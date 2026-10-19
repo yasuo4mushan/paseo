@@ -41,10 +41,7 @@ const mockState = vi.hoisted(() => {
         command: string[];
         env?: Record<string, string>;
       }>,
-      kimi: [] as Array<{
-        command: string[];
-        env?: Record<string, string>;
-      }>,
+      kimi: [] as ConstructorEntry[],
       pi: [] as ConstructorEntry[],
       genericAcp: [] as Array<{
         command: string[];
@@ -465,20 +462,13 @@ vi.mock("./providers/kimi-acp-agent.js", () => ({
       supportsReasoningStream: true,
       supportsToolInvocations: true,
     };
-    readonly provider = "acp";
+    readonly provider = "kimi";
     readonly runtimeSettings?: unknown;
 
-    constructor(options: { command: string[]; env?: Record<string, string> }) {
-      this.runtimeSettings = {
-        command: {
-          mode: "replace",
-          argv: options.command,
-        },
-        env: options.env,
-      };
+    constructor(options: { runtimeSettings?: unknown }) {
+      this.runtimeSettings = options.runtimeSettings;
       mockState.constructorArgs.kimi.push({
-        command: options.command,
-        env: options.env,
+        runtimeSettings: options.runtimeSettings,
       });
     }
 
@@ -498,6 +488,15 @@ vi.mock("./providers/kimi-acp-agent.js", () => ({
     }
 
     async isAvailable(): Promise<boolean> {
+      const command: { mode?: string; argv?: string[] } | undefined =
+        typeof this.runtimeSettings === "object" && this.runtimeSettings !== null
+          ? Reflect.get(this.runtimeSettings, "command")
+          : undefined;
+      if (command?.mode === "replace") {
+        const { isCommandAvailable } =
+          await import("../../executable-resolution/executable-resolution.js");
+        return await isCommandAvailable(command.argv?.[0] ?? "");
+      }
       return true;
     }
   },
@@ -883,29 +882,98 @@ test("traecli provider extending acp uses TraeACPAgentClient", () => {
   expect(mockState.constructorArgs.genericAcp).toEqual([]);
 });
 
-test("kimi provider extending acp uses KimiACPAgentClient", () => {
+test("built-in kimi provider uses KimiACPAgentClient with default command", () => {
+  const registry = buildProviderRegistry(logger);
+
+  expect(registry.kimi).toMatchObject({
+    id: "kimi",
+    label: "Kimi",
+    defaultModeId: null,
+  });
+  expect(registry.kimi.createClient(logger).provider).toBe("kimi");
+  expect(mockState.constructorArgs.kimi).toEqual([
+    {
+      runtimeSettings: undefined,
+    },
+    {
+      runtimeSettings: undefined,
+    },
+  ]);
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("kimi override applies command", () => {
+  buildProviderRegistry(logger, {
+    providerOverrides: {
+      kimi: {
+        command: ["/opt/kimi/bin/kimi", "acp"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.kimi[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["/opt/kimi/bin/kimi", "acp"],
+      },
+      env: undefined,
+    },
+  });
+});
+
+test("legacy kimi custom ACP config falls back to the built-in provider with its command", () => {
+  // Configs written by older releases added kimi through the catalog as
+  // extends: "acp" with an explicit command. The built-in entry shadows the
+  // derived one and merges the command/env into its runtimeSettings, so the
+  // same config keeps launching KimiACPAgentClient.
   const registry = buildProviderRegistry(logger, {
     providerOverrides: {
       kimi: {
         extends: "acp",
         label: "Kimi Code CLI",
         command: ["kimi", "acp"],
+        env: { KIMI_LOG_LEVEL: "debug" },
       },
     },
   });
 
   expect(registry.kimi.createClient(logger).provider).toBe("kimi");
-  expect(mockState.constructorArgs.kimi).toEqual([
-    {
-      command: ["kimi", "acp"],
-      env: undefined,
+  expect(mockState.constructorArgs.kimi[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["kimi", "acp"],
+      },
+      env: { KIMI_LOG_LEVEL: "debug" },
     },
-    {
-      command: ["kimi", "acp"],
-      env: undefined,
-    },
-  ]);
+  });
   expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("kimi runtimeSettings map merges env alongside override command", () => {
+  buildProviderRegistry(logger, {
+    runtimeSettings: {
+      kimi: {
+        env: { KIMI_ENV: "runtime" },
+      },
+    },
+    providerOverrides: {
+      kimi: {
+        command: ["kimi", "acp", "--verbose"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.kimi[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["kimi", "acp", "--verbose"],
+      },
+      env: { KIMI_ENV: "runtime" },
+    },
+  });
 });
 
 test('extends: "acp" without command throws', () => {

@@ -2,19 +2,31 @@ import type { Logger } from "pino";
 
 import type { AgentModelDefinition } from "../agent-sdk-types.js";
 import {
+  checkProviderLaunchAvailable,
+  resolveProviderLaunch,
+  type ProviderRuntimeSettings,
+} from "../provider-launch-config.js";
+import {
+  ACPAgentClient,
   type ACPCatalogModelResolverContext,
+  DEFAULT_ACP_CAPABILITIES,
   deriveSelectorOptions,
   findSelectConfigOption,
 } from "./acp-agent.js";
-import { toDiagnosticErrorMessage } from "./diagnostic-utils.js";
-import { GenericACPAgentClient } from "./generic-acp-agent.js";
+import {
+  buildBinaryDiagnosticRows,
+  buildCommandResolutionDiagnosticRows,
+  formatProviderDiagnostic,
+  formatProviderDiagnosticError,
+  toDiagnosticErrorMessage,
+} from "./diagnostic-utils.js";
+
+/** Default launch command for the built-in kimi provider (`kimi acp`, stdio JSON-RPC). */
+export const KIMI_ACP_DEFAULT_COMMAND = ["kimi", "acp"] as [string, ...string[]];
 
 interface KimiACPAgentClientOptions {
   logger: Logger;
-  command: [string, ...string[]];
-  env?: Record<string, string>;
-  providerId?: string;
-  label?: string;
+  runtimeSettings?: ProviderRuntimeSettings;
 }
 
 // Kimi exposes thinking options only for the selected model. Keep its model-switching
@@ -79,15 +91,47 @@ export async function resolveKimiCatalogModels({
   return resolved;
 }
 
-export class KimiACPAgentClient extends GenericACPAgentClient {
+/**
+ * Built-in Kimi Code (Moonshot AI) ACP client. Launches `kimi acp` by default;
+ * `agents.providers.kimi.command`/`env` config overrides flow in through
+ * runtimeSettings like other built-in providers.
+ */
+export class KimiACPAgentClient extends ACPAgentClient {
   constructor(options: KimiACPAgentClientOptions) {
     super({
+      provider: "kimi",
       logger: options.logger,
-      command: options.command,
-      env: options.env,
-      providerId: options.providerId,
-      label: options.label,
+      runtimeSettings: options.runtimeSettings,
+      defaultCommand: KIMI_ACP_DEFAULT_COMMAND,
+      capabilities: DEFAULT_ACP_CAPABILITIES,
+      // Kimi advertises slash commands with available_commands_update after
+      // session/new, so the first listCommands() waits for that batch (kept
+      // from the previous generic-ACP integration).
+      waitForInitialCommands: true,
       catalogModelResolver: resolveKimiCatalogModels,
     });
+  }
+
+  async getDiagnostic(): Promise<{ diagnostic: string }> {
+    try {
+      const launch = await resolveProviderLaunch({
+        commandConfig: this.runtimeSettings?.command,
+        defaultBinary: KIMI_ACP_DEFAULT_COMMAND[0],
+      });
+      const availability = await checkProviderLaunchAvailable(launch);
+
+      return {
+        diagnostic: formatProviderDiagnostic("Kimi", [
+          ...(await buildCommandResolutionDiagnosticRows(launch, {
+            knownBinaryNames: ["kimi"],
+          })),
+          ...(await buildBinaryDiagnosticRows(launch, availability)),
+        ]),
+      };
+    } catch (error) {
+      return {
+        diagnostic: formatProviderDiagnosticError("Kimi", error),
+      };
+    }
   }
 }

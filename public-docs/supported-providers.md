@@ -18,6 +18,7 @@ Work out of the box once the underlying CLI is installed and authenticated.
 - [Codex](/docs/codex). OpenAI's workspace agent with sandbox controls and optional network access.
 - [OpenCode](https://opencode.ai/). Open-source coding assistant with multi-provider model support.
 - [Pi](https://pi.dev). Minimal terminal-based coding agent with multi-provider LLM support.
+- [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code). Moonshot AI's coding agent, via Agent Client Protocol.
 - [Antigravity](#antigravity). Uses your installed `agy` CLI through a built-in provider plugin.
 - [Muse Code](/docs/muse-code). Meta's terminal coding agent, bundled as a provider plugin.
 
@@ -58,6 +59,33 @@ for provider-specific environment variables:
 
 See [Custom providers](/docs/custom-providers) for command and environment overrides.
 
+### Kimi Code CLI
+
+Install the [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code) on your daemon host
+(`npm install -g @moonshot-ai/kimi-code` or your package manager's equivalent), then run
+`kimi` once to sign in with your Moonshot account. Paseo launches `kimi acp` and discovers
+models, modes, and per-model thinking options over the Agent Client Protocol.
+
+If `kimi` is outside your daemon's PATH, override the command in
+`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+
+```json
+{
+  "agents": {
+    "providers": {
+      "kimi": {
+        "command": ["/absolute/path/to/kimi", "acp"],
+        "env": { "KIMI_LOG_LEVEL": "debug" }
+      }
+    }
+  }
+}
+```
+
+Configs from older releases that added Kimi from the ACP catalog (`extends: "acp"`)
+keep working: the built-in provider takes over and honors the same command and env
+settings.
+
 ## ACP catalog
 
 Pick any of these from the in-app provider catalog. Each entry is a one-click install of the underlying CLI.
@@ -88,7 +116,6 @@ Pick any of these from the in-app provider catalog. Each entry is a one-click in
 - [Hoplite](#hoplite), cloud coding agent through its local ACP bridge.
 - [Junie](https://junie.jetbrains.com/docs/junie-cli-acp.html), JetBrains' coding agent.
 - [Kilo Code](https://kilo.ai/docs/code-with-ai/platforms/cli), open-source coding agent.
-- [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code), Moonshot AI's coding assistant.
 - [Minion Code](https://github.com/femto/minion-code), Minion-framework coding agent.
 - [Mistral Vibe](https://github.com/mistralai/mistral-vibe), Mistral's open-source CLI assistant.
 - [Nova](https://www.compassap.ai/portfolio/nova.html), Compass AI's software engineer.
