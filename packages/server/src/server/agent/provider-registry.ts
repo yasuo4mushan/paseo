@@ -46,6 +46,7 @@ import type { OpenCodeBridge } from "./providers/opencode/bridge.js";
 import { OmpAgentClient } from "./providers/omp/agent.js";
 import type { OmpRuntime } from "./providers/omp/runtime.js";
 import { PiRpcAgentClient } from "./providers/pi/agent.js";
+import { QoderACPAgentClient } from "./providers/qoder-acp-agent.js";
 import { TraeACPAgentClient } from "./providers/trae-acp-agent.js";
 import { MockLoadTestAgentClient } from "./providers/mock-load-test-agent.js";
 import { MockSlowProviderClient } from "./providers/mock-slow-provider.js";
@@ -226,6 +227,11 @@ const PROVIDER_CLIENT_FACTORIES: Record<string, ProviderClientFactory> = {
     }),
   pi: (logger, runtimeSettings) =>
     new PiRpcAgentClient({
+      logger,
+      runtimeSettings,
+    }),
+  qoder: (logger, runtimeSettings) =>
+    new QoderACPAgentClient({
       logger,
       runtimeSettings,
     }),
@@ -856,11 +862,12 @@ function addDerivedProviders(
           if (providerId === "cursor") {
             return new CursorACPAgentClient(acpOptions);
           }
-          // "kimi" and "codebuddy-code" are built-in providers: legacy configs
-          // that added them as custom ACP providers are shadowed by the built-in
-          // entries above (see the BUILTIN_PROVIDER_IDS guard at the top of this
-          // loop) and their command/env overrides merge into the built-in
-          // factory's runtimeSettings, so no special case is needed here.
+          // "kimi", "codebuddy-code", and "qoder" are built-in providers:
+          // legacy configs that added them as custom ACP providers are shadowed
+          // by the built-in entries above (see the BUILTIN_PROVIDER_IDS guard at
+          // the top of this loop) and their command/env overrides merge into the
+          // built-in factory's runtimeSettings, so no special case is needed
+          // here.
           if (providerId === "kiro") {
             return new KiroACPAgentClient(acpOptions);
           }

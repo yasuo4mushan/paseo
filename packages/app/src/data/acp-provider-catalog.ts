@@ -344,10 +344,16 @@ const CATALOG_DATA = [
     id: "qoder",
     title: "Qoder CLI",
     description: "AI coding assistant with agentic capabilities",
-    version: "1.1.4",
+    // Manual install (npm global `@qoder-ai/qodercli`); the command is not
+    // version-pinned (the old entry locked npx to 1.1.4 while the CLI has
+    // moved on, e.g. 1.1.74). Qoder is also a built-in daemon provider, so
+    // this entry mainly serves older daemon/app builds and the catalog icon
+    // lookup — provider snapshots hide the tile once the built-in qoder
+    // provider is listed.
+    version: "manual",
     iconId: "qoder",
     installLink: "https://qoder.com",
-    command: ["npx", "-y", "@qoder-ai/qodercli@1.1.4", "--acp"],
+    command: ["qoder", "--acp"],
   },
   {
     id: "qwen-code",

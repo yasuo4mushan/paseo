@@ -44,6 +44,7 @@ const mockState = vi.hoisted(() => {
       }>,
       kimi: [] as ConstructorEntry[],
       pi: [] as ConstructorEntry[],
+      qoder: [] as ConstructorEntry[],
       genericAcp: [] as Array<{
         command: string[];
         env?: Record<string, string>;
@@ -64,6 +65,7 @@ const mockState = vi.hoisted(() => {
       this.constructorArgs.trae = [];
       this.constructorArgs.kimi = [];
       this.constructorArgs.pi = [];
+      this.constructorArgs.qoder = [];
       this.constructorArgs.genericAcp = [];
       this.isCommandAvailable.mockReset();
       this.isCommandAvailable.mockImplementation(async (_command: string) => false);
@@ -520,6 +522,56 @@ vi.mock("./providers/kimi-acp-agent.js", () => ({
     constructor(options: { runtimeSettings?: unknown }) {
       this.runtimeSettings = options.runtimeSettings;
       mockState.constructorArgs.kimi.push({
+        runtimeSettings: options.runtimeSettings,
+      });
+    }
+
+    async createSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async resumeSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async fetchCatalog(): Promise<ProviderCatalog> {
+      return {
+        models: mockState.runtimeModels.get(this.provider) ?? [],
+        modes: [],
+      };
+    }
+
+    async isAvailable(): Promise<boolean> {
+      const command: { mode?: string; argv?: string[] } | undefined =
+        typeof this.runtimeSettings === "object" && this.runtimeSettings !== null
+          ? Reflect.get(this.runtimeSettings, "command")
+          : undefined;
+      if (command?.mode === "replace") {
+        const { isCommandAvailable } =
+          await import("../../executable-resolution/executable-resolution.js");
+        return await isCommandAvailable(command.argv?.[0] ?? "");
+      }
+      return true;
+    }
+  },
+}));
+
+vi.mock("./providers/qoder-acp-agent.js", () => ({
+  QoderACPAgentClient: class QoderACPAgentClient {
+    readonly capabilities = {
+      supportsStreaming: true,
+      supportsSessionPersistence: true,
+      supportsDynamicModes: true,
+      supportsMcpServers: true,
+      supportsReasoningStream: true,
+      supportsToolInvocations: true,
+    };
+    readonly provider = "qoder";
+    readonly runtimeSettings?: unknown;
+
+    constructor(options: { runtimeSettings?: unknown }) {
+      this.runtimeSettings = options.runtimeSettings;
+      mockState.constructorArgs.qoder.push({
         runtimeSettings: options.runtimeSettings,
       });
     }
@@ -1118,6 +1170,101 @@ test("codebuddy-code runtimeSettings map merges env alongside override command",
         argv: ["codebuddy", "--acp", "--verbose"],
       },
       env: { CODEBUDDY_ENV: "runtime" },
+    },
+  });
+});
+
+test("built-in qoder provider uses QoderACPAgentClient with default command", () => {
+  const registry = buildProviderRegistry(logger);
+
+  expect(registry.qoder).toMatchObject({
+    id: "qoder",
+    label: "Qoder",
+    defaultModeId: null,
+  });
+  expect(registry.qoder.createClient(logger).provider).toBe("qoder");
+  expect(mockState.constructorArgs.qoder).toEqual([
+    {
+      runtimeSettings: undefined,
+    },
+    {
+      runtimeSettings: undefined,
+    },
+  ]);
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("qoder override applies command", () => {
+  buildProviderRegistry(logger, {
+    providerOverrides: {
+      qoder: {
+        command: ["/opt/alibaba/qoder", "--acp"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.qoder[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["/opt/alibaba/qoder", "--acp"],
+      },
+      env: undefined,
+    },
+  });
+});
+
+test("legacy qoder custom ACP config falls back to the built-in provider with its command", () => {
+  // Configs written by older releases added Qoder through the catalog as
+  // extends: "acp" with an explicit command (the catalog entry shipped
+  // `npx -y @qoder-ai/qodercli@1.1.4 --acp`). The built-in entry shadows the
+  // derived one and merges the command/env into its runtimeSettings, so the
+  // same config keeps launching QoderACPAgentClient.
+  const registry = buildProviderRegistry(logger, {
+    providerOverrides: {
+      qoder: {
+        extends: "acp",
+        label: "Qoder CLI",
+        command: ["npx", "-y", "@qoder-ai/qodercli@1.1.4", "--acp"],
+        env: { QODER_ENV: "debug" },
+      },
+    },
+  });
+
+  expect(registry.qoder.createClient(logger).provider).toBe("qoder");
+  expect(mockState.constructorArgs.qoder[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["npx", "-y", "@qoder-ai/qodercli@1.1.4", "--acp"],
+      },
+      env: { QODER_ENV: "debug" },
+    },
+  });
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("qoder runtimeSettings map merges env alongside override command", () => {
+  buildProviderRegistry(logger, {
+    runtimeSettings: {
+      qoder: {
+        env: { QODER_ENV: "runtime" },
+      },
+    },
+    providerOverrides: {
+      qoder: {
+        command: ["qoder", "--acp", "--verbose"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.qoder[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["qoder", "--acp", "--verbose"],
+      },
+      env: { QODER_ENV: "runtime" },
     },
   });
 });
