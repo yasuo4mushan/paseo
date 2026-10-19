@@ -21,6 +21,7 @@ Work out of the box once the underlying CLI is installed and authenticated.
 - [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code). Moonshot AI's coding agent, via Agent Client Protocol.
 - [CodeBuddy Code](https://www.codebuddy.cn/cli/). Tencent's coding agent, via Agent Client Protocol.
 - [Qoder](https://qoder.com). Alibaba's Qoder CLI coding agent, via Agent Client Protocol.
+- [Qwen Code](https://qwenlm.github.io/qwen-code-docs/en/users/overview). Alibaba's Qwen Code CLI coding agent, via Agent Client Protocol.
 - [Antigravity](#antigravity). Uses your installed `agy` CLI through a built-in provider plugin.
 - [Muse Code](/docs/muse-code). Meta's terminal coding agent, bundled as a provider plugin.
 
@@ -143,6 +144,34 @@ Configs from older releases that added Qoder from the ACP catalog
 (`extends: "acp"`) keep working: the built-in provider takes over and honors the same
 command and env settings.
 
+### Qwen Code
+
+Install the [Qwen Code CLI](https://qwenlm.github.io/qwen-code-docs/en/users/overview) on
+your daemon host (`npm install -g @qwen-code/qwen-code` or your package manager's
+equivalent), then authenticate once: run `qwen` and complete the Qwen account sign-in, or
+set `OPENAI_API_KEY` for the OpenAI-compatible API-key mode the ACP handshake advertises.
+Paseo launches `qwen --acp` and discovers models and modes over the Agent Client Protocol.
+
+If `qwen` is outside your daemon's PATH, override the command in
+`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+
+```json
+{
+  "agents": {
+    "providers": {
+      "qwen-code": {
+        "command": ["/absolute/path/to/qwen", "--acp"],
+        "env": { "EXAMPLE_VARIABLE": "value" }
+      }
+    }
+  }
+}
+```
+
+Configs from older releases that added Qwen Code from the ACP catalog
+(`extends: "acp"`) keep working: the built-in provider takes over and honors the same
+command and env settings.
+
 ## ACP catalog
 
 Pick any of these from the in-app provider catalog. Each entry is a one-click install of the underlying CLI.
@@ -176,7 +205,6 @@ Pick any of these from the in-app provider catalog. Each entry is a one-click in
 - [Mistral Vibe](https://github.com/mistralai/mistral-vibe), Mistral's open-source CLI assistant.
 - [Nova](https://www.compassap.ai/portfolio/nova.html), Compass AI's software engineer.
 - [Poolside](https://docs.poolside.ai/cli/pool), Poolside's coding agent.
-- [Qwen Code](https://qwenlm.github.io/qwen-code-docs/en/users/overview), Alibaba's Qwen coding assistant.
 - [siGit Code](https://github.com/getsigit/sigit), local-first coding agent with optional on-device LLM.
 - [Stakpak](https://stakpak.dev/), Rust-based DevOps agent.
 - [TRAE CLI](https://docs.trae.cn/cli_get-started-with-trae-cli), ByteDance's official TRAE coding agent.

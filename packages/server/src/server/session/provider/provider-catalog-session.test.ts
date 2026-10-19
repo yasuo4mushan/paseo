@@ -336,6 +336,7 @@ it("announces shared content without retransmitting models or hashing discovery 
         "omp",
         "codebuddy-code",
         "qoder",
+        "qwen-code",
       ].map((provider) => [provider, { enabled: provider === "codex" }]),
     ),
     extraClients: {

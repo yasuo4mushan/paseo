@@ -45,6 +45,7 @@ const mockState = vi.hoisted(() => {
       kimi: [] as ConstructorEntry[],
       pi: [] as ConstructorEntry[],
       qoder: [] as ConstructorEntry[],
+      qwenCode: [] as ConstructorEntry[],
       genericAcp: [] as Array<{
         command: string[];
         env?: Record<string, string>;
@@ -66,6 +67,7 @@ const mockState = vi.hoisted(() => {
       this.constructorArgs.kimi = [];
       this.constructorArgs.pi = [];
       this.constructorArgs.qoder = [];
+      this.constructorArgs.qwenCode = [];
       this.constructorArgs.genericAcp = [];
       this.isCommandAvailable.mockReset();
       this.isCommandAvailable.mockImplementation(async (_command: string) => false);
@@ -572,6 +574,56 @@ vi.mock("./providers/qoder-acp-agent.js", () => ({
     constructor(options: { runtimeSettings?: unknown }) {
       this.runtimeSettings = options.runtimeSettings;
       mockState.constructorArgs.qoder.push({
+        runtimeSettings: options.runtimeSettings,
+      });
+    }
+
+    async createSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async resumeSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async fetchCatalog(): Promise<ProviderCatalog> {
+      return {
+        models: mockState.runtimeModels.get(this.provider) ?? [],
+        modes: [],
+      };
+    }
+
+    async isAvailable(): Promise<boolean> {
+      const command: { mode?: string; argv?: string[] } | undefined =
+        typeof this.runtimeSettings === "object" && this.runtimeSettings !== null
+          ? Reflect.get(this.runtimeSettings, "command")
+          : undefined;
+      if (command?.mode === "replace") {
+        const { isCommandAvailable } =
+          await import("../../executable-resolution/executable-resolution.js");
+        return await isCommandAvailable(command.argv?.[0] ?? "");
+      }
+      return true;
+    }
+  },
+}));
+
+vi.mock("./providers/qwen-acp-agent.js", () => ({
+  QwenACPAgentClient: class QwenACPAgentClient {
+    readonly capabilities = {
+      supportsStreaming: true,
+      supportsSessionPersistence: true,
+      supportsDynamicModes: true,
+      supportsMcpServers: true,
+      supportsReasoningStream: true,
+      supportsToolInvocations: true,
+    };
+    readonly provider = "qwen-code";
+    readonly runtimeSettings?: unknown;
+
+    constructor(options: { runtimeSettings?: unknown }) {
+      this.runtimeSettings = options.runtimeSettings;
+      mockState.constructorArgs.qwenCode.push({
         runtimeSettings: options.runtimeSettings,
       });
     }
@@ -1265,6 +1317,101 @@ test("qoder runtimeSettings map merges env alongside override command", () => {
         argv: ["qoder", "--acp", "--verbose"],
       },
       env: { QODER_ENV: "runtime" },
+    },
+  });
+});
+
+test("built-in qwen-code provider uses QwenACPAgentClient with default command", () => {
+  const registry = buildProviderRegistry(logger);
+
+  expect(registry["qwen-code"]).toMatchObject({
+    id: "qwen-code",
+    label: "Qwen Code",
+    defaultModeId: null,
+  });
+  expect(registry["qwen-code"].createClient(logger).provider).toBe("qwen-code");
+  expect(mockState.constructorArgs.qwenCode).toEqual([
+    {
+      runtimeSettings: undefined,
+    },
+    {
+      runtimeSettings: undefined,
+    },
+  ]);
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("qwen-code override applies command", () => {
+  buildProviderRegistry(logger, {
+    providerOverrides: {
+      "qwen-code": {
+        command: ["/opt/alibaba/qwen", "--acp"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.qwenCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["/opt/alibaba/qwen", "--acp"],
+      },
+      env: undefined,
+    },
+  });
+});
+
+test("legacy qwen-code custom ACP config falls back to the built-in provider with its command", () => {
+  // Configs written by older releases added Qwen Code through the catalog as
+  // extends: "acp" with an explicit command (the catalog entry shipped
+  // `npx -y @qwen-code/qwen-code@0.20.1 --acp --experimental-skills`). The
+  // built-in entry shadows the derived one and merges the command/env into its
+  // runtimeSettings, so the same config keeps launching QwenACPAgentClient.
+  const registry = buildProviderRegistry(logger, {
+    providerOverrides: {
+      "qwen-code": {
+        extends: "acp",
+        label: "Qwen Code",
+        command: ["npx", "-y", "@qwen-code/qwen-code@0.20.1", "--acp", "--experimental-skills"],
+        env: { QWEN_ENV: "debug" },
+      },
+    },
+  });
+
+  expect(registry["qwen-code"].createClient(logger).provider).toBe("qwen-code");
+  expect(mockState.constructorArgs.qwenCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["npx", "-y", "@qwen-code/qwen-code@0.20.1", "--acp", "--experimental-skills"],
+      },
+      env: { QWEN_ENV: "debug" },
+    },
+  });
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("qwen-code runtimeSettings map merges env alongside override command", () => {
+  buildProviderRegistry(logger, {
+    runtimeSettings: {
+      "qwen-code": {
+        env: { QWEN_ENV: "runtime" },
+      },
+    },
+    providerOverrides: {
+      "qwen-code": {
+        command: ["qwen", "--acp", "--verbose"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.qwenCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["qwen", "--acp", "--verbose"],
+      },
+      env: { QWEN_ENV: "runtime" },
     },
   });
 });

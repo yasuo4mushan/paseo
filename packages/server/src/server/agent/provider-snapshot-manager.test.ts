@@ -399,6 +399,7 @@ describe("ProviderSnapshotManager public surface", () => {
         opencode: { enabled: false },
         pi: { enabled: false },
         qoder: { enabled: false },
+        "qwen-code": { enabled: false },
       },
       extraClients: {
         codex: createExtraClient("codex", { isAvailable, fetchCatalog }),
@@ -877,6 +878,7 @@ describe("ProviderSnapshotManager public surface", () => {
         opencode: { enabled: false },
         pi: { enabled: false },
         qoder: { enabled: false },
+        "qwen-code": { enabled: false },
       },
     });
     try {
@@ -892,6 +894,7 @@ describe("ProviderSnapshotManager public surface", () => {
         "opencode",
         "pi",
         "qoder",
+        "qwen-code",
       ]);
       for (const entry of entries) {
         expect(entry.enabled).toBe(false);
@@ -1638,6 +1641,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       opencode: { enabled: false },
       pi: { enabled: false },
       qoder: { enabled: false },
+      "qwen-code": { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -1692,6 +1696,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       opencode: { enabled: false },
       pi: { enabled: false },
       qoder: { enabled: false },
+      "qwen-code": { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -2279,6 +2284,7 @@ describe("ProviderSnapshotManager cwd routing", () => {
           opencode: { enabled: false },
           pi: { enabled: false },
           qoder: { enabled: false },
+          "qwen-code": { enabled: false },
         },
       });
       try {
@@ -3245,9 +3251,18 @@ test("result identity covers content, metadata and status while unchanged refres
 });
 
 const PUBLICATION_PROVIDERS = Object.fromEntries(
-  ["claude", "codebuddy-code", "codex", "copilot", "kimi", "opencode", "pi", "qoder", "omp"].map(
-    (provider) => [provider, { enabled: provider === "codex" }],
-  ),
+  [
+    "claude",
+    "codebuddy-code",
+    "codex",
+    "copilot",
+    "kimi",
+    "opencode",
+    "pi",
+    "qoder",
+    "qwen-code",
+    "omp",
+  ].map((provider) => [provider, { enabled: provider === "codex" }]),
 );
 
 test("reads retain the target snapshot and cold binding publishes only the resolved transition", async () => {
