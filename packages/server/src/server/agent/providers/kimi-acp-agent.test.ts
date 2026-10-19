@@ -60,9 +60,6 @@ function createKimiClient(spawnProcess: () => Promise<SpawnedACPProcess>): KimiA
 
   return new TestKimiACPAgentClient({
     logger: createTestLogger(),
-    command: ["kimi", "acp"],
-    providerId: "kimi",
-    label: "Kimi Code CLI",
   });
 }
 

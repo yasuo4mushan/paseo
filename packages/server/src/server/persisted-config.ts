@@ -1,4 +1,5 @@
 import { PluginRegistriesSchema } from "@getpaseo/protocol/plugin-registry";
+import { BUILTIN_PROVIDER_IDS } from "@getpaseo/protocol/provider-manifest";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -175,7 +176,8 @@ const AgentMetadataGenerationSchema = z
   })
   .strict();
 
-const BUILTIN_PROVIDER_IDS = ["claude", "codex", "copilot", "opencode", "pi", "omp"] as const;
+// Imported from the protocol manifest so legacy provider-settings migration and
+// override validation share one source of truth (see ProviderOverridesSchema).
 
 function isLegacyProviderEntry(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

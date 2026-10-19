@@ -280,7 +280,11 @@ const CATALOG_DATA = [
     id: "kimi",
     title: "Kimi Code CLI",
     description: "Moonshot AI's open-source terminal coding agent",
-    version: "0.11.0",
+    // Manual install (brew/npm global); the command is not version-pinned. Kimi
+    // is also a built-in daemon provider, so this entry mainly serves older
+    // daemon/app builds and the catalog icon lookup — provider snapshots hide
+    // the tile once the built-in kimi provider is listed.
+    version: "manual",
     iconId: "kimi",
     installLink: "https://github.com/MoonshotAI/kimi-code",
     command: ["kimi", "acp"],

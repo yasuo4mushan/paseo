@@ -202,6 +202,11 @@ const PROVIDER_CLIENT_FACTORIES: Record<string, ProviderClientFactory> = {
       logger,
       runtimeSettings,
     }),
+  kimi: (logger, runtimeSettings) =>
+    new KimiACPAgentClient({
+      logger,
+      runtimeSettings,
+    }),
   cursor: (logger, runtimeSettings) =>
     new CursorACPAgentClient({
       logger,
@@ -845,9 +850,11 @@ function addDerivedProviders(
           if (providerId === "cursor") {
             return new CursorACPAgentClient(acpOptions);
           }
-          if (providerId === "kimi") {
-            return new KimiACPAgentClient(acpOptions);
-          }
+          // "kimi" is a built-in provider: legacy configs that added it as a custom
+          // ACP provider are shadowed by the built-in entry above (see the
+          // BUILTIN_PROVIDER_IDS guard at the top of this loop) and their
+          // command/env overrides merge into the built-in factory's
+          // runtimeSettings, so no special case is needed here.
           if (providerId === "kiro") {
             return new KiroACPAgentClient(acpOptions);
           }

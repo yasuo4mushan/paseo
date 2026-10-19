@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { AgentProvider } from "./agent-types.js";
-import { AgentProviderSchema } from "./provider-manifest.js";
+import { AgentProviderSchema, BUILTIN_PROVIDER_IDS } from "./provider-manifest.js";
 
 const ProviderCommandDefaultSchema = z.object({
   mode: z.literal("default"),
@@ -65,14 +65,17 @@ export const ProviderOverrideSchema = z.object({
   order: z.number().optional(),
 });
 
-const BUILTIN_PROVIDER_IDS = ["claude", "codex", "copilot", "opencode", "pi", "omp"] as const;
+// Single source of truth: derived from AGENT_PROVIDER_DEFINITIONS so config
+// validation (override vs custom-provider rules, valid `extends` targets) never
+// drifts from the manifest.
+const BUILTIN_PROVIDER_ID_LIST = BUILTIN_PROVIDER_IDS;
 const PROVIDER_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 export const ProviderOverridesSchema = z
   .record(z.string(), ProviderOverrideSchema)
   .superRefine((providers, ctx) => {
-    const builtinProviderIdSet = new Set<string>(BUILTIN_PROVIDER_IDS);
-    const validExtendsValues = new Set<string>([...BUILTIN_PROVIDER_IDS, "acp"]);
+    const builtinProviderIdSet = new Set<string>(BUILTIN_PROVIDER_ID_LIST);
+    const validExtendsValues = new Set<string>([...BUILTIN_PROVIDER_ID_LIST, "acp"]);
 
     for (const [providerId, provider] of Object.entries(providers)) {
       if (!PROVIDER_ID_PATTERN.test(providerId)) {

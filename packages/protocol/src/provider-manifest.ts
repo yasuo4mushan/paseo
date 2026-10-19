@@ -227,6 +227,17 @@ export const AGENT_PROVIDER_DEFINITIONS: AgentProviderDefinition[] = [
     modes: COPILOT_MODES,
   },
   {
+    id: "kimi",
+    label: "Kimi",
+    description:
+      "Moonshot AI's Kimi Code terminal coding agent via Agent Client Protocol with per-model thinking options",
+    // Kimi reports its modes and models at runtime over ACP (session/new and
+    // config options); there is no static mode list to scaffold. Like pi, the
+    // daemon leaves mode selection to the discovered catalog.
+    defaultModeId: null,
+    modes: [],
+  },
+  {
     id: "opencode",
     label: "OpenCode",
     description: "Open-source coding assistant with multi-provider model support",
