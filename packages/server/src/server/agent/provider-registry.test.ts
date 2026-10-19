@@ -46,6 +46,7 @@ const mockState = vi.hoisted(() => {
       pi: [] as ConstructorEntry[],
       qoder: [] as ConstructorEntry[],
       qwenCode: [] as ConstructorEntry[],
+      zcode: [] as ConstructorEntry[],
       genericAcp: [] as Array<{
         command: string[];
         env?: Record<string, string>;
@@ -68,6 +69,7 @@ const mockState = vi.hoisted(() => {
       this.constructorArgs.pi = [];
       this.constructorArgs.qoder = [];
       this.constructorArgs.qwenCode = [];
+      this.constructorArgs.zcode = [];
       this.constructorArgs.genericAcp = [];
       this.isCommandAvailable.mockReset();
       this.isCommandAvailable.mockImplementation(async (_command: string) => false);
@@ -625,6 +627,56 @@ vi.mock("./providers/qwen-acp-agent.js", () => ({
       this.runtimeSettings = options.runtimeSettings;
       mockState.constructorArgs.qwenCode.push({
         runtimeSettings: options.runtimeSettings,
+      });
+    }
+
+    async createSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async resumeSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async fetchCatalog(): Promise<ProviderCatalog> {
+      return {
+        models: mockState.runtimeModels.get(this.provider) ?? [],
+        modes: [],
+      };
+    }
+
+    async isAvailable(): Promise<boolean> {
+      const command: { mode?: string; argv?: string[] } | undefined =
+        typeof this.runtimeSettings === "object" && this.runtimeSettings !== null
+          ? Reflect.get(this.runtimeSettings, "command")
+          : undefined;
+      if (command?.mode === "replace") {
+        const { isCommandAvailable } =
+          await import("../../executable-resolution/executable-resolution.js");
+        return await isCommandAvailable(command.argv?.[0] ?? "");
+      }
+      return true;
+    }
+  },
+}));
+
+vi.mock("./providers/zcode/agent.js", () => ({
+  ZcodeAgentClient: class ZcodeAgentClient {
+    readonly capabilities = {
+      supportsStreaming: true,
+      supportsSessionPersistence: true,
+      supportsDynamicModes: false,
+      supportsMcpServers: true,
+      supportsReasoningStream: true,
+      supportsToolInvocations: true,
+    };
+    readonly provider = "zcode";
+    readonly runtimeSettings?: unknown;
+
+    constructor(logger: unknown, runtimeSettings?: unknown) {
+      this.runtimeSettings = runtimeSettings;
+      mockState.constructorArgs.zcode.push({
+        runtimeSettings: runtimeSettings,
       });
     }
 
@@ -1412,6 +1464,52 @@ test("qwen-code runtimeSettings map merges env alongside override command", () =
         argv: ["qwen", "--acp", "--verbose"],
       },
       env: { QWEN_ENV: "runtime" },
+    },
+  });
+});
+
+test("built-in zcode provider uses ZcodeAgentClient", () => {
+  const registry = buildProviderRegistry(logger);
+
+  expect(registry.zcode).toMatchObject({
+    id: "zcode",
+    label: "ZCode",
+    defaultModeId: "build",
+  });
+  expect(registry.zcode.modes.map((mode) => mode.id)).toEqual(["build", "edit", "plan", "yolo"]);
+  expect(registry.zcode.createClient(logger).provider).toBe("zcode");
+  expect(mockState.constructorArgs.zcode).toEqual([
+    {
+      runtimeSettings: undefined,
+    },
+    {
+      runtimeSettings: undefined,
+    },
+  ]);
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("zcode override applies command and env", () => {
+  buildProviderRegistry(logger, {
+    runtimeSettings: {
+      zcode: {
+        env: { ZCODE_DEBUG: "1" },
+      },
+    },
+    providerOverrides: {
+      zcode: {
+        command: ["/opt/zcode/zcode.cjs"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.zcode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["/opt/zcode/zcode.cjs"],
+      },
+      env: { ZCODE_DEBUG: "1" },
     },
   });
 });

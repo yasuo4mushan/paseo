@@ -22,6 +22,7 @@ Work out of the box once the underlying CLI is installed and authenticated.
 - [CodeBuddy Code](https://www.codebuddy.cn/cli/). Tencent's coding agent, via Agent Client Protocol.
 - [Qoder](https://qoder.com). Alibaba's Qoder CLI coding agent, via Agent Client Protocol.
 - [Qwen Code](https://qwenlm.github.io/qwen-code-docs/en/users/overview). Alibaba's Qwen Code CLI coding agent, via Agent Client Protocol.
+- [ZCode](#zcode). Z.ai's ZCode coding agent (GLM), via its native app-server protocol.
 - [Antigravity](#antigravity). Uses your installed `agy` CLI through a built-in provider plugin.
 - [Muse Code](/docs/muse-code). Meta's terminal coding agent, bundled as a provider plugin.
 
@@ -171,6 +172,43 @@ If `qwen` is outside your daemon's PATH, override the command in
 Configs from older releases that added Qwen Code from the ACP catalog
 (`extends: "acp"`) keep working: the built-in provider takes over and honors the same
 command and env settings.
+
+### ZCode
+
+Install the [Z.ai ZCode](https://z.ai) desktop app on your daemon host and sign in once
+(models use the providers configured in the app, e.g. a BigModel / Z.ai Coding Plan API
+key). Paseo launches the bundled `zcode app-server` directly — ZCode does not support
+ACP, so this is a native Direct integration — and discovers models, modes, and thinking
+levels over its protocol. A `zcode` binary on PATH is preferred when present.
+
+If the app lives somewhere else or you use a standalone CLI build, override the command
+in `~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+
+```json
+{
+  "agents": {
+    "providers": {
+      "zcode": {
+        "command": ["/usr/local/bin/zcode", "app-server"],
+        "env": { "EXAMPLE_VARIABLE": "value" }
+      }
+    }
+  }
+}
+```
+
+Notes and current limitations:
+
+- Modes mirror ZCode's own list (`build`, `edit`, `plan`, `yolo`); switching modes maps
+  to ZCode's `session/setMode`.
+- Tool permission requests and `askUserQuestion` prompts surface in Paseo and are
+  answered from the UI. Anything Paseo cannot map is denied (fail closed) — configure
+  such tools in ZCode itself.
+- Sessions persist in ZCode's own store and are resumed across daemon restarts when
+  possible; an unrestorable session falls back to a fresh ZCode session with a notice.
+- Out of scope for now: mid-turn steering, fine-grained thought-level switching beyond
+  the model's advertised levels, and manual compaction (ZCode's auto-compaction shows
+  up as a timeline entry).
 
 ## ACP catalog
 

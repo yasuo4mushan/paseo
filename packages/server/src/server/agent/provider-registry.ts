@@ -49,6 +49,7 @@ import { PiRpcAgentClient } from "./providers/pi/agent.js";
 import { QoderACPAgentClient } from "./providers/qoder-acp-agent.js";
 import { QwenACPAgentClient } from "./providers/qwen-acp-agent.js";
 import { TraeACPAgentClient } from "./providers/trae-acp-agent.js";
+import { ZcodeAgentClient } from "./providers/zcode/agent.js";
 import { MockLoadTestAgentClient } from "./providers/mock-load-test-agent.js";
 import { MockSlowProviderClient } from "./providers/mock-slow-provider.js";
 import { ToolPolicyUnsupportedError, mergeProviderOptions } from "./provider-options.js";
@@ -241,6 +242,7 @@ const PROVIDER_CLIENT_FACTORIES: Record<string, ProviderClientFactory> = {
       logger,
       runtimeSettings,
     }),
+  zcode: (logger, runtimeSettings) => new ZcodeAgentClient(logger, runtimeSettings),
   omp: (logger, runtimeSettings, options) =>
     new OmpAgentClient({
       logger,
@@ -873,7 +875,8 @@ function addDerivedProviders(
           // are shadowed by the built-in entries above (see the
           // BUILTIN_PROVIDER_IDS guard at the top of this loop) and their
           // command/env overrides merge into the built-in factory's
-          // runtimeSettings, so no special case is needed here.
+          // runtimeSettings, so no special case is needed here. The same
+          // applies to "zcode" (built-in Direct provider, not ACP).
           if (providerId === "kiro") {
             return new KiroACPAgentClient(acpOptions);
           }
