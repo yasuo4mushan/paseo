@@ -279,6 +279,16 @@ export const AGENT_PROVIDER_DEFINITIONS: AgentProviderDefinition[] = [
     modes: [],
   },
   {
+    id: "qwen-code",
+    label: "Qwen Code",
+    description: "Alibaba's Qwen Code terminal coding agent via Agent Client Protocol",
+    // Qwen Code reports its modes and models at runtime over ACP; there is no
+    // static mode list to scaffold. Like kimi/pi/qoder, the daemon leaves mode
+    // selection to the discovered catalog.
+    defaultModeId: null,
+    modes: [],
+  },
+  {
     id: "omp",
     label: "Oh My Pi",
     description: "Multi-provider coding agent with native approvals, host tools, and subagents",

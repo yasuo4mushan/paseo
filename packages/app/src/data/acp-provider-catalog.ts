@@ -359,10 +359,19 @@ const CATALOG_DATA = [
     id: "qwen-code",
     title: "Qwen Code",
     description: "Alibaba's Qwen coding assistant",
-    version: "0.20.1",
+    // Manual install (npm global `@qwen-code/qwen-code`); the command is not
+    // version-pinned (the old entry locked npx to 0.20.1 while the CLI has
+    // moved on, e.g. 0.25.3). The legacy `--experimental-skills` flag is
+    // dropped: it is undocumented in current CLI help (skills are built-in
+    // now), and the catalog command mirrors the built-in provider's minimal
+    // `qwen --acp`. Qwen Code is also a built-in daemon provider, so this
+    // entry mainly serves older daemon/app builds and the catalog icon lookup
+    // — provider snapshots hide the tile once the built-in qwen-code provider
+    // is listed.
+    version: "manual",
     iconId: "qwen-code",
     installLink: "https://qwenlm.github.io/qwen-code-docs/en/users/overview",
-    command: ["npx", "-y", "@qwen-code/qwen-code@0.20.1", "--acp", "--experimental-skills"],
+    command: ["qwen", "--acp"],
   },
   {
     id: "sigit",
