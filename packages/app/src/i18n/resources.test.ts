@@ -214,7 +214,7 @@ describe("translation resources", () => {
     expect(ja.settings.providers.models.many).toBe("{{count}}つのモデル");
     expect(ptBR.settings.providers.models.many).toBe("{{count}} modelos");
     expect(ru.settings.providers.models.many).toBe("{{count}} моделей");
-    expect(zhCN.settings.providers.models.many).toBe("{{count}} 个 Model");
+    expect(zhCN.settings.providers.models.many).toBe("{{count}} 个模型");
   });
 
   it("preserves reviewed Korean status labels", () => {
