@@ -398,6 +398,7 @@ describe("ProviderSnapshotManager public surface", () => {
         kimi: { enabled: false },
         opencode: { enabled: false },
         pi: { enabled: false },
+        qoder: { enabled: false },
       },
       extraClients: {
         codex: createExtraClient("codex", { isAvailable, fetchCatalog }),
@@ -875,6 +876,7 @@ describe("ProviderSnapshotManager public surface", () => {
         kimi: { enabled: false },
         opencode: { enabled: false },
         pi: { enabled: false },
+        qoder: { enabled: false },
       },
     });
     try {
@@ -889,6 +891,7 @@ describe("ProviderSnapshotManager public surface", () => {
         "omp",
         "opencode",
         "pi",
+        "qoder",
       ]);
       for (const entry of entries) {
         expect(entry.enabled).toBe(false);
@@ -1634,6 +1637,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       kimi: { enabled: false },
       opencode: { enabled: false },
       pi: { enabled: false },
+      qoder: { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -1687,6 +1691,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       kimi: { enabled: false },
       opencode: { enabled: false },
       pi: { enabled: false },
+      qoder: { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -2273,6 +2278,7 @@ describe("ProviderSnapshotManager cwd routing", () => {
           kimi: { enabled: false },
           opencode: { enabled: false },
           pi: { enabled: false },
+          qoder: { enabled: false },
         },
       });
       try {
@@ -3239,7 +3245,7 @@ test("result identity covers content, metadata and status while unchanged refres
 });
 
 const PUBLICATION_PROVIDERS = Object.fromEntries(
-  ["claude", "codebuddy-code", "codex", "copilot", "kimi", "opencode", "pi", "omp"].map(
+  ["claude", "codebuddy-code", "codex", "copilot", "kimi", "opencode", "pi", "qoder", "omp"].map(
     (provider) => [provider, { enabled: provider === "codex" }],
   ),
 );
