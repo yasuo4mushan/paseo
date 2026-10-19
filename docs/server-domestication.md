@@ -6,11 +6,11 @@
 
 Paseo 的"服务器"分三类，只有 **relay 中继服务器** 是官方托管的公共服务；daemon 与连接方式本身完全自托管、无强制外部依赖。relay 端点在协议里是**数据而非硬编码常量**（默认值除外），因此替换为国内服务器**不需要改协议**，只需要：自部署一份 relay + 修改默认端点/配置。
 
-| 类别 | 现状 | 是否依赖海外服务 | 国内化动作 |
-| --- | --- | --- | --- |
-| Daemon（agent 宿主） | 自托管，监听 `127.0.0.1:6767`（TCP/WebSocket/HTTP 同端口） | 否 | 无需改动；可用官方 Docker 镜像在国内 VPS/NAS 部署 |
-| Relay（手机配对中继） | 托管于 `relay.paseo.sh:443`（Cloudflare Worker） | **是** | 自部署 relay（推荐纯 Node 版）+ 走 `daemon.relay.endpoint` 配置切换 |
-| 插件注册表 / 桌面更新 | `paseo plugin add owner/slug` 走 GitHub 克隆；桌面更新走 GitHub Releases | 是（辅助功能） | 可选：Gitee 镜像、更新源镜像，不影响核心功能 |
+| 类别                  | 现状                                                                     | 是否依赖海外服务 | 国内化动作                                                          |
+| --------------------- | ------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------- |
+| Daemon（agent 宿主）  | 自托管，监听 `127.0.0.1:6767`（TCP/WebSocket/HTTP 同端口）               | 否               | 无需改动；可用官方 Docker 镜像在国内 VPS/NAS 部署                   |
+| Relay（手机配对中继） | 托管于 `relay.paseo.sh:443`（Cloudflare Worker）                         | **是**           | 自部署 relay（推荐纯 Node 版）+ 走 `daemon.relay.endpoint` 配置切换 |
+| 插件注册表 / 桌面更新 | `paseo plugin add owner/slug` 走 GitHub 克隆；桌面更新走 GitHub Releases | 是（辅助功能）   | 可选：Gitee 镜像、更新源镜像，不影响核心功能                        |
 
 ## 2. 连接模型（代码事实）
 
@@ -40,16 +40,19 @@ Paseo 的"服务器"分三类，只有 **relay 中继服务器** 是官方托管
 ### 4.2 Relay——两条自托管路线
 
 **路线 A：Cloudflare Worker 自部署（最快，海外边缘）**
+
 1. `cd packages/relay && npx wrangler deploy`（改 `wrangler.toml` 的 `account_id`/`routes` 为自己的域名）。
 2. 优点：零运维；缺点：Cloudflare 边缘在大陆无节点，质量一般。
 
 **路线 B：纯 Node relay 自部署（推荐，国内 VPS）**
+
 1. 新增一个 Node 入口（`ws` WebSocketServer 实现 `RelayDurableObject` 同语义：server/client 按 `serverId` 配对、转发密文帧；协议常量 `CURRENT_RELAY_PROTOCOL_VERSION = "2"`）。加密库复用 `packages/relay/src`。
 2. TLS 由 nginx/caddy 终结（wss → 本地 ws），endpoint 形如 `relay.example.cn:443`。
 3. systemd 或 Docker 常驻。
 4. 这是**需要开发的新任务**（预计中等工作量，协议本身只有握手/配对/转发三类消息）。
 
 **切换配置（两种路线相同， daemon 侧生效）**
+
 ```bash
 # 环境变量方式
 export PASEO_RELAY_ENDPOINT="relay.example.cn:443"
@@ -59,6 +62,7 @@ export PASEO_RELAY_USE_TLS="true"
 # 或持久化到 ~/.paseo/config.json
 { "daemon": { "relay": { "enabled": true, "endpoint": "relay.example.cn:443", "useTls": true } } }
 ```
+
 解析逻辑见 `packages/server/src/server/config.ts` `resolveRelayConfig()`（优先级：CLI flag > env > 持久化配置 > 默认 `relay.paseo.sh:443`）。
 
 **产品级改造（可选后续任务）**：把默认 relay 做成构建时可注入（例如 `PASEO_DEFAULT_RELAY_ENDPOINT` build 变量 + Settings 里可见的 relay 端点展示/修改项），让国产化发行版开箱即用国内 relay，无需用户手工改配置。
