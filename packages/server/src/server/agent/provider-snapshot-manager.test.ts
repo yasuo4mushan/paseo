@@ -392,6 +392,7 @@ describe("ProviderSnapshotManager public surface", () => {
       logger: createTestLogger(),
       providerOverrides: {
         claude: { enabled: false },
+        "codebuddy-code": { enabled: false },
         codex: { enabled: false },
         copilot: { enabled: false },
         kimi: { enabled: false },
@@ -868,6 +869,7 @@ describe("ProviderSnapshotManager public surface", () => {
       logger: createTestLogger(),
       providerOverrides: {
         claude: { enabled: false },
+        "codebuddy-code": { enabled: false },
         codex: { enabled: false },
         copilot: { enabled: false },
         kimi: { enabled: false },
@@ -878,7 +880,16 @@ describe("ProviderSnapshotManager public surface", () => {
     try {
       const entries = await manager.listProviders({ cwd: "/tmp/project", wait: true });
       const providers = entries.map((entry) => entry.provider).sort();
-      expect(providers).toEqual(["claude", "codex", "copilot", "kimi", "omp", "opencode", "pi"]);
+      expect(providers).toEqual([
+        "claude",
+        "codebuddy-code",
+        "codex",
+        "copilot",
+        "kimi",
+        "omp",
+        "opencode",
+        "pi",
+      ]);
       for (const entry of entries) {
         expect(entry.enabled).toBe(false);
         expect(entry.status).toBe("unavailable");
@@ -1619,6 +1630,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       claude: { enabled: true },
       codex: { enabled: true, command: ["codex"], env: { TEST_SETTING: "same" } },
       copilot: { enabled: false },
+      "codebuddy-code": { enabled: false },
       kimi: { enabled: false },
       opencode: { enabled: false },
       pi: { enabled: false },
@@ -1671,6 +1683,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       claude: { enabled: false },
       codex: { enabled: true },
       copilot: { enabled: false },
+      "codebuddy-code": { enabled: false },
       kimi: { enabled: false },
       opencode: { enabled: false },
       pi: { enabled: false },
@@ -2256,6 +2269,7 @@ describe("ProviderSnapshotManager cwd routing", () => {
           codex: { enabled: false },
           claude: { enabled: false },
           copilot: { enabled: false },
+          "codebuddy-code": { enabled: false },
           kimi: { enabled: false },
           opencode: { enabled: false },
           pi: { enabled: false },
@@ -3225,10 +3239,9 @@ test("result identity covers content, metadata and status while unchanged refres
 });
 
 const PUBLICATION_PROVIDERS = Object.fromEntries(
-  ["claude", "codex", "copilot", "kimi", "opencode", "pi", "omp"].map((provider) => [
-    provider,
-    { enabled: provider === "codex" },
-  ]),
+  ["claude", "codebuddy-code", "codex", "copilot", "kimi", "opencode", "pi", "omp"].map(
+    (provider) => [provider, { enabled: provider === "codex" }],
+  ),
 );
 
 test("reads retain the target snapshot and cold binding publishes only the resolved transition", async () => {

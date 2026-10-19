@@ -31,6 +31,7 @@ const mockState = vi.hoisted(() => {
   return {
     constructorArgs: {
       claude: [] as ConstructorEntry[],
+      codebuddyCode: [] as ConstructorEntry[],
       codex: [] as ConstructorEntry[],
       copilot: [] as ConstructorEntry[],
       cursor: [] as Array<{
@@ -56,6 +57,7 @@ const mockState = vi.hoisted(() => {
     codexNativeArchiveCalls: [] as Array<{ state: "archive" | "restore"; handle: unknown }>,
     reset() {
       this.constructorArgs.claude = [];
+      this.constructorArgs.codebuddyCode = [];
       this.constructorArgs.codex = [];
       this.constructorArgs.copilot = [];
       this.constructorArgs.cursor = [];
@@ -447,6 +449,56 @@ vi.mock("./providers/trae-acp-agent.js", () => ({
     }
 
     async isAvailable(): Promise<boolean> {
+      return true;
+    }
+  },
+}));
+
+vi.mock("./providers/codebuddy-acp-agent.js", () => ({
+  CodeBuddyACPAgentClient: class CodeBuddyACPAgentClient {
+    readonly capabilities = {
+      supportsStreaming: true,
+      supportsSessionPersistence: true,
+      supportsDynamicModes: true,
+      supportsMcpServers: true,
+      supportsReasoningStream: true,
+      supportsToolInvocations: true,
+    };
+    readonly provider = "codebuddy-code";
+    readonly runtimeSettings?: unknown;
+
+    constructor(options: { runtimeSettings?: unknown }) {
+      this.runtimeSettings = options.runtimeSettings;
+      mockState.constructorArgs.codebuddyCode.push({
+        runtimeSettings: options.runtimeSettings,
+      });
+    }
+
+    async createSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async resumeSession(): Promise<never> {
+      throw new Error("not implemented");
+    }
+
+    async fetchCatalog(): Promise<ProviderCatalog> {
+      return {
+        models: mockState.runtimeModels.get(this.provider) ?? [],
+        modes: [],
+      };
+    }
+
+    async isAvailable(): Promise<boolean> {
+      const command: { mode?: string; argv?: string[] } | undefined =
+        typeof this.runtimeSettings === "object" && this.runtimeSettings !== null
+          ? Reflect.get(this.runtimeSettings, "command")
+          : undefined;
+      if (command?.mode === "replace") {
+        const { isCommandAvailable } =
+          await import("../../executable-resolution/executable-resolution.js");
+        return await isCommandAvailable(command.argv?.[0] ?? "");
+      }
       return true;
     }
   },
@@ -972,6 +1024,100 @@ test("kimi runtimeSettings map merges env alongside override command", () => {
         argv: ["kimi", "acp", "--verbose"],
       },
       env: { KIMI_ENV: "runtime" },
+    },
+  });
+});
+
+test("built-in codebuddy-code provider uses CodeBuddyACPAgentClient with default command", () => {
+  const registry = buildProviderRegistry(logger);
+
+  expect(registry["codebuddy-code"]).toMatchObject({
+    id: "codebuddy-code",
+    label: "CodeBuddy",
+    defaultModeId: null,
+  });
+  expect(registry["codebuddy-code"].createClient(logger).provider).toBe("codebuddy-code");
+  expect(mockState.constructorArgs.codebuddyCode).toEqual([
+    {
+      runtimeSettings: undefined,
+    },
+    {
+      runtimeSettings: undefined,
+    },
+  ]);
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("codebuddy-code override applies command", () => {
+  buildProviderRegistry(logger, {
+    providerOverrides: {
+      "codebuddy-code": {
+        command: ["/opt/tencent/codebuddy", "--acp"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.codebuddyCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["/opt/tencent/codebuddy", "--acp"],
+      },
+      env: undefined,
+    },
+  });
+});
+
+test("legacy codebuddy-code custom ACP config falls back to the built-in provider with its command", () => {
+  // Configs written by older releases added CodeBuddy through the catalog as
+  // extends: "acp" with an explicit command. The built-in entry shadows the
+  // derived one and merges the command/env into its runtimeSettings, so the
+  // same config keeps launching CodeBuddyACPAgentClient.
+  const registry = buildProviderRegistry(logger, {
+    providerOverrides: {
+      "codebuddy-code": {
+        extends: "acp",
+        label: "Codebuddy Code",
+        command: ["codebuddy", "--acp"],
+        env: { CODEBUDDY_ENV: "debug" },
+      },
+    },
+  });
+
+  expect(registry["codebuddy-code"].createClient(logger).provider).toBe("codebuddy-code");
+  expect(mockState.constructorArgs.codebuddyCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["codebuddy", "--acp"],
+      },
+      env: { CODEBUDDY_ENV: "debug" },
+    },
+  });
+  expect(mockState.constructorArgs.genericAcp).toEqual([]);
+});
+
+test("codebuddy-code runtimeSettings map merges env alongside override command", () => {
+  buildProviderRegistry(logger, {
+    runtimeSettings: {
+      "codebuddy-code": {
+        env: { CODEBUDDY_ENV: "runtime" },
+      },
+    },
+    providerOverrides: {
+      "codebuddy-code": {
+        command: ["codebuddy", "--acp", "--verbose"],
+      },
+    },
+  });
+
+  expect(mockState.constructorArgs.codebuddyCode[0]).toEqual({
+    runtimeSettings: {
+      command: {
+        mode: "replace",
+        argv: ["codebuddy", "--acp", "--verbose"],
+      },
+      env: { CODEBUDDY_ENV: "runtime" },
     },
   });
 });

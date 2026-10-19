@@ -326,10 +326,9 @@ it("announces shared content without retransmitting models or hashing discovery 
   const manager = new Manager({
     logger: pino({ level: "silent" }),
     providerOverrides: Object.fromEntries(
-      ["codex", "claude", "pi", "opencode", "copilot", "kimi", "omp"].map((provider) => [
-        provider,
-        { enabled: provider === "codex" },
-      ]),
+      ["codex", "claude", "pi", "opencode", "copilot", "kimi", "omp", "codebuddy-code"].map(
+        (provider) => [provider, { enabled: provider === "codex" }],
+      ),
     ),
     extraClients: {
       codex: {
