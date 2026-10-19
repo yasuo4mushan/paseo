@@ -34,6 +34,7 @@ import type {
   ProviderRuntimeSettings,
 } from "./provider-launch-config.js";
 import { ClaudeAgentClient } from "./providers/claude/agent.js";
+import { CodeBuddyACPAgentClient } from "./providers/codebuddy-acp-agent.js";
 import { CodexAppServerAgentClient } from "./providers/codex-app-server-agent.js";
 import { CopilotACPAgentClient } from "./providers/copilot-acp-agent.js";
 import { CursorACPAgentClient } from "./providers/cursor-acp-agent.js";
@@ -189,6 +190,11 @@ const HUB_E2E_PROVIDER_CONTRACT: ProviderContract = {
 const PROVIDER_CLIENT_FACTORIES: Record<string, ProviderClientFactory> = {
   claude: (logger, runtimeSettings) =>
     new ClaudeAgentClient({
+      logger,
+      runtimeSettings,
+    }),
+  "codebuddy-code": (logger, runtimeSettings) =>
+    new CodeBuddyACPAgentClient({
       logger,
       runtimeSettings,
     }),
@@ -850,11 +856,11 @@ function addDerivedProviders(
           if (providerId === "cursor") {
             return new CursorACPAgentClient(acpOptions);
           }
-          // "kimi" is a built-in provider: legacy configs that added it as a custom
-          // ACP provider are shadowed by the built-in entry above (see the
-          // BUILTIN_PROVIDER_IDS guard at the top of this loop) and their
-          // command/env overrides merge into the built-in factory's
-          // runtimeSettings, so no special case is needed here.
+          // "kimi" and "codebuddy-code" are built-in providers: legacy configs
+          // that added them as custom ACP providers are shadowed by the built-in
+          // entries above (see the BUILTIN_PROVIDER_IDS guard at the top of this
+          // loop) and their command/env overrides merge into the built-in
+          // factory's runtimeSettings, so no special case is needed here.
           if (providerId === "kiro") {
             return new KiroACPAgentClient(acpOptions);
           }

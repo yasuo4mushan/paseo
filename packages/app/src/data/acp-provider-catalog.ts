@@ -69,6 +69,11 @@ const CATALOG_DATA = [
     id: "codebuddy-code",
     title: "Codebuddy Code",
     description: "Tencent Cloud's official intelligent coding tool",
+    // Manual install (npm global or Tencent's installer); the command is not
+    // version-pinned. CodeBuddy is also a built-in daemon provider, so this
+    // entry mainly serves older daemon/app builds and the catalog icon lookup —
+    // provider snapshots hide the tile once the built-in codebuddy-code
+    // provider is listed.
     version: "manual",
     iconId: "codebuddy-code",
     installLink: "https://www.codebuddy.cn/cli/",

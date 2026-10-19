@@ -19,6 +19,7 @@ Work out of the box once the underlying CLI is installed and authenticated.
 - [OpenCode](https://opencode.ai/). Open-source coding assistant with multi-provider model support.
 - [Pi](https://pi.dev). Minimal terminal-based coding agent with multi-provider LLM support.
 - [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code). Moonshot AI's coding agent, via Agent Client Protocol.
+- [CodeBuddy Code](https://www.codebuddy.cn/cli/). Tencent's coding agent, via Agent Client Protocol.
 - [Antigravity](#antigravity). Uses your installed `agy` CLI through a built-in provider plugin.
 - [Muse Code](/docs/muse-code). Meta's terminal coding agent, bundled as a provider plugin.
 
@@ -86,6 +87,34 @@ Configs from older releases that added Kimi from the ACP catalog (`extends: "acp
 keep working: the built-in provider takes over and honors the same command and env
 settings.
 
+### CodeBuddy Code
+
+Install [CodeBuddy Code](https://www.codebuddy.cn/cli/) on your daemon host
+(`npm install -g @tencent-ai/codebuddy-code` or Tencent's installer), then run
+`codebuddy` once to sign in with your Tencent account (iOA, Google, GitHub, WeChat, or a
+self-hosted enterprise domain). Paseo launches `codebuddy --acp` and discovers models and
+modes over the Agent Client Protocol.
+
+If `codebuddy` is outside your daemon's PATH, override the command in
+`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+
+```json
+{
+  "agents": {
+    "providers": {
+      "codebuddy-code": {
+        "command": ["/absolute/path/to/codebuddy", "--acp"],
+        "env": { "EXAMPLE_VARIABLE": "value" }
+      }
+    }
+  }
+}
+```
+
+Configs from older releases that added CodeBuddy from the ACP catalog
+(`extends: "acp"`) keep working: the built-in provider takes over and honors the same
+command and env settings.
+
 ## ACP catalog
 
 Pick any of these from the in-app provider catalog. Each entry is a one-click install of the underlying CLI.
@@ -95,7 +124,6 @@ Pick any of these from the in-app provider catalog. Each entry is a one-click in
 - [Auggie CLI](https://www.augmentcode.com/), Augment Code's agent backed by their context engine.
 - [Autohand Code](https://www.autohand.ai/cli/), Autohand AI's coding agent.
 - [Cline](https://cline.bot/cli), autonomous coding agent.
-- [Codebuddy Code](https://www.codebuddy.cn/cli/), Tencent Cloud's coding tool.
 - [CodeWhale](https://codewhale.net/), terminal coding agent for DeepSeek V4 and open models.
 - [Cortex Code](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code-cli), Snowflake's coding agent.
 - [Corust Agent](https://github.com/Corust-ai/corust-agent-release/releases), Rust-focused coding partner.

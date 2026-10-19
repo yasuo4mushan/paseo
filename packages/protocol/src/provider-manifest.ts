@@ -208,6 +208,16 @@ export const AGENT_PROVIDER_DEFINITIONS: AgentProviderDefinition[] = [
     },
   },
   {
+    id: "codebuddy-code",
+    label: "CodeBuddy",
+    description: "Tencent's CodeBuddy Code terminal coding agent via Agent Client Protocol",
+    // CodeBuddy reports its modes and models at runtime over ACP; there is no
+    // static mode list to scaffold. Like kimi/pi, the daemon leaves mode
+    // selection to the discovered catalog.
+    defaultModeId: null,
+    modes: [],
+  },
+  {
     id: "codex",
     label: "Codex",
     description: "OpenAI's Codex workspace agent with sandbox controls and optional network access",
