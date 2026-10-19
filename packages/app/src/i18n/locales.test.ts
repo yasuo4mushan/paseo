@@ -134,13 +134,18 @@ describe("resolveSupportedLocale", () => {
   it("maps Chinese system locales to Simplified Chinese", () => {
     expect(resolveSupportedLocale("system", ["zh"])).toBe("zh-CN");
     expect(resolveSupportedLocale("system", ["zh-CN"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-Hans"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-Hans-CN"])).toBe("zh-CN");
     expect(resolveSupportedLocale("system", ["zh-Hans-US"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-SG"])).toBe("zh-CN");
   });
 
-  it("does not map Traditional Chinese system locales to Simplified Chinese", () => {
-    expect(resolveSupportedLocale("system", ["zh-TW"])).toBe("en");
-    expect(resolveSupportedLocale("system", ["zh-Hant"])).toBe("en");
-    expect(resolveSupportedLocale("system", ["zh-HK"])).toBe("en");
+  it("maps Traditional Chinese system locales to Simplified Chinese", () => {
+    expect(resolveSupportedLocale("system", ["zh-TW"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-Hant"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-Hant-TW"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-HK"])).toBe("zh-CN");
+    expect(resolveSupportedLocale("system", ["zh-MO"])).toBe("zh-CN");
   });
 
   it("maps unsupported or missing system locales to English", () => {
