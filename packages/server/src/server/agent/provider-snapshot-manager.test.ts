@@ -400,6 +400,7 @@ describe("ProviderSnapshotManager public surface", () => {
         pi: { enabled: false },
         qoder: { enabled: false },
         "qwen-code": { enabled: false },
+        zcode: { enabled: false },
       },
       extraClients: {
         codex: createExtraClient("codex", { isAvailable, fetchCatalog }),
@@ -879,6 +880,7 @@ describe("ProviderSnapshotManager public surface", () => {
         pi: { enabled: false },
         qoder: { enabled: false },
         "qwen-code": { enabled: false },
+        zcode: { enabled: false },
       },
     });
     try {
@@ -895,6 +897,7 @@ describe("ProviderSnapshotManager public surface", () => {
         "pi",
         "qoder",
         "qwen-code",
+        "zcode",
       ]);
       for (const entry of entries) {
         expect(entry.enabled).toBe(false);
@@ -1642,6 +1645,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       pi: { enabled: false },
       qoder: { enabled: false },
       "qwen-code": { enabled: false },
+      zcode: { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -1697,6 +1701,7 @@ describe("ProviderSnapshotManager applyMutableProviderConfig", () => {
       pi: { enabled: false },
       qoder: { enabled: false },
       "qwen-code": { enabled: false },
+      zcode: { enabled: false },
       omp: { enabled: false },
     };
     const manager = new ProviderSnapshotManager({
@@ -3261,6 +3266,7 @@ const PUBLICATION_PROVIDERS = Object.fromEntries(
     "pi",
     "qoder",
     "qwen-code",
+    "zcode",
     "omp",
   ].map((provider) => [provider, { enabled: provider === "codex" }]),
 );

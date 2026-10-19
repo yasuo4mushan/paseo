@@ -167,6 +167,38 @@ export const OMP_MODES: AgentProviderModeDefinition[] = [
   },
 ];
 
+const ZCODE_MODES: AgentProviderModeDefinition[] = [
+  {
+    id: "build",
+    label: "Ask before changes",
+    description: "ZCode asks before each file change.",
+    icon: "Shield",
+    colorTier: "moderate",
+  },
+  {
+    id: "edit",
+    label: "Edit automatically",
+    description: "ZCode edits selected or relevant workspace files automatically.",
+    icon: "ShieldPlus",
+    colorTier: "moderate",
+  },
+  {
+    id: "plan",
+    label: "Plan mode",
+    description: "ZCode inspects the code and presents a plan before editing.",
+    icon: "ShieldEllipsis",
+    colorTier: "planning",
+  },
+  {
+    id: "yolo",
+    label: "Full access",
+    description: "ZCode edits files and runs commands with fewer confirmations.",
+    icon: "ShieldOff",
+    colorTier: "dangerous",
+    isUnattended: true,
+  },
+];
+
 const MOCK_LOAD_TEST_MODES: AgentProviderModeDefinition[] = [
   {
     id: "load-test",
@@ -295,6 +327,16 @@ export const AGENT_PROVIDER_DEFINITIONS: AgentProviderDefinition[] = [
     enabledByDefault: false,
     defaultModeId: "full",
     modes: OMP_MODES,
+  },
+  {
+    id: "zcode",
+    label: "ZCode",
+    description:
+      "Z.ai's ZCode coding agent (GLM) via its native app-server protocol with streaming and permission prompts",
+    // Modes mirror the ZCode app-server's own mode catalog (build/edit/plan/
+    // yolo, accepted verbatim by session/setMode).
+    defaultModeId: "build",
+    modes: ZCODE_MODES,
   },
 ];
 
