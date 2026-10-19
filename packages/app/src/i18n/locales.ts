@@ -154,6 +154,7 @@ const REGIONAL_LANGUAGE_LOCALES: Readonly<Record<string, SupportedLocale>> = {
   ja: "ja",
   ko: "ko",
   ru: "ru",
+  zh: "zh-CN",
 };
 
 export function parseAppLanguage(value: unknown): AppLanguage | null {
@@ -197,9 +198,6 @@ export function resolveSupportedLocale(
     }
     if (normalized === "pt" || normalized === "pt-br") {
       return "pt-BR";
-    }
-    if (normalized === "zh" || normalized === "zh-cn" || normalized.startsWith("zh-hans")) {
-      return "zh-CN";
     }
   }
 
