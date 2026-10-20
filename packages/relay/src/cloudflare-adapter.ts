@@ -15,25 +15,20 @@
  *   "migrations": [{ "tag": "v1", "new_classes": ["RelayDurableObject"] }]
  * }
  * ```
+ *
+ * Session/pairing semantics live in relay-session-core.ts; this adapter only
+ * owns Cloudflare-specific plumbing (WebSocketPair, hibernation state,
+ * attachments, responses).
  */
 
 import { createCutoverProxy } from "./cutover-proxy.js";
-import type { ConnectionRole, RelaySessionAttachment } from "./types.js";
-
-type RelayProtocolVersion = "1" | "2";
-
-const LEGACY_RELAY_VERSION: RelayProtocolVersion = "1";
-const CURRENT_RELAY_VERSION: RelayProtocolVersion = "2";
-
-function resolveRelayVersion(rawValue: string | null): RelayProtocolVersion | null {
-  if (rawValue == null) return LEGACY_RELAY_VERSION;
-  const value = rawValue.trim();
-  if (!value) return LEGACY_RELAY_VERSION;
-  if (value === LEGACY_RELAY_VERSION || value === CURRENT_RELAY_VERSION) {
-    return value;
-  }
-  return null;
-}
+import {
+  RelaySessionCore,
+  resolveRelayVersion,
+  type RelayCoreSocket,
+  type RelaySocketRegistry,
+} from "./relay-session-core.js";
+import type { ConnectionRole } from "./types.js";
 
 interface WebSocketPair {
   0: WebSocket;
@@ -77,15 +72,6 @@ function serializeAttachment(ws: WebSocket, value: unknown): void {
   ws.serializeAttachment(value);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function getString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key];
-  return typeof value === "string" ? value : undefined;
-}
-
 function getGlobalWebSocketPair(): (new () => WebSocketPair) | undefined {
   // Access WebSocketPair from global scope (Cloudflare Workers runtime)
   // Use Reflect to access global property without type assertions
@@ -115,6 +101,26 @@ interface DurableObjectStub {
 }
 
 /**
+ * Bridges the Durable Object hibernation state API onto the transport-agnostic
+ * socket registry the session core queries. `getWebSockets` remains the source
+ * of truth so sockets survive isolate hibernation.
+ */
+function createDurableObjectRegistry(state: DurableObjectState): RelaySocketRegistry {
+  return {
+    register(socket, attachment, tags) {
+      state.acceptWebSocket(socket as WebSocket, tags);
+      serializeAttachment(socket as WebSocket, attachment);
+    },
+    byTag(tag) {
+      return state.getWebSockets(tag) as RelayCoreSocket[];
+    },
+    attachmentOf(socket) {
+      return deserializeAttachment(socket as WebSocket);
+    },
+  };
+}
+
+/**
  * Durable Object that handles WebSocket relay for a single session.
  *
  * v1 WebSockets connect in two shapes:
@@ -132,10 +138,11 @@ interface CFResponseInit extends ResponseInit {
 
 export class RelayDurableObject {
   private state: DurableObjectState;
-  private pendingFrames = new Map<string, Array<string | ArrayBuffer>>();
+  private core: RelaySessionCore;
 
   constructor(state: DurableObjectState) {
     this.state = state;
+    this.core = new RelaySessionCore(createDurableObjectRegistry(state));
   }
 
   private createWebSocketPair(): [WebSocket, WebSocket] {
@@ -162,152 +169,12 @@ export class RelayDurableObject {
     } as CFResponseInit);
   }
 
-  private hasServerDataSocket(connectionId: string): boolean {
-    try {
-      return this.state.getWebSockets(`server:${connectionId}`).length > 0;
-    } catch {
-      return false;
-    }
-  }
-
-  private hasClientSocket(connectionId: string): boolean {
-    try {
-      return this.state.getWebSockets(`client:${connectionId}`).length > 0;
-    } catch {
-      return false;
-    }
-  }
-
-  private closeExistingServerSockets(args: {
-    isServerControl: boolean;
-    isServerData: boolean;
-    resolvedConnectionId: string;
-  }): void {
-    if (args.isServerControl) {
-      for (const ws of this.state.getWebSockets("server-control")) {
-        ws.close(1008, "Replaced by new connection");
-      }
-    } else if (args.isServerData) {
-      for (const ws of this.state.getWebSockets(`server:${args.resolvedConnectionId}`)) {
-        ws.close(1008, "Replaced by new connection");
-      }
-    }
-  }
-
-  // COMPAT(relay-json-ping): Old daemons (< v0.1.76) send JSON {type:"ping"} on the control
-  // socket and rely on a JSON {type:"pong"} reply to keep controlLastSeenAt fresh. New daemons
-  // use WebSocket protocol pings (auto-answered at the edge, DO stays hibernated). Remove this
-  // handler once the supported-daemon floor is >= v0.1.76 (target: 2026-11-13).
-  private handleControlKeepalive(ws: WebSocket, message: string): void {
-    try {
-      const parsed: unknown = JSON.parse(message);
-      const parsedRecord = isRecord(parsed) ? parsed : null;
-      if (parsedRecord?.type !== "ping") return;
-      // Logged so the daemon-side e2e idle test can assert no JSON ping reached the DO
-      // (which would indicate a regression to app-level pings that wake the DO).
-      console.log("[Relay DO] legacy_json_ping_received");
-      try {
-        ws.send(JSON.stringify({ type: "pong", ts: Date.now() }));
-      } catch {
-        // ignore
-      }
-    } catch {
-      // ignore non-JSON control payloads
-    }
-  }
-
-  private nudgeOrResetControlForConnection(connectionId: string): void {
-    // If the daemon's control WS becomes half-open, the DO can't reliably detect it via ws.send errors
-    // (Cloudflare may accept writes even if the other side is no longer reading).
-    //
-    // Instead, observe whether the daemon reacts by opening the per-connection server-data socket.
-    // If it doesn't, nudge with a sync message; if still no reaction, force-close the control
-    // socket(s) so the daemon reconnects.
-    const initialDelayMs = 10_000;
-    const secondDelayMs = 5_000;
-
-    setTimeout(() => {
-      if (!this.hasClientSocket(connectionId)) return;
-      if (this.hasServerDataSocket(connectionId)) return;
-
-      // First nudge: send a full sync list.
-      this.notifyControls({ type: "sync", connectionIds: this.listConnectedConnectionIds() });
-
-      setTimeout(() => {
-        if (!this.hasClientSocket(connectionId)) return;
-        if (this.hasServerDataSocket(connectionId)) return;
-
-        // Still nothing: assume control is stuck and force a reconnect.
-        for (const ws of this.state.getWebSockets("server-control")) {
-          try {
-            ws.close(1011, "Control unresponsive");
-          } catch {
-            // ignore
-          }
-        }
-      }, secondDelayMs);
-    }, initialDelayMs);
-  }
-
-  private bufferFrame(connectionId: string, message: string | ArrayBuffer): void {
-    const existing = this.pendingFrames.get(connectionId) ?? [];
-    existing.push(message);
-    // Prevent unbounded memory growth if a daemon never connects.
-    if (existing.length > 200) {
-      existing.splice(0, existing.length - 200);
-    }
-    this.pendingFrames.set(connectionId, existing);
-  }
-
-  private flushFrames(connectionId: string, serverWs: WebSocket): void {
-    const frames = this.pendingFrames.get(connectionId);
-    if (!frames || frames.length === 0) return;
-    this.pendingFrames.delete(connectionId);
-    for (const frame of frames) {
-      try {
-        serverWs.send(frame);
-      } catch {
-        // If we can't flush, re-buffer and let the daemon re-establish.
-        this.bufferFrame(connectionId, frame);
-        break;
-      }
-    }
-  }
-
-  private listConnectedConnectionIds(): string[] {
-    const out = new Set<string>();
-    for (const ws of this.state.getWebSockets("client")) {
-      try {
-        const attachmentRaw = deserializeAttachment(ws);
-        const attachment = isRecord(attachmentRaw) ? attachmentRaw : null;
-        if (
-          attachment?.role === "client" &&
-          typeof attachment.connectionId === "string" &&
-          attachment.connectionId
-        ) {
-          out.add(attachment.connectionId);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    return Array.from(out);
-  }
-
-  private notifyControls(message: unknown): void {
-    const text = JSON.stringify(message);
-    for (const ws of this.state.getWebSockets("server-control")) {
-      try {
-        ws.send(text);
-      } catch {
-        // If the control socket is dead, close it so the daemon can reconnect.
-        try {
-          ws.close(1011, "Control send failed");
-        } catch {
-          // ignore
-        }
-      }
-    }
+  /**
+   * Public so the adapter tests can drive the nudge timeline directly; the
+   * session core triggers it itself whenever a v2 client connects.
+   */
+  nudgeOrResetControlForConnection(connectionId: string): void {
+    this.core.nudgeOrResetControlForConnection(connectionId);
   }
 
   private fetchV1(request: Request, role: ConnectionRole, serverId: string): Response {
@@ -319,18 +186,7 @@ export class RelayDurableObject {
     }
 
     const [client, server] = this.createWebSocketPair();
-    this.state.acceptWebSocket(server, [role]);
-
-    const attachment: RelaySessionAttachment = {
-      serverId,
-      role,
-      version: LEGACY_RELAY_VERSION,
-      connectionId: null,
-      createdAt: Date.now(),
-    };
-    serializeAttachment(server, attachment);
-
-    console.log(`[Relay DO] v1:${role} connected to session ${serverId}`);
+    this.core.acceptV1Connection(server, { role, serverId });
 
     return this.asSwitchingProtocolsResponse(client);
   }
@@ -344,72 +200,8 @@ export class RelayDurableObject {
     const upgradeError = this.requireWebSocketUpgrade(request);
     if (upgradeError) return upgradeError;
 
-    // If a client didn't provide a connectionId, the relay assigns one for routing.
-    const resolvedConnectionId =
-      role === "client" && !connectionId
-        ? `conn_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`
-        : connectionId;
-
-    const isServerControl = role === "server" && !resolvedConnectionId;
-    const isServerData = role === "server" && !!resolvedConnectionId;
-
-    // Close any existing server-side connection with the same identity.
-    // - server-control: single per serverId
-    // - server-data: single per connectionId
-    // - client: many sockets per connectionId are allowed
-    this.closeExistingServerSockets({ isServerControl, isServerData, resolvedConnectionId });
-
     const [client, server] = this.createWebSocketPair();
-
-    const tags: string[] = [];
-    if (role === "client") {
-      tags.push("client", `client:${resolvedConnectionId}`);
-    } else if (isServerControl) {
-      tags.push("server-control");
-    } else {
-      tags.push("server", `server:${resolvedConnectionId}`);
-    }
-
-    this.state.acceptWebSocket(server, tags);
-
-    const attachment: RelaySessionAttachment = {
-      serverId,
-      role,
-      version: CURRENT_RELAY_VERSION,
-      connectionId: resolvedConnectionId || null,
-      createdAt: Date.now(),
-    };
-    serializeAttachment(server, attachment);
-
-    let roleSuffix = "";
-    if (isServerControl) {
-      roleSuffix = "(control)";
-    } else if (isServerData) {
-      roleSuffix = `(data:${resolvedConnectionId})`;
-    } else if (role === "client") {
-      roleSuffix = `(${resolvedConnectionId})`;
-    }
-    console.log(`[Relay DO] v2:${role}${roleSuffix} connected to session ${serverId}`);
-
-    if (role === "client") {
-      this.notifyControls({ type: "connected", connectionId: resolvedConnectionId });
-      this.nudgeOrResetControlForConnection(resolvedConnectionId);
-    }
-
-    if (isServerControl) {
-      // Send current connection list so the daemon can attach existing connections.
-      try {
-        server.send(
-          JSON.stringify({ type: "sync", connectionIds: this.listConnectedConnectionIds() }),
-        );
-      } catch {
-        // ignore
-      }
-    }
-
-    if (isServerData && resolvedConnectionId) {
-      this.flushFrames(resolvedConnectionId, server);
-    }
+    this.core.acceptV2Connection(server, { role, serverId, connectionId });
 
     return this.asSwitchingProtocolsResponse(client);
   }
@@ -435,7 +227,7 @@ export class RelayDurableObject {
       return new Response("Invalid v parameter (expected 1 or 2)", { status: 400 });
     }
 
-    if (version === LEGACY_RELAY_VERSION) {
+    if (version === "1") {
       return this.fetchV1(request, role, serverId);
     }
 
@@ -446,126 +238,21 @@ export class RelayDurableObject {
    * Called when a WebSocket message is received (wakes from hibernation).
    */
   webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): void {
-    const attachmentRaw = deserializeAttachment(ws);
-    if (!isRecord(attachmentRaw)) {
-      console.error("[Relay DO] Message from WebSocket without attachment");
-      return;
-    }
-    const attachment = attachmentRaw;
-
-    const version = getString(attachment, "version") ?? LEGACY_RELAY_VERSION;
-
-    if (version === LEGACY_RELAY_VERSION) {
-      const targetRole = attachment.role === "server" ? "client" : "server";
-      const targets = this.state.getWebSockets(targetRole);
-      for (const target of targets) {
-        try {
-          target.send(message);
-        } catch (error) {
-          console.error(`[Relay DO] Failed to forward to ${targetRole}:`, error);
-        }
-      }
-      return;
-    }
-
-    const role = getString(attachment, "role");
-    const connectionId = getString(attachment, "connectionId");
-    if (!connectionId) {
-      // Control channel: support simple app-level keepalive.
-      if (typeof message === "string") {
-        this.handleControlKeepalive(ws, message);
-      }
-      return;
-    }
-
-    if (role === "client") {
-      const servers = this.state.getWebSockets(`server:${connectionId}`);
-      if (servers.length === 0) {
-        this.bufferFrame(connectionId, message);
-        return;
-      }
-      for (const target of servers) {
-        try {
-          target.send(message);
-        } catch (error) {
-          console.error(`[Relay DO] Failed to forward client->server(${connectionId}):`, error);
-        }
-      }
-      return;
-    }
-
-    // server data socket -> client
-    const targets = this.state.getWebSockets(`client:${connectionId}`);
-    for (const target of targets) {
-      try {
-        target.send(message);
-      } catch (error) {
-        console.error(`[Relay DO] Failed to forward server->client(${connectionId}):`, error);
-      }
-    }
+    this.core.webSocketMessage(ws, message);
   }
 
   /**
    * Called when a WebSocket closes (wakes from hibernation).
    */
   webSocketClose(ws: WebSocket, code: number, reason: string, _wasClean: boolean): void {
-    const attachmentRaw = deserializeAttachment(ws);
-    if (!isRecord(attachmentRaw)) return;
-    const attachment = attachmentRaw;
-
-    const version = getString(attachment, "version") ?? LEGACY_RELAY_VERSION;
-    const role = getString(attachment, "role");
-    const connectionId = getString(attachment, "connectionId");
-    const serverId = getString(attachment, "serverId");
-    console.log(
-      `[Relay DO] v${version}:${role ?? "unknown"}${connectionId ? `(${connectionId})` : ""} disconnected from session ${serverId ?? "unknown"} (${code}: ${reason})`,
-    );
-
-    if (version === LEGACY_RELAY_VERSION) {
-      return;
-    }
-
-    if (role === "client" && connectionId) {
-      const remainingClientSockets = this.state
-        .getWebSockets(`client:${connectionId}`)
-        .some((socket) => socket !== ws);
-      if (remainingClientSockets) {
-        return;
-      }
-
-      this.pendingFrames.delete(connectionId);
-      // Last socket for this session closed: now clean up matching server-data socket.
-      for (const serverWs of this.state.getWebSockets(`server:${connectionId}`)) {
-        try {
-          serverWs.close(1001, "Client disconnected");
-        } catch {
-          // ignore
-        }
-      }
-      this.notifyControls({ type: "disconnected", connectionId });
-      return;
-    }
-
-    if (role === "server" && connectionId) {
-      // Force the client to reconnect and re-handshake when the daemon side drops.
-      for (const clientWs of this.state.getWebSockets(`client:${connectionId}`)) {
-        try {
-          clientWs.close(1012, "Server disconnected");
-        } catch {
-          // ignore
-        }
-      }
-    }
+    this.core.webSocketClose(ws, code, reason);
   }
 
   /**
    * Called on WebSocket error.
    */
   webSocketError(ws: WebSocket, error: unknown): void {
-    const attachmentRaw = deserializeAttachment(ws);
-    const attachment = isRecord(attachmentRaw) ? attachmentRaw : null;
-    const role = attachment ? getString(attachment, "role") : undefined;
-    console.error(`[Relay DO] WebSocket error for ${role ?? "unknown"}:`, error);
+    this.core.webSocketError(ws, error);
   }
 }
 

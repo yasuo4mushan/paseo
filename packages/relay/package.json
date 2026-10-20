@@ -20,6 +20,10 @@
     "./cloudflare": {
       "types": "./dist/cloudflare-adapter.d.ts",
       "default": "./dist/cloudflare-adapter.js"
+    },
+    "./node": {
+      "types": "./dist/node-server.d.ts",
+      "default": "./dist/node-server.js"
     }
   },
   "publishConfig": {
@@ -29,6 +33,7 @@
     "clean": "node ../../scripts/clean-package-dist.mjs",
     "build": "tsc -p tsconfig.json --incremental false",
     "build:clean": "npm run clean && npm run build",
+    "start:node": "node dist/node-server.js",
     "prepack": "npm run build:clean",
     "typecheck": "tsgo --noEmit",
     "test": "vitest run",

@@ -12,7 +12,10 @@ import {
 // This live test uses the hosted relay's real TLS endpoint. Self-hosted relay TLS
 // opt-in is covered at URL-building/integration level so the local E2E does not
 // need to provision trusted certificates.
-const RELAY_BASE_URL = process.env.PASEO_LIVE_RELAY_URL ?? "wss://relay.paseo.sh";
+// Point PASEO_RELAY_E2E_TARGET at a self-hosted relay (e.g. ws://127.0.0.1:6790
+// for the Node server from node-server.ts) to run the same flow against it.
+const RELAY_BASE_URL =
+  process.env.PASEO_RELAY_E2E_TARGET ?? process.env.PASEO_LIVE_RELAY_URL ?? "wss://relay.paseo.sh";
 
 async function withRetry<T>(
   fn: () => Promise<T>,

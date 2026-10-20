@@ -6,11 +6,11 @@
 
 Paseo 的"服务器"分三类，只有 **relay 中继服务器** 是官方托管的公共服务；daemon 与连接方式本身完全自托管、无强制外部依赖。relay 端点在协议里是**数据而非硬编码常量**（默认值除外），因此替换为国内服务器**不需要改协议**，只需要：自部署一份 relay + 修改默认端点/配置。
 
-| 类别                  | 现状                                                                     | 是否依赖海外服务 | 国内化动作                                                          |
-| --------------------- | ------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------- |
-| Daemon（agent 宿主）  | 自托管，监听 `127.0.0.1:6767`（TCP/WebSocket/HTTP 同端口）               | 否               | 无需改动；可用官方 Docker 镜像在国内 VPS/NAS 部署                   |
-| Relay（手机配对中继） | 托管于 `relay.paseo.sh:443`（Cloudflare Worker）                         | **是**           | 自部署 relay（推荐纯 Node 版）+ 走 `daemon.relay.endpoint` 配置切换 |
-| 插件注册表 / 桌面更新 | `paseo plugin add owner/slug` 走 GitHub 克隆；桌面更新走 GitHub Releases | 是（辅助功能）   | 可选：Gitee 镜像、更新源镜像，不影响核心功能                        |
+| 类别                  | 现状                                                                     | 是否依赖海外服务 | 国内化动作                                                                         |
+| --------------------- | ------------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------- |
+| Daemon（agent 宿主）  | 自托管，监听 `127.0.0.1:6767`（TCP/WebSocket/HTTP 同端口）               | 否               | 无需改动；可用官方 Docker 镜像在国内 VPS/NAS 部署                                  |
+| Relay（手机配对中继） | 托管于 `relay.paseo.sh:443`（Cloudflare Worker）                         | **是**           | 自部署 relay（纯 Node 版已实现，§4.2 路线 B）+ 走 `daemon.relay.endpoint` 配置切换 |
+| 插件注册表 / 桌面更新 | `paseo plugin add owner/slug` 走 GitHub 克隆；桌面更新走 GitHub Releases | 是（辅助功能）   | 可选：Gitee 镜像、更新源镜像，不影响核心功能                                       |
 
 ## 2. 连接模型（代码事实）
 
@@ -21,6 +21,7 @@ Paseo 的"服务器"分三类，只有 **relay 中继服务器** 是官方托管
 - 默认 relay 常量：`DEFAULT_RELAY_ENDPOINT = "relay.paseo.sh:443"`（`packages/protocol/src/daemon-endpoints.ts:70` 与 `packages/server/src/server/config.ts:39` 各有一份）。
 - relay 实现位于 `packages/relay`：
   - Cloudflare Worker 入口 `src/cloudflare-adapter.ts` + Durable Object `RelayDurableObject`（`wrangler.toml` 绑定 `relay.paseo.sh`）。
+  - 纯 Node 入口 `src/node-server.ts`（自托管用，§4.2 路线 B），两者共享会话核心 `src/relay-session-core.ts`。
   - `wrangler.toml` 里 `PASEO_RELAY_UPSTREAM = "https://paseo-relay-next.fly.dev"` —— 官方正在从 fly.io（纯 Node 服务）向 Cloudflare 迁移，`src/cutover-proxy.ts` 负责灰度切换。
   - 加密通道（`encrypted-channel.ts`）、密钥（`crypto.ts`，tweetnacl）与传输层解耦；包依赖里已含 `ws`，自托管纯 Node 版具备条件。
 
@@ -44,12 +45,40 @@ Paseo 的"服务器"分三类，只有 **relay 中继服务器** 是官方托管
 1. `cd packages/relay && npx wrangler deploy`（改 `wrangler.toml` 的 `account_id`/`routes` 为自己的域名）。
 2. 优点：零运维；缺点：Cloudflare 边缘在大陆无节点，质量一般。
 
-**路线 B：纯 Node relay 自部署（推荐，国内 VPS）**
+**路线 B：纯 Node relay 自部署（推荐，国内 VPS，t09 已实现）**
 
-1. 新增一个 Node 入口（`ws` WebSocketServer 实现 `RelayDurableObject` 同语义：server/client 按 `serverId` 配对、转发密文帧；协议常量 `CURRENT_RELAY_PROTOCOL_VERSION = "2"`）。加密库复用 `packages/relay/src`。
-2. TLS 由 nginx/caddy 终结（wss → 本地 ws），endpoint 形如 `relay.example.cn:443`。
-3. systemd 或 Docker 常驻。
-4. 这是**需要开发的新任务**（预计中等工作量，协议本身只有握手/配对/转发三类消息）。
+入口 `packages/relay/src/node-server.ts`（`npm run start:node`，导出 `@getpaseo/relay/node`），与 Cloudflare Worker 共享同一套会话语义（`relay-session-core.ts`：v1/v2 连接形态、pendingFrames 缓冲、控制通道 sync/nudge、顶替 close(1008)），不鉴权、只见密文（威胁模型见 [SECURITY.md](../SECURITY.md)）。部署三步：
+
+1. VPS 安装 Node ≥ 20，下载本仓库并构建：`npm install && npm run build:relay`（或安装发布包后直接用其 `dist`）。
+2. 启动：`PORT=6790 HOST=0.0.0.0 npm run start:node --workspace=@getpaseo/relay`（默认端口 6790；`PORT=0` 随机分配）。
+3. TLS 终结后对外暴露 443，endpoint 形如 `relay.example.cn:443`。
+
+TLS 终结示例（caddy，自动证书）：
+
+```
+relay.example.cn {
+    reverse_proxy 127.0.0.1:6790
+}
+```
+
+nginx 等价配置：`location / { proxy_pass http://127.0.0.1:6790; proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; }`（证书自备）。
+
+systemd unit 示例：
+
+```ini
+[Unit]
+Description=Paseo relay
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/paseo
+Environment=PORT=6790
+ExecStart=/usr/bin/node packages/relay/dist/node-server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
 
 **切换配置（两种路线相同， daemon 侧生效）**
 
@@ -77,9 +106,11 @@ export PASEO_RELAY_USE_TLS="true"
 - `npx vitest run packages/protocol/src/daemon-endpoints.test.ts packages/protocol/src/connection-offer.test.ts`（连接/配对 URI 语义）。
 - 自托管 relay 后：`paseo daemon pair` 生成 URI 应包含自部署 endpoint；手机扫码后可建立 E2EE 会话。
 - relay 协议回归：`npx vitest run packages/relay`。
+- 本地起 Node relay 后跑真实协议全链路：`RUN_LIVE_RELAY_E2E=1 PASEO_RELAY_E2E_TARGET=ws://127.0.0.1:6790 npx vitest run packages/relay/src/live-relay.e2e.test.ts`。
 
 ## 6. 与后续任务的映射
 
 - t02–t06：五个国产 Agent provider 接入（Kimi/CodeBuddy/Qoder/Qwen/ZCode）。
 - t07：zh-CN 语言覆盖审计（上游已支持 `zh-CN` 且默认跟随系统语言 `"system"`）。
 - t08：全量连接验证 + 集成合并（架构师）。
+- t09：纯 Node relay 服务器（本文件 §4.2 路线 B），已实现。
