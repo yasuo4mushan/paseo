@@ -1,0 +1,102 @@
+.agent-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f5f6f7;
+}
+
+.timeline {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.entry {
+  margin-bottom: 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.55;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.entry-user {
+  background: #1f6feb;
+  color: #ffffff;
+  margin-left: 80rpx;
+}
+
+.entry-assistant {
+  background: #ffffff;
+  color: #1f2329;
+  margin-right: 40rpx;
+}
+
+.entry-reasoning {
+  background: #f2f3f5;
+  color: #8f959e;
+  font-size: 24rpx;
+}
+
+.entry-system {
+  background: #eef7f0;
+  color: #4b5563;
+  font-size: 24rpx;
+}
+
+.entry-error {
+  background: #fdebe9;
+  color: #d4380d;
+}
+
+.error-inline {
+  color: #d4380d;
+  font-size: 24rpx;
+  padding: 12rpx 20rpx;
+}
+
+.empty-timeline {
+  text-align: center;
+  padding: 80rpx 0;
+}
+
+.timeline-bottom {
+  height: 8rpx;
+}
+
+.composer {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-top: 1rpx solid #e5e6eb;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+}
+
+.composer-status {
+  font-size: 22rpx;
+  color: #8f959e;
+  margin-bottom: 8rpx;
+}
+
+.composer-status.is-running {
+  color: #1f6feb;
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+}
+
+.composer-input {
+  flex: 1;
+  background: #f5f6f7;
+  border-radius: 12rpx;
+  padding: 14rpx 20rpx;
+  font-size: 28rpx;
+}
+
+.send-btn {
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}

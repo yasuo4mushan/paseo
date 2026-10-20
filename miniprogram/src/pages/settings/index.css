@@ -1,0 +1,33 @@
+.row {
+  display: flex;
+  padding: 12rpx 0;
+  font-size: 26rpx;
+}
+
+.row-label {
+  width: 180rpx;
+  flex-shrink: 0;
+  color: #8f959e;
+}
+
+.row-value {
+  flex: 1;
+  word-break: break-all;
+}
+
+.row-value.ok {
+  color: #1a7f37;
+}
+
+.row-value.bad {
+  color: #d4380d;
+}
+
+.action-btn {
+  margin-top: 20rpx;
+}
+
+.about {
+  margin-top: 40rpx;
+  line-height: 1.6;
+}

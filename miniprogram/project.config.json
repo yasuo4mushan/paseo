@@ -1,0 +1,28 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "paseo-miniprogram",
+  "description": "Paseo 微信小程序客户端",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "3.7.12",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": false,
+    "coverView": true,
+    "autoAudits": false,
+    "showShadowRootInWxmlPanel": true,
+    "compileHotReLoad": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "packNpmManually": false,
+  "packNpmRelationList": [],
+  "minifyWXSS": true,
+  "minifyWXML": true
+}
