@@ -8,6 +8,9 @@ export default defineAppConfig({
     "pages/files/index",
     "pages/pair/index",
     "pages/settings/index",
+    "pages/schedules/index",
+    "pages/scripts/index",
+    "pages/new-workspace/index",
   ],
   window: {
     backgroundTextStyle: "@bgTxtStyle",

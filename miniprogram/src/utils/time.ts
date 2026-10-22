@@ -20,3 +20,13 @@ export function formatRelativeTime(iso: string, now: number = Date.now()): strin
   if (delta < 30 * 86_400_000) return `${Math.floor(delta / 86_400_000)} 天前`;
   return iso.slice(0, 10);
 }
+
+/** ISO 时间 → MM-DD HH:mm（定时任务下次执行/执行记录用）。 */
+export function formatDateTime(iso: string): string {
+  if (!iso) return "";
+  const time = Date.parse(iso);
+  if (Number.isNaN(time)) return "";
+  const d = new Date(time);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

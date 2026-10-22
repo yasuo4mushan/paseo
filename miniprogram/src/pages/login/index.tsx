@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { hub, hubErrorMessage, hasSession } from "@/hub/hub-client";
+import { useThemeClass } from "@/hooks/use-theme";
 import "./index.css";
 
 type Mode = "login" | "register";
 
 export default function LoginPage() {
+  const themeClass = useThemeClass();
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -55,7 +57,7 @@ export default function LoginPage() {
   };
 
   return (
-    <View className="login-page">
+    <View className={`login-page ${themeClass}`}>
       <View className="login-hero">
         <View className="brand-word">
           <View className="brand-aa">aa</View>

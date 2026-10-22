@@ -105,3 +105,32 @@
   margin-left: 16rpx;
   flex-shrink: 0;
 }
+
+/* t18：新建工作区入口行 */
+.ws-new-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 28rpx 24rpx;
+  margin-top: 8rpx;
+  border-top: 1rpx solid var(--divider);
+}
+
+.ws-new-icon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: var(--brand-fade);
+  color: var(--brand);
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ws-new-text {
+  font-size: 26rpx;
+  color: var(--brand);
+  font-weight: 600;
+}

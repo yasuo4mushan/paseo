@@ -1,0 +1,60 @@
+.scripts-page {
+  padding-top: 8rpx;
+}
+
+.script-card {
+  padding: 28rpx;
+}
+
+.script-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.script-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.script-pill {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  padding: 6rpx 18rpx;
+  border-radius: var(--radius-round);
+  background: var(--fill);
+  color: var(--text-2);
+}
+
+.script-pill-ok {
+  background: var(--brand-fade);
+  color: var(--brand);
+}
+
+.script-pill-bad {
+  background: var(--danger-fade);
+  color: var(--danger);
+}
+
+.script-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.script-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.script-note {
+  text-align: center;
+  padding: 8rpx 32rpx 32rpx;
+}

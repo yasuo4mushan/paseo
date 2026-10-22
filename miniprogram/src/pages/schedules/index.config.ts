@@ -1,0 +1,4 @@
+export default definePageConfig({
+  navigationBarTitleText: "定时任务",
+  enablePullDownRefresh: true,
+});

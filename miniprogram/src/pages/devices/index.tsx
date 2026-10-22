@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
 import { Button, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { hasSession, hub, hubErrorMessage, isAuthExpired } from "@/hub/hub-client";
 import type { HubDevice } from "@/hub/hub-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { useThemeClass } from "@/hooks/use-theme";
 import { formatRelativeTime } from "@/utils/time";
 import "./index.css";
 
@@ -21,9 +22,11 @@ function osMeta(os: string): { label: string; icon: string } {
 }
 
 export default function DevicesPage() {
-  const connectionState = useSyncExternalStore(
-    (cb) => connectionManager.subscribe(cb),
-    () => connectionManager.getState(),
+  const themeClass = useThemeClass();
+  const [connectionState, setConnectionState] = useState(() => connectionManager.getState());
+  useEffect(
+    () => connectionManager.subscribe(() => setConnectionState(connectionManager.getState())),
+    [],
   );
   const [authed, setAuthed] = useState(() => hasSession());
   const [devices, setDevices] = useState<HubDevice[] | null>(null);
@@ -91,7 +94,7 @@ export default function DevicesPage() {
   if (!authed) return <View />;
 
   return (
-    <View className="page devices-page">
+    <View className={`page devices-page ${themeClass}`}>
       {error ? (
         <View className="error-inline">{error}</View>
       ) : devices === null ? (
