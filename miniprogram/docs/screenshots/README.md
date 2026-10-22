@@ -34,3 +34,28 @@ osascript 返回 -1743）。深色支持已实现并通过构建验证：
 
 在开发者工具中切换系统深色外观（或真机系统切深色、或授予终端 `System Events`
 权限后跑 `node scripts/ui-automation.mjs --dark`）即可验证。
+
+## t16 批次：功能对齐（工作区/创建/控制/权限）
+
+由 `scripts/ui-automation-t16.mjs`（端口 9422）对**真实 hub + 真实 daemon** 驱动生成：
+探针账号 `t16probe-*`（curl 注册 + `devices.register` 预置带真实 relay offer 的
+`t16-mac-dev` 设备），连接走真实 relay E2EE。**配额纪律：全程只创建一个真实
+agent（claude / 短 prompt"只回复 ok"），验证后已删除**（删除经 `wx.showModal`
+mock 确认后走真实 `delete_agent_request`）。
+
+| 文件 | 页面 | 说明 |
+| --- | --- | --- |
+| `t16-01-agents-workspace-bar.png` | Agent 列表 | 顶栏新增工作区栏 + 右上"新建"入口 |
+| `t16-02-workspace-picker.png` | 工作区选择 | 真实 `fetch_workspaces_request`：daemon 返回的工作区按项目分组、状态点 |
+| `t16-03-agents-workspace-selected.png` | Agent 列表 | 选中工作区回填顶栏（选择持久化到 storage） |
+| `t16-04-create-form.png` | 新建 Agent | 真实 provider 目录（claude/codex/copilot）+ 模型目录（picker）+ 任务指令 |
+| `t16-05-agent-created.png` | Agent 详情 | **真实创建的 agent**（短 prompt），创建后自动进入会话 |
+| `t16-06-agent-running-interrupt.png` | Agent 详情 | （缺）短 prompt 执行过快、截图中 agent 已完成，中断按钮仅在 running 态展示；cancel RPC 由单测覆盖请求形状 |
+| `t16-07-detail-actions.png` | Agent 详情 | 操作区：状态徽标 + 删除（带确认弹层） |
+| `t16-08-permission-tool.png` | 全局弹层 | 权限请求（工具授权）：mock 推送驱动——daemon 真实权限推送难以在自动化中自然触发；展示工具名/命令摘要/拒绝/允许 |
+| `t16-09-permission-plan.png` | 全局弹层 | 权限请求（计划确认）：协议多档 actions（继续规划 / 按计划实施） |
+
+权限弹层的推送→排队→回应状态机见 `tests/permission-store.test.ts`；RPC 形状与
+推送路由见 `tests/protocol-t16.test.ts`（`agent_permission_request` 推送 +
+`agent_permission_response` 回应）。深色模式限制同上节（新组件全部复用既有
+tokens，`prefers-color-scheme: dark` 自动适配）。
