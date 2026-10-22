@@ -97,8 +97,8 @@ export function createRelayPlaintextSocket(args: {
 
   underlying = connectUnderlying();
 
-  // 文本帧直传；二进制密文帧（binaryCiphertext 协商成功且明文为二进制时才会
-  // 出现，MVP 只发 JSON 字符串）转发到底层的 sendBinary。
+  // 文本帧直传；二进制明文帧（t17 文件传输 / binaryCiphertext 密文）转发到底层
+  // 的 sendBinary（官方 daemon-client-relay-e2ee-transport 同款双路径）。
   const transport: Transport = {
     send: (data) => {
       if (typeof data === "string") {
@@ -183,6 +183,14 @@ export function createRelayPlaintextSocket(args: {
       if (!channel || !channel.isOpen()) {
         throw new Error("E2EE 信道未就绪");
       }
+      channel.send(data);
+    },
+    sendBinary(data: ArrayBuffer) {
+      if (!channel || !channel.isOpen()) {
+        throw new Error("E2EE 信道未就绪");
+      }
+      // 加密信道负责密文封装：binaryCiphertext 协商成功时直接走二进制帧，
+      // 否则 base64 文本帧（encrypted-channel.send 内部处理）。
       channel.send(data);
     },
     close(code, reason) {

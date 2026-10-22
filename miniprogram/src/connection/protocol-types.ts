@@ -35,7 +35,13 @@ export interface FetchAgentsResponse {
 
 /** messages.ts: AgentTimelineItemPayloadSchema（子集：可渲染的条目） */
 export type AgentTimelineItem =
-  | { type: "user_message"; text: string }
+  | {
+      type: "user_message";
+      text: string;
+      /** messages.ts user_message 条目上的可选幂等/消息 id（t17 附件回配对用）。 */
+      messageId?: string;
+      clientMessageId?: string;
+    }
   | { type: "assistant_message"; text: string }
   | { type: "reasoning"; text: string }
   | {
@@ -113,6 +119,77 @@ export interface SendAgentMessageResponse {
   requestId: string;
   agentId: string;
   accepted: boolean;
+  error: string | null;
+}
+
+// --- t17：文件浏览 / 二进制读取 / 附件上传（vendor 自 messages.ts 与 client） ---
+
+/** messages.ts: FileExplorerEntrySchema */
+export interface FileExplorerEntry {
+  name: string;
+  path: string;
+  kind: "file" | "directory";
+  size: number;
+  modifiedAt: string;
+}
+
+/** messages.ts: FileExplorerDirectorySchema */
+export interface FileExplorerDirectory {
+  path: string;
+  entries: FileExplorerEntry[];
+}
+
+/** messages.ts: FileExplorerFileSchema（无 acceptBinary 的 legacy JSON 路径） */
+export interface LegacyFileExplorerFile {
+  path: string;
+  kind: "text" | "image" | "binary";
+  encoding: "utf-8" | "base64" | "none";
+  content?: string;
+  mimeType?: string;
+  size: number;
+  modifiedAt: string;
+  revision?: string;
+}
+
+/** messages.ts: FileExplorerResponseMessageSchema.payload */
+export interface FileExplorerResponsePayload {
+  cwd: string;
+  path: string;
+  mode: "list" | "file";
+  directory: FileExplorerDirectory | null;
+  file: LegacyFileExplorerFile | null;
+  error: string | null;
+  requestId: string;
+}
+
+/**
+ * client daemon-client.ts FileReadResult：二进制帧读到的统一结果。
+ * kind 判定与官方 binaryFileKind 一致（image 开头 → image；utf-8 或 text/json → text）。
+ */
+export interface FileReadResult {
+  bytes: Uint8Array;
+  mime: string;
+  size: number;
+  path: string;
+  kind: "text" | "image" | "binary";
+  modifiedAt: string;
+  revision?: string;
+}
+
+/** messages.ts: UploadedFileAttachmentSchema（file.upload.response 返回并随消息发送） */
+export interface UploadedFileAttachment {
+  type: "uploaded_file";
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  path: string;
+}
+
+/** messages.ts: file.upload.response payload */
+export interface FileUploadResponse {
+  requestId: string;
+  file: UploadedFileAttachment | null;
   error: string | null;
 }
 
@@ -260,7 +337,8 @@ export type SessionRequestMessage =
       agentId: string;
       text: string;
       messageId?: string;
-      attachments: [];
+      /** t17：uploaded_file 附件（messages.ts AgentAttachmentsSchema 的子集）。 */
+      attachments: UploadedFileAttachment[];
     }
   | { type: "daemon.get_status.request"; requestId: string }
   | { type: "fetch_workspaces_request"; requestId: string }
@@ -290,7 +368,26 @@ export type SessionRequestMessage =
       initialPrompt?: string;
     }
   | { type: "cancel_agent_request"; agentId: string; requestId: string }
-  | { type: "delete_agent_request"; agentId: string; requestId: string };
+  | { type: "delete_agent_request"; agentId: string; requestId: string }
+  | {
+      /** t17：目录列表走 mode:"list"（纯 JSON 响应）。 */
+      type: "file_explorer_request";
+      requestId: string;
+      cwd: string;
+      path?: string;
+      mode: "list" | "file";
+      acceptBinary?: boolean;
+      maxBytes?: number;
+    }
+  | {
+      /** t17：上传附件的元数据头；字节走 FileBegin/Chunk/End 二进制帧。 */
+      type: "file.upload.request";
+      requestId: string;
+      fileName: string;
+      mimeType: string;
+      size: number;
+      modifiedAt: string;
+    };
 
 /**
  * 权限回应（messages.ts AgentPermissionResponseMessageSchema）。
@@ -407,7 +504,16 @@ export function parseTimelineItem(value: unknown): AgentTimelineItem {
     case "user_message":
     case "assistant_message":
     case "reasoning":
-      return { type: value.type, text: str(value.text) ?? "" };
+      return value.type === "user_message"
+        ? {
+            type: "user_message",
+            text: str(value.text) ?? "",
+            ...(str(value.messageId) ? { messageId: str(value.messageId) ?? "" } : {}),
+            ...(str(value.clientMessageId)
+              ? { clientMessageId: str(value.clientMessageId) ?? "" }
+              : {}),
+          }
+        : { type: value.type, text: str(value.text) ?? "" };
     case "tool_call": {
       const status = str(value.status);
       return {
@@ -599,13 +705,7 @@ export function parseSendAgentMessageResponse(payload: unknown): SendAgentMessag
 // t16 新增消息的解析守卫
 // ---------------------------------------------------------------------------
 
-const WORKSPACE_STATUS_BUCKETS = new Set([
-  "needs_input",
-  "failed",
-  "running",
-  "attention",
-  "done",
-]);
+const WORKSPACE_STATUS_BUCKETS = new Set(["needs_input", "failed", "running", "attention", "done"]);
 
 function parseWorkspaceDescriptor(value: unknown): WorkspaceDescriptor | null {
   if (!isRecord(value)) return null;
@@ -749,7 +849,8 @@ export function parsePermissionRequest(value: unknown): PermissionRequest | null
     id,
     provider: str(value.provider) ?? "",
     name: str(value.name) ?? "",
-    kind: kindRaw && PERMISSION_KINDS.has(kindRaw) ? (kindRaw as PermissionRequest["kind"]) : "other",
+    kind:
+      kindRaw && PERMISSION_KINDS.has(kindRaw) ? (kindRaw as PermissionRequest["kind"]) : "other",
     title: nullableStr(value.title) ?? undefined,
     description: nullableStr(value.description) ?? undefined,
     input,
@@ -777,10 +878,9 @@ export function parsePermissionResolvedPush(payload: unknown): PermissionResolve
  * create_agent_request 的应答：daemon 以 status 推送（agent_created / agent_create_failed），
  * requestId 在 payload 内，经通用 pending 关联回来后再用这里解析。
  */
-export function parseCreateAgentStatusPayload(payload: unknown):
-  | { ok: true; agent: AgentSnapshot }
-  | { ok: false; error: string }
-  | null {
+export function parseCreateAgentStatusPayload(
+  payload: unknown,
+): { ok: true; agent: AgentSnapshot } | { ok: false; error: string } | null {
   if (!isRecord(payload)) return null;
   if (payload.status === "agent_created") {
     const agent = parseAgentSnapshot(payload.agent);
@@ -790,4 +890,99 @@ export function parseCreateAgentStatusPayload(payload: unknown):
     return { ok: false, error: str(payload.error) ?? "创建失败" };
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// t17：文件浏览 / 上传响应解析
+// ---------------------------------------------------------------------------
+
+function parseFileExplorerEntry(value: unknown): FileExplorerEntry | null {
+  if (!isRecord(value)) return null;
+  const name = str(value.name);
+  const path = str(value.path);
+  if (!name || !path) return null;
+  const kind = str(value.kind) === "directory" ? "directory" : "file";
+  return {
+    name,
+    path,
+    kind,
+    size: typeof value.size === "number" ? value.size : 0,
+    modifiedAt: str(value.modifiedAt) ?? "",
+  };
+}
+
+export function parseFileExplorerResponse(payload: unknown): FileExplorerResponsePayload | null {
+  if (!isRecord(payload)) return null;
+  const requestId = str(payload.requestId);
+  if (!requestId) return null;
+  const mode = str(payload.mode) === "file" ? "file" : "list";
+  let directory: FileExplorerDirectory | null = null;
+  if (isRecord(payload.directory)) {
+    const dirPath = str(payload.directory.path);
+    const entriesRaw = Array.isArray(payload.directory.entries) ? payload.directory.entries : [];
+    directory = {
+      path: dirPath ?? "",
+      entries: entriesRaw
+        .map(parseFileExplorerEntry)
+        .filter((e): e is FileExplorerEntry => e !== null),
+    };
+  }
+  let file: LegacyFileExplorerFile | null = null;
+  if (isRecord(payload.file)) {
+    const filePath = str(payload.file.path);
+    if (filePath) {
+      const kindRaw = str(payload.file.kind);
+      const encodingRaw = str(payload.file.encoding);
+      file = {
+        path: filePath,
+        kind: kindRaw === "image" || kindRaw === "binary" ? kindRaw : "text",
+        encoding: encodingRaw === "base64" || encodingRaw === "none" ? encodingRaw : "utf-8",
+        content: nullableStr(payload.file.content) ?? undefined,
+        mimeType: nullableStr(payload.file.mimeType) ?? undefined,
+        size: typeof payload.file.size === "number" ? payload.file.size : 0,
+        modifiedAt: str(payload.file.modifiedAt) ?? "",
+        revision: nullableStr(payload.file.revision) ?? undefined,
+      };
+    }
+  }
+  return {
+    cwd: str(payload.cwd) ?? "",
+    path: str(payload.path) ?? "",
+    mode,
+    directory,
+    file,
+    error: nullableStr(payload.error),
+    requestId,
+  };
+}
+
+export function parseFileUploadResponse(payload: unknown): FileUploadResponse | null {
+  if (!isRecord(payload)) return null;
+  const requestId = str(payload.requestId);
+  if (!requestId) return null;
+  let file: UploadedFileAttachment | null = null;
+  if (isRecord(payload.file)) {
+    const id = str(payload.file.id);
+    const fileName = str(payload.file.fileName);
+    if (id && fileName && str(payload.file.type) === "uploaded_file") {
+      file = {
+        type: "uploaded_file",
+        id,
+        fileName,
+        mimeType: str(payload.file.mimeType) ?? "application/octet-stream",
+        size: typeof payload.file.size === "number" ? payload.file.size : 0,
+        path: str(payload.file.path) ?? "",
+      };
+    }
+  }
+  return { requestId, file, error: nullableStr(payload.error) };
+}
+
+/** 官方 client binaryFileKind：mime/encoding → 展示类型。 */
+export function binaryFileKind(mime: string, encoding: string): FileReadResult["kind"] {
+  if (mime.startsWith("image/")) return "image";
+  if (encoding === "utf-8" || mime.startsWith("text/") || mime === "application/json") {
+    return "text";
+  }
+  return "binary";
 }
