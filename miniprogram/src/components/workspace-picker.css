@@ -1,0 +1,107 @@
+/* 工作区选择器（t16）：半屏弹层，样式与 permission-overlay 同规范。 */
+
+.ws-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 900;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ws-sheet {
+  width: 100%;
+  max-height: 70vh;
+  background: var(--card);
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 40rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-sheet-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 24rpx;
+}
+
+.ws-list {
+  flex: 1;
+  max-height: 56vh;
+}
+
+.ws-group {
+  margin-bottom: 16rpx;
+}
+
+.ws-group-name {
+  font-size: 22rpx;
+  padding: 8rpx 0;
+}
+
+.ws-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 16rpx;
+  border-radius: var(--radius);
+}
+
+.ws-row:active,
+.ws-row-active {
+  background: var(--fill);
+}
+
+.ws-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--text-3);
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.ws-dot-run {
+  background: var(--brand);
+}
+
+.ws-dot-warn {
+  background: var(--warning);
+}
+
+.ws-dot-error {
+  background: var(--danger);
+}
+
+.ws-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ws-row-name {
+  font-size: 28rpx;
+  color: var(--text-1);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-row-path {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-row-check {
+  color: var(--brand);
+  font-size: 28rpx;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}

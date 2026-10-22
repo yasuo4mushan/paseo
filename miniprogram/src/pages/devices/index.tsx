@@ -4,6 +4,7 @@ import { Button, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { hasSession, hub, hubErrorMessage, isAuthExpired } from "@/hub/hub-client";
 import type { HubDevice } from "@/hub/hub-types";
+import { PermissionOverlay } from "@/components/permission-overlay";
 import { formatRelativeTime } from "@/utils/time";
 import "./index.css";
 
@@ -160,6 +161,7 @@ export default function DevicesPage() {
           重试
         </Button>
       ) : null}
+      <PermissionOverlay />
     </View>
   );
 }

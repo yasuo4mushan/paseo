@@ -1,6 +1,7 @@
 import { useEffect, type PropsWithChildren } from "react";
 import Taro from "@tarojs/taro";
 import { installPooledRandomSource, randomSourceInstalled } from "./connection/random-source";
+import { permissionStore } from "./permission/permission-store";
 // 全局设计 tokens 与共享样式（app.wxss）：Taro 的 app 入口不会自动收集
 // src/app.css，必须在入口显式 import，否则全局样式静默丢失（t10 踩坑）。
 import "./app.css";
@@ -28,6 +29,14 @@ function installRandom(): void {
 function App({ children }: PropsWithChildren) {
   useEffect(() => {
     installRandom();
+    // 自动化验收桥（t16）：devtools automator 经 mini.evaluate(getApp()) 注入
+    // mock 权限推送，驱动全局弹层截图。生产环境无 UI 暴露面，仅内部对象引用。
+    const app = Taro.getApp?.() as unknown as {
+      __automation?: { permissionStore: typeof permissionStore };
+    } | undefined;
+    if (app && !app.__automation) {
+      app.__automation = { permissionStore };
+    }
   }, []);
   return children;
 }

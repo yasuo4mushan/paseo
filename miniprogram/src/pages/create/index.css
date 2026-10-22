@@ -1,0 +1,92 @@
+.create-page {
+  padding-top: 8rpx;
+}
+
+.ws-select {
+  display: flex;
+  align-items: center;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
+}
+
+.ws-select:active {
+  opacity: 0.8;
+}
+
+.ws-select-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-select-placeholder {
+  color: var(--text-3);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.chip {
+  padding: 12rpx 28rpx;
+  border-radius: var(--radius-round);
+  background: var(--fill);
+  color: var(--text-1);
+  font-size: 26rpx;
+}
+
+.chip-active {
+  background: var(--brand-fade);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.chip-disabled {
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
+.picker-value {
+  display: flex;
+  align-items: center;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
+}
+
+.picker-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-label {
+  margin-top: 28rpx;
+}
+
+.prompt-input {
+  width: 100%;
+  min-height: 160rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+.prompt-placeholder {
+  color: var(--text-3);
+}

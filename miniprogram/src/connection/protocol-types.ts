@@ -116,6 +116,106 @@ export interface SendAgentMessageResponse {
   error: string | null;
 }
 
+// --- t16：工作区 / provider 目录 / 创建 / 控制 / 权限（均 vendor 自 messages.ts） ---
+
+/** messages.ts: WorkspaceDescriptorPayloadSchema（子集：选择器需要的字段） */
+export interface WorkspaceDescriptor {
+  id: string;
+  projectId: string;
+  projectDisplayName: string;
+  projectRootPath: string;
+  workspaceDirectory: string | null;
+  name: string;
+  title: string | null;
+  status: "needs_input" | "failed" | "running" | "attention" | "done";
+  activityAt: string | null;
+}
+
+/** messages.ts: WorkspaceProjectDescriptorPayloadSchema（子集：无活跃工作区的项目父级） */
+export interface WorkspaceProjectDescriptor {
+  projectId: string;
+  projectDisplayName: string;
+  projectRootPath: string;
+}
+
+/** messages.ts: FetchWorkspacesResponseMessageSchema.payload（子集） */
+export interface FetchWorkspacesResponse {
+  requestId: string;
+  workspaces: WorkspaceDescriptor[];
+  emptyProjects: WorkspaceProjectDescriptor[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+/** messages.ts: ListAvailableProvidersResponseSchema.payload.providers[i] */
+export interface ProviderAvailability {
+  provider: string;
+  available: boolean;
+  error?: string | null;
+}
+
+/** messages.ts: AgentModelDefinitionSchema（子集） */
+export interface ProviderModelDefinition {
+  id: string;
+  label: string;
+  description?: string;
+  isDefault?: boolean;
+}
+
+/** messages.ts: AgentModeSchema（子集） */
+export interface ProviderMode {
+  id: string;
+  label: string;
+  description?: string;
+}
+
+/** messages.ts: AgentPermissionActionSchema */
+export interface PermissionAction {
+  id: string;
+  label: string;
+  behavior: "allow" | "deny";
+  variant?: "primary" | "secondary" | "danger";
+}
+
+/** messages.ts: AgentPermissionRequestPayloadSchema（子集：actions 缺省时由客户端补默认两档） */
+export interface PermissionRequest {
+  id: string;
+  provider: string;
+  name: string;
+  kind: "tool" | "plan" | "question" | "mode" | "other";
+  title?: string;
+  description?: string;
+  input?: Record<string, unknown>;
+  actions: PermissionAction[];
+}
+
+/** messages.ts: AgentPermissionRequestMessageSchema.payload（daemon 主动推送） */
+export interface PermissionRequestPush {
+  agentId: string;
+  request: PermissionRequest;
+}
+
+/** messages.ts: AgentPermissionResponseMessageSchema.response（客户端回应权限） */
+export type PermissionResponsePayload =
+  | { behavior: "allow"; selectedActionId?: string }
+  | { behavior: "deny"; selectedActionId?: string; message?: string };
+
+/** messages.ts: AgentPermissionResolvedMessageSchema.payload（daemon 主动推送，子集） */
+export interface PermissionResolvedPush {
+  agentId: string;
+  requestId: string;
+}
+
+/** 创建 agent 的可选配置（create_agent_request.config 子集 + workspaceId/initialPrompt） */
+export interface CreateAgentOptions {
+  provider: string;
+  cwd: string;
+  model?: string;
+  modeId?: string;
+  workspaceId?: string;
+  initialPrompt?: string;
+}
+
 /** hello 客户端类型枚举：messages.ts WSHelloMessageSchema.clientType */
 export type WsClientType = "mobile" | "browser" | "cli" | "mcp" | "hub";
 
@@ -162,7 +262,47 @@ export type SessionRequestMessage =
       messageId?: string;
       attachments: [];
     }
-  | { type: "daemon.get_status.request"; requestId: string };
+  | { type: "daemon.get_status.request"; requestId: string }
+  | { type: "fetch_workspaces_request"; requestId: string }
+  | { type: "list_available_providers_request"; requestId: string }
+  | {
+      type: "list_provider_models_request";
+      provider: string;
+      cwd?: string;
+      requestId: string;
+    }
+  | {
+      type: "list_provider_modes_request";
+      provider: string;
+      cwd?: string;
+      requestId: string;
+    }
+  | {
+      type: "create_agent_request";
+      requestId: string;
+      config: {
+        provider: string;
+        cwd: string;
+        model?: string;
+        modeId?: string;
+      };
+      workspaceId?: string;
+      initialPrompt?: string;
+    }
+  | { type: "cancel_agent_request"; agentId: string; requestId: string }
+  | { type: "delete_agent_request"; agentId: string; requestId: string };
+
+/**
+ * 权限回应（messages.ts AgentPermissionResponseMessageSchema）。
+ * 注意：这里的 requestId 是"权限请求的 id"，不做 RPC 关联——
+ * 官方客户端同款 fire-and-forget，结果由 agent_permission_resolved 推送告知。
+ */
+export interface PermissionResponseMessage {
+  type: "agent_permission_response";
+  agentId: string;
+  requestId: string;
+  response: PermissionResponsePayload;
+}
 
 /** MVP 关心的 daemon 主动推送 / 响应消息 */
 export type SessionNotificationMessage =
@@ -189,6 +329,29 @@ export type SessionNotificationMessage =
       payload: Record<string, unknown> & { requestId: string };
     }
   | { type: "daemon.get_status.response"; payload: Record<string, unknown> & { requestId: string } }
+  | { type: "fetch_workspaces_response"; payload: Record<string, unknown> & { requestId: string } }
+  | {
+      type: "list_available_providers_response";
+      payload: Record<string, unknown> & { requestId: string };
+    }
+  | {
+      type: "list_provider_models_response";
+      payload: Record<string, unknown> & { requestId: string };
+    }
+  | {
+      type: "list_provider_modes_response";
+      payload: Record<string, unknown> & { requestId: string };
+    }
+  | { type: "cancel_agent_response"; payload: Record<string, unknown> & { requestId: string } }
+  | { type: "agent_deleted"; payload: Record<string, unknown> & { requestId: string } }
+  | {
+      type: "agent_permission_request";
+      payload: { agentId?: unknown; request?: unknown } & Record<string, unknown>;
+    }
+  | {
+      type: "agent_permission_resolved";
+      payload: { agentId?: unknown; requestId?: unknown } & Record<string, unknown>;
+    }
   | { type: string; payload?: Record<string, unknown> & { requestId?: string } };
 
 // ---------------------------------------------------------------------------
@@ -430,4 +593,201 @@ export function parseSendAgentMessageResponse(payload: unknown): SendAgentMessag
     accepted: bool(payload.accepted),
     error: nullableStr(payload.error),
   };
+}
+
+// ---------------------------------------------------------------------------
+// t16 新增消息的解析守卫
+// ---------------------------------------------------------------------------
+
+const WORKSPACE_STATUS_BUCKETS = new Set([
+  "needs_input",
+  "failed",
+  "running",
+  "attention",
+  "done",
+]);
+
+function parseWorkspaceDescriptor(value: unknown): WorkspaceDescriptor | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  const statusRaw = str(value.status);
+  return {
+    id,
+    projectId: str(value.projectId) ?? "",
+    projectDisplayName: str(value.projectDisplayName) ?? "",
+    projectRootPath: str(value.projectRootPath) ?? "",
+    workspaceDirectory: nullableStr(value.workspaceDirectory),
+    name: str(value.name) ?? "",
+    title: nullableStr(value.title),
+    status:
+      statusRaw && WORKSPACE_STATUS_BUCKETS.has(statusRaw)
+        ? (statusRaw as WorkspaceDescriptor["status"])
+        : "done",
+    activityAt: nullableStr(value.activityAt),
+  };
+}
+
+function parseWorkspaceProjectDescriptor(value: unknown): WorkspaceProjectDescriptor | null {
+  if (!isRecord(value)) return null;
+  const projectId = str(value.projectId);
+  if (!projectId) return null;
+  return {
+    projectId,
+    projectDisplayName: str(value.projectDisplayName) ?? "",
+    projectRootPath: str(value.projectRootPath) ?? "",
+  };
+}
+
+export function parseFetchWorkspacesResponse(payload: unknown): FetchWorkspacesResponse | null {
+  if (!isRecord(payload)) return null;
+  const requestId = str(payload.requestId);
+  if (!requestId) return null;
+  const entries = Array.isArray(payload.entries) ? payload.entries : [];
+  const emptyRaw = Array.isArray(payload.emptyProjects) ? payload.emptyProjects : [];
+  const pageInfo = isRecord(payload.pageInfo) ? payload.pageInfo : {};
+  return {
+    requestId,
+    workspaces: entries
+      .map(parseWorkspaceDescriptor)
+      .filter((w): w is WorkspaceDescriptor => w !== null),
+    emptyProjects: emptyRaw
+      .map(parseWorkspaceProjectDescriptor)
+      .filter((p): p is WorkspaceProjectDescriptor => p !== null),
+    hasMore: bool(pageInfo.hasMore),
+    nextCursor: nullableStr(pageInfo.nextCursor),
+  };
+}
+
+export function parseListAvailableProvidersResponse(
+  payload: unknown,
+): ProviderAvailability[] | null {
+  if (!isRecord(payload)) return null;
+  const providers = Array.isArray(payload.providers) ? payload.providers : [];
+  return providers
+    .map((raw): ProviderAvailability | null => {
+      if (!isRecord(raw)) return null;
+      const provider = str(raw.provider);
+      if (!provider) return null;
+      return { provider, available: bool(raw.available), error: nullableStr(raw.error) };
+    })
+    .filter((p): p is ProviderAvailability => p !== null);
+}
+
+export function parseProviderModelsResponse(payload: unknown): ProviderModelDefinition[] | null {
+  if (!isRecord(payload)) return null;
+  const models = Array.isArray(payload.models) ? payload.models : [];
+  return models
+    .map((raw): ProviderModelDefinition | null => {
+      if (!isRecord(raw)) return null;
+      const id = str(raw.id);
+      if (!id) return null;
+      return {
+        id,
+        label: str(raw.label) ?? id,
+        description: nullableStr(raw.description) ?? undefined,
+        isDefault: bool(raw.isDefault) || undefined,
+      };
+    })
+    .filter((m): m is ProviderModelDefinition => m !== null);
+}
+
+export function parseProviderModesResponse(payload: unknown): ProviderMode[] | null {
+  if (!isRecord(payload)) return null;
+  const modes = Array.isArray(payload.modes) ? payload.modes : [];
+  return modes
+    .map((raw): ProviderMode | null => {
+      if (!isRecord(raw)) return null;
+      const id = str(raw.id);
+      if (!id) return null;
+      return {
+        id,
+        label: str(raw.label) ?? id,
+        description: nullableStr(raw.description) ?? undefined,
+      };
+    })
+    .filter((m): m is ProviderMode => m !== null);
+}
+
+const PERMISSION_KINDS = new Set(["tool", "plan", "question", "mode", "other"]);
+
+/** actions 缺省时补官方默认两档（app PermissionRequestCard 同款兜底）。 */
+function defaultPermissionActions(): PermissionAction[] {
+  return [
+    { id: "reject", label: "拒绝", behavior: "deny", variant: "danger" },
+    { id: "accept", label: "允许", behavior: "allow", variant: "primary" },
+  ];
+}
+
+export function parsePermissionRequest(value: unknown): PermissionRequest | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  const kindRaw = str(value.kind);
+  const actionsRaw = Array.isArray(value.actions) ? value.actions : [];
+  const actions = actionsRaw
+    .map((raw): PermissionAction | null => {
+      if (!isRecord(raw)) return null;
+      const actionId = str(raw.id);
+      const label = str(raw.label);
+      const behavior = str(raw.behavior);
+      if (!actionId || !label || (behavior !== "allow" && behavior !== "deny")) return null;
+      const variant = str(raw.variant);
+      return {
+        id: actionId,
+        label,
+        behavior,
+        variant:
+          variant === "primary" || variant === "secondary" || variant === "danger"
+            ? variant
+            : undefined,
+      };
+    })
+    .filter((a): a is PermissionAction => a !== null);
+  const input = isRecord(value.input) ? (value.input as Record<string, unknown>) : undefined;
+  return {
+    id,
+    provider: str(value.provider) ?? "",
+    name: str(value.name) ?? "",
+    kind: kindRaw && PERMISSION_KINDS.has(kindRaw) ? (kindRaw as PermissionRequest["kind"]) : "other",
+    title: nullableStr(value.title) ?? undefined,
+    description: nullableStr(value.description) ?? undefined,
+    input,
+    actions: actions.length > 0 ? actions : defaultPermissionActions(),
+  };
+}
+
+export function parsePermissionRequestPush(payload: unknown): PermissionRequestPush | null {
+  if (!isRecord(payload)) return null;
+  const agentId = str(payload.agentId);
+  const request = parsePermissionRequest(payload.request);
+  if (!agentId || !request) return null;
+  return { agentId, request };
+}
+
+export function parsePermissionResolvedPush(payload: unknown): PermissionResolvedPush | null {
+  if (!isRecord(payload)) return null;
+  const agentId = str(payload.agentId);
+  const requestId = str(payload.requestId);
+  if (!agentId || !requestId) return null;
+  return { agentId, requestId };
+}
+
+/**
+ * create_agent_request 的应答：daemon 以 status 推送（agent_created / agent_create_failed），
+ * requestId 在 payload 内，经通用 pending 关联回来后再用这里解析。
+ */
+export function parseCreateAgentStatusPayload(payload: unknown):
+  | { ok: true; agent: AgentSnapshot }
+  | { ok: false; error: string }
+  | null {
+  if (!isRecord(payload)) return null;
+  if (payload.status === "agent_created") {
+    const agent = parseAgentSnapshot(payload.agent);
+    return agent ? { ok: true, agent } : null;
+  }
+  if (payload.status === "agent_create_failed") {
+    return { ok: false, error: str(payload.error) ?? "创建失败" };
+  }
+  return null;
 }

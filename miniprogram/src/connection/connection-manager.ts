@@ -18,8 +18,11 @@ import {
 import { createRelayPlaintextSocket } from "./relay-transport";
 import { createWxSocket } from "./wx-socket";
 import type { AgentSnapshot, AgentStreamPayload, DaemonStatus, ServerInfo } from "./protocol-types";
+import { permissionStore } from "@/permission/permission-store";
+import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 
 const STORAGE_KEY = "paseo_mp_connection";
+const WORKSPACE_STORAGE_KEY = "paseo_mp_workspace";
 
 export type StoredConnection =
   | { kind: "relay"; input: string; offer: RelayOffer }
@@ -60,6 +63,25 @@ class ConnectionManager {
     (update: { kind: "upsert"; agent: AgentSnapshot } | { kind: "remove"; agentId: string }) => void
   >();
   private disconnectListeners = new Set<() => void>();
+
+  constructor() {
+    // 工作区选择持久化到 Taro storage（t16：按设备连接隔离）
+    workspaceStore.installStorage(
+      () => {
+        const raw = Taro.getStorageSync<string>(WORKSPACE_STORAGE_KEY);
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw) as WorkspaceSelection;
+        } catch {
+          return null;
+        }
+      },
+      (value) => {
+        if (value) Taro.setStorageSync(WORKSPACE_STORAGE_KEY, JSON.stringify(value));
+        else Taro.removeStorageSync(WORKSPACE_STORAGE_KEY);
+      },
+    );
+  }
 
   getState(): ManagerState {
     return this.state;
@@ -191,13 +213,24 @@ class ConnectionManager {
         onAgentUpdate: (update) => {
           for (const listener of this.agentUpdateListeners) listener(update);
         },
+        onPermissionRequest: (push) => {
+          permissionStore.handlePush(push);
+        },
+        onPermissionResolved: (push) => {
+          permissionStore.handleResolved(push);
+        },
         onDisconnect: () => {
           this.setState({ status: "disconnected" });
+          this.teardownSessionState();
           for (const listener of this.disconnectListeners) listener();
         },
       },
     );
     this.connection = daemonConnection;
+    // 权限回应发送器：只在连接存活期间可用
+    permissionStore.bindSender((agentId, requestId, response) => {
+      daemonConnection.respondToPermission(agentId, requestId, response);
+    });
 
     try {
       const info = await daemonConnection.connect();
@@ -208,9 +241,17 @@ class ConnectionManager {
       const message = error instanceof Error ? error.message : String(error);
       daemonConnection.close();
       this.connection = null;
+      this.teardownSessionState();
       this.setState({ status: "error", message });
       throw error;
     }
+  }
+
+  /** 断开/连接失败时清理会话级状态（权限队列、工作区选择）。 */
+  private teardownSessionState(): void {
+    permissionStore.bindSender(null);
+    permissionStore.clearAll();
+    workspaceStore.clear(false);
   }
 
   getConnection(): DaemonConnection | null {
@@ -230,6 +271,7 @@ class ConnectionManager {
       this.connection = null;
     }
     this.activeDevice = null;
+    this.teardownSessionState();
     this.setState({ status: "disconnected" });
   }
 
