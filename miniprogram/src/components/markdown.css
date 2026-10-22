@@ -1,0 +1,203 @@
+/**
+ * Markdown 渲染样式（t19）。配合 components/markdown.tsx 的 AST 结构。
+ * 代码块等宽（Menlo/Roboto Mono 栈，小程序端 iOS/Android 各取可用项）+ 横向滚动。
+ */
+
+.md-root {
+  display: flex;
+  flex-direction: column;
+  font-size: 28rpx;
+  line-height: 1.65;
+}
+
+.md-inline {
+  font-size: inherit;
+  line-height: inherit;
+  word-break: break-all;
+}
+
+.md-strong {
+  font-weight: 700;
+}
+
+.md-em {
+  font-style: italic;
+}
+
+.md-strike {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+
+.md-code-inline {
+  font-family: Menlo, Consolas, "Roboto Mono", monospace;
+  font-size: 25rpx;
+  background: var(--fill);
+  border-radius: 6rpx;
+  padding: 2rpx 8rpx;
+}
+
+.md-link {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+/* ---------- 块级 ---------- */
+
+.md-heading {
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 16rpx 0 8rpx;
+}
+
+.md-h1 {
+  font-size: 36rpx;
+}
+
+.md-h2 {
+  font-size: 33rpx;
+}
+
+.md-h3 {
+  font-size: 31rpx;
+}
+
+.md-h4 {
+  font-size: 29rpx;
+}
+
+.md-h5 {
+  font-size: 28rpx;
+}
+
+.md-h6 {
+  font-size: 27rpx;
+  color: var(--text-2);
+}
+
+.md-root .md-heading:first-child {
+  margin-top: 0;
+}
+
+.md-para {
+  margin: 4rpx 0;
+}
+
+.md-quote {
+  border-left: 6rpx solid var(--fill);
+  background: var(--fill);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 8rpx 16rpx;
+  margin: 8rpx 0;
+}
+
+.md-list {
+  margin: 4rpx 0;
+}
+
+.md-item {
+  display: flex;
+  flex-direction: row;
+  margin: 4rpx 0;
+}
+
+.md-item-marker {
+  width: 40rpx;
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+
+.md-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.md-item-1 {
+  padding-left: 36rpx;
+}
+
+.md-hr {
+  height: 2rpx;
+  background: var(--fill);
+  margin: 16rpx 0;
+}
+
+/* ---------- 代码块 ---------- */
+
+.md-code-block {
+  margin: 12rpx 0;
+  border-radius: var(--radius);
+  background: var(--fill);
+  overflow: hidden;
+}
+
+.md-code-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 16rpx;
+  border-bottom: 2rpx solid var(--card);
+}
+
+.md-code-lang {
+  font-size: 22rpx;
+  color: var(--text-3);
+  text-transform: lowercase;
+}
+
+.md-code-copy {
+  font-size: 22rpx;
+  color: var(--brand);
+  padding: 4rpx 12rpx;
+}
+
+.md-code-body {
+  width: 100%;
+  padding: 12rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.md-code-text {
+  font-family: Menlo, Consolas, "Roboto Mono", monospace;
+  font-size: 24rpx;
+  line-height: 1.55;
+  color: var(--text-1);
+  white-space: pre;
+}
+
+/* ---------- 表格 ---------- */
+
+.md-table-scroll {
+  width: 100%;
+  margin: 12rpx 0;
+}
+
+.md-table {
+  border: 2rpx solid var(--fill);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.md-tr {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 2rpx solid var(--fill);
+}
+
+.md-tr:last-child {
+  border-bottom: none;
+}
+
+.md-tr-head {
+  background: var(--fill);
+  font-weight: 600;
+}
+
+.md-td {
+  flex: 1;
+  min-width: 200rpx;
+  max-width: 520rpx;
+  padding: 8rpx 12rpx;
+  font-size: 25rpx;
+}

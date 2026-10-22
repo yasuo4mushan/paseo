@@ -1,9 +1,8 @@
 /**
- * 工作区脚本页（t18，P2）：package.json scripts 目录 + 启停触发。
+ * 工作区脚本页（t18 建立，t19 补输出面）：package.json scripts 目录 + 启停触发。
  *
  * RPC：workspace.script.list/start/stop.request（vendor 自 messages.ts）。
- * 脚本输出走终端流（terminalId → TerminalStream 二进制帧），小程序端渲染面
- * 属 t19 范围：这里只做"触发运行 + 生命周期/健康状态"，输出查看标注未接。
+ * t19：脚本输出走终端流（terminalId → pages/terminal 简化终端视图）。
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -152,12 +151,26 @@ export default function ScriptsPage() {
                   运行
                 </Button>
               )}
+              {script.terminalId ? (
+                <Button
+                  className="btn btn-mini btn-ghost"
+                  onClick={() =>
+                    Taro.navigateTo({
+                      url: `/pages/terminal/index?terminalId=${encodeURIComponent(
+                        script.terminalId ?? "",
+                      )}&title=${encodeURIComponent(script.scriptName)}`,
+                    })
+                  }
+                >
+                  输出
+                </Button>
+              ) : null}
             </View>
           </View>
         ))
       )}
       <View className="faint script-note">
-        脚本输出经终端流二进制帧下发，小程序渲染面待 t18 后续批次（当前仅状态）。
+        t19：脚本输出经终端流（terminalId → TerminalStream 帧）在"输出"里实时查看。
       </View>
       <PermissionOverlay />
     </View>

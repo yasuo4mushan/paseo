@@ -6,9 +6,12 @@ import type {
   AgentSnapshot,
   AgentTimelineEntry,
   AgentTimelineItem,
+  ProviderSubagentSummary,
+  SlashCommand,
   UploadedFileAttachment,
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { MarkdownView } from "@/components/markdown";
 import { useThemeClass } from "@/hooks/use-theme";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
 import { displayLabels, setDisplayLabels } from "@/utils/agent-directory";
@@ -57,6 +60,14 @@ const TOOL_STATUS_ICON: Record<string, string> = {
   completed: "✓",
   failed: "✗",
   canceled: "–",
+};
+
+/** t19：subagent 状态文案（ProviderSubagentDescriptorPayload.status）。 */
+const SUBAGENT_STATUS_LABEL: Record<string, string> = {
+  running: "运行中",
+  completed: "完成",
+  failed: "失败",
+  canceled: "取消",
 };
 
 function bubbleClass(item: AgentTimelineItem): string {
@@ -146,12 +157,25 @@ function BubbleContent({ item }: { item: AgentTimelineItem }) {
     case "compaction":
       return <View>{item.status === "completed" ? "上下文压缩完成" : "上下文压缩中…"}</View>;
     case "user_message":
+      return <View className="bubble-text">{item.text}</View>;
     case "assistant_message":
+      // t19：assistant 输出走轻量 Markdown 渲染（标题/列表/代码块/表格/链接）。
+      return <MarkdownView text={item.text} />;
     case "reasoning":
       return <View className="bubble-text">{item.text}</View>;
     default:
       return <View className="bubble-text">（暂不支持展示的条目类型）</View>;
   }
+}
+
+/** 自动化/调试桥：记录页面级事件（app.ts 安装 __automation 时生效，否则静默）。 */
+function recordAutomationEvent(event: Record<string, unknown>): void {
+  const app = Taro.getApp?.() as unknown as
+    | {
+        __automation?: { downloadLog?: Array<Record<string, unknown>> };
+      }
+    | undefined;
+  app?.__automation?.downloadLog?.push({ ...event, at: Date.now() });
 }
 
 function createClientMessageId(): string {
@@ -177,6 +201,16 @@ export default function AgentPage() {
   const [labelDraft, setLabelDraft] = useState("");
   const [labelSaving, setLabelSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  // t19：重命名（label 编辑器共用保存通道）
+  const [nameDraft, setNameDraft] = useState("");
+  // t19：subagents 轨道
+  const [subagentsOpen, setSubagentsOpen] = useState(false);
+  const [subagents, setSubagents] = useState<ProviderSubagentSummary[]>([]);
+  // t19：斜杠命令目录（首次输入 / 时拉取）
+  const [commands, setCommands] = useState<SlashCommand[] | null>(null);
+  const commandsLoadedFor = useRef("");
+  // t19：运行中发送行为（steer=插入对话 / interrupt=先中断）
+  const [interruptOnSend, setInterruptOnSend] = useState(false);
 
   useLoad((options) => {
     const id = options?.id ? decodeURIComponent(options.id) : "";
@@ -234,6 +268,7 @@ export default function AgentPage() {
           setSnapshot(self);
           const navTitle = self.title ?? self.id.slice(0, 8);
           setTitle(navTitle);
+          setNameDraft(self.title ?? "");
           Taro.setNavigationBarTitle({ title: navTitle });
         }
         const timeline = await conn.fetchAgentTimeline(agentId, 50);
@@ -280,12 +315,64 @@ export default function AgentPage() {
       }
     });
 
+    // t19：subagents 轨道实时更新（upsert/remove；打开面板时可见）
+    const unsubscribeSubagents = connectionManager.onSubagentUpdate((update) => {
+      if (update.kind === "upsert") {
+        if (update.subagent.parentAgentId !== agentId) return;
+        setSubagents((prev) => {
+          const rest = prev.filter((s) => s.id !== update.subagent.id);
+          return [...rest, update.subagent].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+        });
+      } else {
+        if (update.parentAgentId !== agentId) return;
+        setSubagents((prev) => prev.filter((s) => s.id !== update.subagentId));
+      }
+    });
+
     return () => {
       disposed = true;
       unsubscribeStream();
       unsubscribeAgents();
+      unsubscribeSubagents();
     };
   }, [agentId]);
+
+  // t19：打开 subagents 面板时拉取列表（此后由推送维护）
+  useEffect(() => {
+    if (!subagentsOpen || !agentId) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    void conn
+      .listSubagents(agentId)
+      .then((list) => setSubagents([...list].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))))
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : String(err));
+      });
+  }, [subagentsOpen, agentId]);
+
+  // t19：首次输入 / 时拉取斜杠命令目录（每 agent 一次）
+  useEffect(() => {
+    if (!agentId || commands !== null || commandsLoadedFor.current === agentId) return;
+    if (!draft.startsWith("/")) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    commandsLoadedFor.current = agentId;
+    void conn
+      .listCommands(agentId)
+      .then((list) => {
+        setCommands(list);
+        // 自动化证据：真实 daemon 返回的命令目录大小（空目录 = 面板不弹，属正常）
+        recordAutomationEvent({ kind: "slash_commands", agentId, count: list.length });
+      })
+      .catch((err) => {
+        commandsLoadedFor.current = ""; // 失败允许重试
+        recordAutomationEvent({
+          kind: "slash_commands_error",
+          agentId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+  }, [draft, agentId, commands]);
 
   // ---- 附件选择与上传（t17） ----
 
@@ -407,6 +494,10 @@ export default function AgentPage() {
       const result = await conn.sendAgentMessage(agentId, text || "（附件）", {
         messageId: clientMessageId,
         ...(attachments.length > 0 ? { attachments } : {}),
+        // t19：运行中按 toggle 决定 插入对话(steer) / 先中断再投递(interrupt)
+        ...(status === "running" && interruptOnSend
+          ? { activeTurnBehavior: "interrupt" as const }
+          : {}),
       });
       if (!result.accepted) {
         setError(result.error ?? "消息未被接受");
@@ -477,7 +568,7 @@ export default function AgentPage() {
     }
     const { confirm } = await Taro.showModal({
       title: "归档 Agent",
-      content: "归档后从进行中列表移除，可在\"归档\"筛选里找到并恢复。",
+      content: '归档后从进行中列表移除，可在"归档"筛选里找到并恢复。',
       confirmText: "归档",
       cancelText: "取消",
     });
@@ -485,9 +576,7 @@ export default function AgentPage() {
     setArchiving(true);
     try {
       await conn.archiveAgent(agentId);
-      setSnapshot((prev) =>
-        prev ? { ...prev, archivedAt: new Date().toISOString() } : prev,
-      );
+      setSnapshot((prev) => (prev ? { ...prev, archivedAt: new Date().toISOString() } : prev));
       Taro.showToast({ title: "已归档", icon: "none" });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -527,6 +616,75 @@ export default function AgentPage() {
       setLabelSaving(false);
     }
   };
+
+  // ---- t19：重命名 / 导出 / 上下文计量 ----
+
+  /** 重命名（update_agent name；导航栏与气泡标题同步刷新）。 */
+  const saveName = async () => {
+    const name = nameDraft.trim();
+    if (!agentId || !name || name === (snapshot?.title ?? "") || labelSaving) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    setLabelSaving(true);
+    try {
+      await conn.updateAgent(agentId, { name });
+      setSnapshot((prev) => (prev ? { ...prev, title: name } : prev));
+      setTitle(name);
+      Taro.setNavigationBarTitle({ title: name });
+      Taro.showToast({ title: "已重命名", icon: "success" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLabelSaving(false);
+    }
+  };
+
+  /**
+   * 导出会话（本地操作，无专用 RPC——官方 app 的导出即剪贴板 markdown）：
+   * 时间线 → markdown 文本 → 剪贴板。
+   */
+  const exportTimeline = async () => {
+    if (entries.length === 0) {
+      Taro.showToast({ title: "暂无可导出的消息", icon: "none" });
+      return;
+    }
+    const lines: string[] = [`# ${title || agentId}`, ""];
+    for (const entry of entries) {
+      const item = entry.item;
+      if (
+        item.type === "user_message" ||
+        item.type === "assistant_message" ||
+        item.type === "reasoning"
+      ) {
+        const who =
+          item.type === "user_message"
+            ? "## 用户"
+            : item.type === "assistant_message"
+              ? "## 助手"
+              : "### 思考";
+        lines.push(who, "", item.text, "");
+      } else if (item.type === "error") {
+        lines.push("> 错误：", item.message, "");
+      }
+    }
+    const markdown = lines.join("\n");
+    try {
+      await Taro.setClipboardData({ data: markdown });
+      Taro.showToast({ title: `已复制 ${entries.length} 条消息`, icon: "none" });
+    } catch {
+      Taro.showToast({ title: "复制失败", icon: "none" });
+    }
+  };
+
+  /** t19：上下文窗口计量（agent_update 全量 snapshot.lastUsage 提供）。 */
+  const usage = snapshot?.usage ?? null;
+  const contextPercent =
+    usage?.contextWindowMaxTokens && usage.contextWindowUsedTokens !== undefined
+      ? Math.min(
+          100,
+          Math.round((usage.contextWindowUsedTokens / usage.contextWindowMaxTokens) * 100),
+        )
+      : null;
 
   const labels = displayLabels(snapshot?.labels);
 
@@ -587,9 +745,60 @@ export default function AgentPage() {
                 添加
               </Button>
             </View>
+            {/* t19：重命名（update_agent name） */}
+            <View className="label-editor-title rename-title">名称</View>
+            <View className="label-editor-row">
+              <Input
+                className="label-input"
+                value={nameDraft}
+                onInput={(e) => setNameDraft(e.detail.value)}
+                onConfirm={() => void saveName()}
+                placeholder="会话名称"
+                placeholderClass="composer-placeholder"
+                confirmType="done"
+              />
+              <Button
+                className="btn btn-mini label-add-btn"
+                disabled={labelSaving || !nameDraft.trim() || nameDraft.trim() === snapshot?.title}
+                onClick={() => void saveName()}
+              >
+                重命名
+              </Button>
+            </View>
             <View className="label-editor-done" onClick={() => setLabelEditing(false)}>
               收起
             </View>
+          </View>
+        ) : null}
+        {/* t19：subagents 轨道 */}
+        {subagentsOpen ? (
+          <View className="subagent-panel">
+            <View className="subagent-head">
+              <View className="subagent-title">子代理（{subagents.length}）</View>
+              <View className="subagent-close" onClick={() => setSubagentsOpen(false)}>
+                收起
+              </View>
+            </View>
+            {subagents.length === 0 ? (
+              <View className="faint subagent-empty">
+                暂无子代理。provider 发起 subagent 后会出现在这里。
+              </View>
+            ) : (
+              subagents.map((sub) => (
+                <View key={sub.id} className="subagent-row">
+                  <View className={`subagent-dot subagent-dot-${sub.status}`} />
+                  <View className="subagent-main">
+                    <View className="subagent-name">{sub.title ?? sub.id}</View>
+                    <View className="faint subagent-desc">
+                      {sub.subtitle ?? sub.description ?? sub.provider}
+                    </View>
+                  </View>
+                  <View className={`subagent-status subagent-status-${sub.status}`}>
+                    {SUBAGENT_STATUS_LABEL[sub.status]}
+                  </View>
+                </View>
+              ))
+            )}
           </View>
         ) : null}
         {entries.length === 0 ? (
@@ -629,6 +838,18 @@ export default function AgentPage() {
             </View>
           ) : null}
           {title ? <View className="faint composer-title">{title}</View> : null}
+          {/* t19：上下文窗口计量条（lastUsage；详情态 agent_update 推送提供） */}
+          {contextPercent !== null ? (
+            <View className="ctx-gauge">
+              <View className="ctx-gauge-bar">
+                <View
+                  className={`ctx-gauge-fill ${contextPercent >= 80 ? "ctx-gauge-hot" : ""}`}
+                  style={{ width: `${contextPercent}%` }}
+                />
+              </View>
+              <View className="faint num ctx-gauge-text">{contextPercent}%</View>
+            </View>
+          ) : null}
           <View className="composer-actions">
             {status === "running" && !snapshot?.archivedAt ? (
               <Button
@@ -639,6 +860,22 @@ export default function AgentPage() {
                 {cancelling ? "中断中…" : "中断"}
               </Button>
             ) : null}
+            {/* t19：运行中发送行为切换（steer=插入 / interrupt=打断后投递） */}
+            {status === "running" && !snapshot?.archivedAt ? (
+              <Button
+                className={`btn btn-mini action-btn ${interruptOnSend ? "btn-danger" : "btn-ghost"}`}
+                onClick={() => setInterruptOnSend((v) => !v)}
+              >
+                {interruptOnSend ? "发送:打断" : "发送:插入"}
+              </Button>
+            ) : null}
+            {/* t19：subagents 轨道入口 */}
+            <Button
+              className="btn btn-mini btn-ghost action-btn"
+              onClick={() => setSubagentsOpen((v) => !v)}
+            >
+              子代理{subagents.length > 0 ? `(${subagents.length})` : ""}
+            </Button>
             <Button
               className="btn btn-mini btn-ghost action-btn"
               disabled={labelSaving}
@@ -652,6 +889,13 @@ export default function AgentPage() {
               onClick={() => void toggleArchive()}
             >
               {snapshot?.archivedAt ? "恢复" : "归档"}
+            </Button>
+            {/* t19：导出（本地 markdown → 剪贴板） */}
+            <Button
+              className="btn btn-mini btn-ghost action-btn"
+              onClick={() => void exportTimeline()}
+            >
+              导出
             </Button>
             <Button
               className="btn btn-mini btn-danger action-btn"
@@ -686,6 +930,29 @@ export default function AgentPage() {
                 </View>
               </View>
             ))}
+          </ScrollView>
+        ) : null}
+        {/* t19：斜杠命令面板（输入 / 触发；list_commands 目录） */}
+        {draft.startsWith("/") && commands !== null && commands.length > 0 ? (
+          <ScrollView className="slash-panel" scrollY enhanced showScrollbar={false}>
+            {commands
+              .filter((cmd) =>
+                draft === "/" ? true : `/${cmd.name}`.startsWith(draft.split(" ")[0] ?? ""),
+              )
+              .slice(0, 8)
+              .map((cmd) => (
+                <View
+                  key={cmd.name}
+                  className="slash-row"
+                  onClick={() => setDraft(`/${cmd.name} `)}
+                >
+                  <View className="slash-name num">{`/${cmd.name}`}</View>
+                  <View className="slash-desc">
+                    {cmd.description}
+                    {cmd.argumentHint ? ` ${cmd.argumentHint}` : ""}
+                  </View>
+                </View>
+              ))}
           </ScrollView>
         ) : null}
         <View className="composer-row">

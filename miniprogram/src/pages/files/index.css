@@ -216,3 +216,73 @@
   align-self: center;
   min-width: 320rpx;
 }
+
+/* ---------- t19：编辑器（fs.file.write 写回） ---------- */
+
+.crumbs-add {
+  margin-left: auto;
+  color: var(--brand);
+  font-size: 32rpx;
+  font-weight: 700;
+  padding: 0 12rpx;
+}
+
+.preview-edit {
+  min-width: 200rpx;
+}
+
+.editor-overlay {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-banner {
+  background: var(--brand-fade);
+  color: var(--text-1);
+  font-size: 24rpx;
+  padding: 12rpx 24rpx;
+}
+
+.editor-error {
+  margin: 12rpx 24rpx 0;
+}
+
+.editor-textarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--text-1);
+  background: var(--bg);
+  text-align: left;
+}
+
+.editor-foot {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--divider);
+  background: var(--card);
+}
+
+.editor-state {
+  flex: 1;
+}
+
+.editor-save {
+  min-width: 240rpx;
+}
+
+.crumbs-term {
+  margin-left: 4rpx;
+  color: var(--text-2);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 24rpx;
+  padding: 0 12rpx;
+}

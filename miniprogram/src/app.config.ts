@@ -6,6 +6,8 @@ export default defineAppConfig({
     "pages/agent/index",
     "pages/create/index",
     "pages/files/index",
+    "pages/changes/index",
+    "pages/terminal/index",
     "pages/pair/index",
     "pages/settings/index",
     "pages/schedules/index",

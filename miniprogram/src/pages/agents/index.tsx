@@ -41,8 +41,8 @@ function useConnectionState() {
 
 /** attention 红点集合订阅（t18：推送到达 → 列表高亮）。 */
 function useAttentionIds(): Set<string> {
-  const [ids, setIds] = useState<Set<string>>(() =>
-    new Set(attentionStore.getSnapshot().map((e) => e.agentId)),
+  const [ids, setIds] = useState<Set<string>>(
+    () => new Set(attentionStore.getSnapshot().map((e) => e.agentId)),
   );
   useEffect(
     () =>
@@ -153,12 +153,16 @@ export default function AgentsPage() {
           <View className="ws-bar-value">{workspace?.label ?? "选择工作区"}</View>
           <View className="ws-bar-arrow">▾</View>
         </View>
-        <View
-          className="tool-entry"
-          onClick={() => Taro.navigateTo({ url: "/pages/files/index" })}
-        >
+        <View className="tool-entry" onClick={() => Taro.navigateTo({ url: "/pages/files/index" })}>
           <View className="tool-entry-icon">📂</View>
           <View className="tool-entry-text">文件</View>
+        </View>
+        <View
+          className="tool-entry"
+          onClick={() => Taro.navigateTo({ url: "/pages/changes/index" })}
+        >
+          <View className="tool-entry-icon">🔀</View>
+          <View className="tool-entry-text">改动</View>
         </View>
         <View
           className="tool-entry"
@@ -207,7 +211,7 @@ export default function AgentsPage() {
           <View className="empty-desc">
             {filter === "archived"
               ? "在会话详情里归档的 agent 会出现在这里。"
-              : "点右上角\"新建\"在此设备上创建 agent。"}
+              : '点右上角"新建"在此设备上创建 agent。'}
           </View>
         </View>
       ) : (
