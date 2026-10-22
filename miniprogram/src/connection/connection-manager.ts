@@ -19,6 +19,7 @@ import { createRelayPlaintextSocket } from "./relay-transport";
 import { createWxSocket } from "./wx-socket";
 import type { AgentSnapshot, AgentStreamPayload, DaemonStatus, ServerInfo } from "./protocol-types";
 import { permissionStore } from "@/permission/permission-store";
+import { attentionStore } from "@/stores/attention-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 
 const STORAGE_KEY = "paseo_mp_connection";
@@ -211,6 +212,7 @@ class ConnectionManager {
           for (const listener of this.streamListeners) listener(payload);
         },
         onAgentUpdate: (update) => {
+          if (update.kind === "upsert") attentionStore.syncAgentSnapshot(update.agent);
           for (const listener of this.agentUpdateListeners) listener(update);
         },
         onPermissionRequest: (push) => {
@@ -218,6 +220,9 @@ class ConnectionManager {
         },
         onPermissionResolved: (push) => {
           permissionStore.handleResolved(push);
+        },
+        onAttention: (push) => {
+          attentionStore.handlePush(push);
         },
         onDisconnect: () => {
           this.setState({ status: "disconnected" });
@@ -247,10 +252,11 @@ class ConnectionManager {
     }
   }
 
-  /** 断开/连接失败时清理会话级状态（权限队列、工作区选择）。 */
+  /** 断开/连接失败时清理会话级状态（权限队列、attention、工作区选择）。 */
   private teardownSessionState(): void {
     permissionStore.bindSender(null);
     permissionStore.clearAll();
+    attentionStore.clearAll();
     workspaceStore.clear(false);
   }
 

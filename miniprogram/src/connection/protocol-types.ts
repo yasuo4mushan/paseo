@@ -24,6 +24,10 @@ export interface AgentSnapshot {
   lastUserMessageAt: string | null;
   archivedAt?: string | null;
   requiresAttention?: boolean;
+  /** messages.ts AgentListItemPayload.labels：t18 归档/标签用（内部 paseo.* 前缀不展示）。 */
+  labels?: Record<string, string>;
+  /** messages.ts AgentListItemPayload.attentionReason：finished | error | permission。 */
+  attentionReason?: "finished" | "error" | "permission" | null;
 }
 
 /** messages.ts: FetchAgentsResponseMessageSchema.payload.entries[i].agent 即 AgentSnapshot */
@@ -296,6 +300,98 @@ export interface CreateAgentOptions {
 /** hello 客户端类型枚举：messages.ts WSHelloMessageSchema.clientType */
 export type WsClientType = "mobile" | "browser" | "cli" | "mcp" | "hub";
 
+// --- t18：定时任务 / 脚本 / attention 推送 / 会话导入 / 归档标签（vendor 自 packages/protocol） ---
+
+/** protocol/schedule/types.ts ScheduleCadenceSchema */
+export type ScheduleCadence =
+  | { type: "every"; everyMs: number }
+  | { type: "cron"; expression: string; timezone?: string };
+
+/** protocol/schedule/types.ts ScheduleStatusSchema */
+export type ScheduleStatus = "active" | "paused" | "completed";
+
+/** protocol/schedule/rpc-schemas.ts ScheduleCreateTargetSchema（self 是老别名，保解析） */
+export type ScheduleCreateTarget =
+  | { type: "self" | "agent"; agentId: string }
+  | {
+      type: "new-agent";
+      config: {
+        provider: string;
+        cwd: string;
+        modeId?: string;
+        model?: string;
+        archiveOnFinish?: boolean;
+        isolation?: "local" | "worktree";
+        title?: string | null;
+      };
+    };
+
+/** protocol/schedule/types.ts ScheduleRunSchema */
+export interface ScheduleRun {
+  id: string;
+  scheduledFor: string;
+  startedAt: string;
+  endedAt: string | null;
+  status: "running" | "succeeded" | "failed";
+  agentId: string | null;
+  output: string | null;
+  error: string | null;
+}
+
+/** protocol/schedule/types.ts ScheduleSummarySchema（StoredSchedule 去掉 runs） */
+export interface ScheduleSummary {
+  id: string;
+  name: string | null;
+  prompt: string;
+  cadence: ScheduleCadence;
+  target: ScheduleCreateTarget;
+  status: ScheduleStatus;
+  createdAt: string;
+  updatedAt: string;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  pausedAt: string | null;
+  expiresAt: string | null;
+  maxRuns: number | null;
+  runs?: ScheduleRun[];
+}
+
+/** messages.ts AgentAttentionRequiredMessageSchema.payload（推送，legacy 客户端免订阅） */
+export interface AttentionPush {
+  agentId: string;
+  reason: "finished" | "error" | "permission";
+  timestamp: string;
+  shouldNotify: boolean;
+  notification?: { title: string; body: string };
+}
+
+/** messages.ts RecentProviderSessionDescriptorPayloadSchema */
+export interface RecentProviderSession {
+  providerId: string;
+  providerLabel: string;
+  providerHandleId: string;
+  cwd: string;
+  title: string | null;
+  firstPromptPreview: string | null;
+  lastPromptPreview: string | null;
+  lastActivityAt: string;
+}
+
+/** messages.ts WorkspaceScriptPayloadSchema（子集：状态展示需要的字段） */
+export interface WorkspaceScriptInfo {
+  scriptName: string;
+  type: "script" | "service";
+  hostname: string;
+  port: number | null;
+  proxyUrl: string | null;
+  publicProxyUrl: string | null;
+  lifecycle: "running" | "stopped";
+  health: "healthy" | "unhealthy" | null;
+  exitCode: number | null;
+  terminalId: string | null;
+}
+
+
 /** hello 被拒原因：messages.ts WSHelloRejectedMessageSchema.reason */
 export type HelloRejectedReason =
   | "password_required"
@@ -321,7 +417,18 @@ export type WsOutboundEnvelope =
 
 /** MVP 用到的 request 消息（requestId 由 DaemonConnection 生成） */
 export type SessionRequestMessage =
-  | { type: "fetch_agents_request"; requestId: string; subscribe?: Record<string, never> }
+  | {
+      type: "fetch_agents_request";
+      requestId: string;
+      /**
+       * t18：带 subscribe 建立 agent 目录订阅 → daemon 持续推送 agent_update
+       * （messages.ts FetchAgentsRequestMessageSchema.subscribe；不传则 daemon
+       * 只回快照、不推送——t15 起的隐性缺口，归档/attention 红点依赖此修复）。
+       * subscriptionId 传上次返回值以复用订阅。
+       */
+      subscribe?: { subscriptionId?: string };
+      filter?: { includeArchived?: boolean };
+    }
   | {
       type: "fetch_agent_timeline_request";
       requestId: string;
@@ -369,6 +476,107 @@ export type SessionRequestMessage =
     }
   | { type: "cancel_agent_request"; agentId: string; requestId: string }
   | { type: "delete_agent_request"; agentId: string; requestId: string }
+  | {
+      /** t18：归档 agent；应答 agent_archived 推送（requestId 关联）。 */
+      type: "archive_agent_request";
+      agentId: string;
+      requestId: string;
+    }
+  | {
+      /** t18：恢复归档 agent（unarchive 语义，见 app archived-agent-callout）。 */
+      type: "refresh_agent_request";
+      agentId: string;
+      requestId: string;
+    }
+  | {
+      /** t18：改名/打标签；应答 update_agent_response。 */
+      type: "update_agent_request";
+      agentId: string;
+      name?: string;
+      labels?: Record<string, string>;
+      requestId: string;
+    }
+  | {
+      /** t18：清除 attention（红点消除）；应答 clear_agent_attention_response。 */
+      type: "clear_agent_attention";
+      agentId: string | string[];
+      requestId: string;
+    }
+  | {
+      /** t18：provider 会话列表（导入已有会话用）。 */
+      type: "fetch_recent_provider_sessions_request";
+      cwd?: string;
+      providers?: string[];
+      since?: string;
+      limit?: number;
+      query?: string;
+      requestId: string;
+    }
+  | {
+      /** t18：导入 provider 会话；应答 status 推送 agent_resumed/agent_create_failed。 */
+      type: "import_agent_request";
+      provider?: string;
+      providerId?: string;
+      sessionId?: string;
+      providerHandleId?: string;
+      cwd?: string;
+      workspaceId?: string;
+      labels?: Record<string, string>;
+      requestId: string;
+    }
+  | {
+      /** t18：注册本机目录为项目工作区（新建工作区最小路径）。 */
+      type: "open_project_request";
+      cwd: string;
+      requestId: string;
+    }
+  | {
+      /** t18：GitHub 仓库 clone 到设备目录（repo 形如 owner/name 或完整 URL）。 */
+      type: "project.github.clone.request";
+      repo: string;
+      cloneProtocol?: "https" | "ssh";
+      targetDirectory: string;
+      requestId: string;
+    }
+  | {
+      /** t18：workspace scripts（package.json scripts 目录）。 */
+      type: "workspace.script.list.request";
+      workspaceId: string;
+      requestId: string;
+    }
+  | {
+      type: "workspace.script.start.request";
+      workspaceId: string;
+      scriptName: string;
+      requestId: string;
+    }
+  | {
+      type: "workspace.script.stop.request";
+      workspaceId: string;
+      scriptName: string;
+      requestId: string;
+    }
+  | {
+      /** t18：定时任务（schedule/rpc-schemas.ts，slash 命名族）。 */
+      type: "schedule/list";
+      requestId: string;
+    }
+  | {
+      type: "schedule/create";
+      prompt: string;
+      name?: string;
+      cadence: ScheduleCadence;
+      target: ScheduleCreateTarget;
+      maxRuns?: number;
+      expiresAt?: string;
+      runOnCreate?: boolean;
+      requestId: string;
+    }
+  | { type: "schedule/pause"; scheduleId: string; requestId: string }
+  | { type: "schedule/resume"; scheduleId: string; requestId: string }
+  | { type: "schedule/delete"; scheduleId: string; requestId: string }
+  | { type: "schedule/run-once"; scheduleId: string; requestId: string }
+  | { type: "schedule/logs"; scheduleId: string; requestId: string }
   | {
       /** t17：目录列表走 mode:"list"（纯 JSON 响应）。 */
       type: "file_explorer_request";
@@ -495,7 +703,28 @@ export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
     lastUserMessageAt: nullableStr(value.lastUserMessageAt),
     archivedAt: nullableStr(value.archivedAt),
     requiresAttention: bool(value.requiresAttention),
+    labels: parseLabels(value.labels),
+    attentionReason:
+      value.attentionReason === "finished" || value.attentionReason === "error"
+        ? value.attentionReason
+        : value.attentionReason === "permission"
+          ? "permission"
+          : null,
   };
+}
+
+/** labels 容错解析：仅保留 string→string；坏值丢弃（协议 Record<string,string>）。 */
+function parseLabels(value: unknown): Record<string, string> | undefined {
+  if (!isRecord(value)) return undefined;
+  const out: Record<string, string> = {};
+  let count = 0;
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === "string") {
+      out[key] = raw;
+      count += 1;
+    }
+  }
+  return count > 0 ? out : undefined;
 }
 
 export function parseTimelineItem(value: unknown): AgentTimelineItem {
@@ -985,4 +1214,262 @@ export function binaryFileKind(mime: string, encoding: string): FileReadResult["
     return "text";
   }
   return "binary";
+}
+
+// ---------------------------------------------------------------------------
+// t18：定时任务 / attention / 导入 / 脚本 / 项目注册 解析守卫
+// ---------------------------------------------------------------------------
+
+function parseCadence(value: unknown): ScheduleCadence | null {
+  if (!isRecord(value)) return null;
+  if (value.type === "every" && typeof value.everyMs === "number") {
+    return { type: "every", everyMs: value.everyMs };
+  }
+  if (value.type === "cron" && typeof value.expression === "string" && value.expression) {
+    const timezone = nullableStr(value.timezone);
+    return { type: "cron", expression: value.expression, ...(timezone ? { timezone } : {}) };
+  }
+  return null;
+}
+
+function parseScheduleTarget(value: unknown): ScheduleCreateTarget | null {
+  if (!isRecord(value)) return null;
+  if ((value.type === "agent" || value.type === "self") && typeof value.agentId === "string") {
+    return { type: value.type, agentId: value.agentId };
+  }
+  if (value.type === "new-agent" && isRecord(value.config)) {
+    const provider = str(value.config.provider);
+    const cwd = str(value.config.cwd);
+    if (!provider || !cwd) return null;
+    return {
+      type: "new-agent",
+      config: {
+        provider,
+        cwd,
+        ...(str(value.config.modeId) ? { modeId: str(value.config.modeId) ?? "" } : {}),
+        ...(str(value.config.model) ? { model: str(value.config.model) ?? "" } : {}),
+      },
+    };
+  }
+  return null;
+}
+
+const SCHEDULE_STATUSES = new Set(["active", "paused", "completed"]);
+
+export function parseScheduleSummary(value: unknown): ScheduleSummary | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  const prompt = str(value.prompt);
+  const cadence = parseCadence(value.cadence);
+  const target = parseScheduleTarget(value.target);
+  if (!id || !prompt || !cadence || !target) return null;
+  const statusRaw = str(value.status);
+  // StoredSchedule（run-once/inspect 响应）带 runs；ScheduleSummary 不带。都兼容。
+  const runsRaw = Array.isArray(value.runs) ? value.runs : undefined;
+  return {
+    id,
+    name: nullableStr(value.name),
+    prompt,
+    cadence,
+    target,
+    status: statusRaw && SCHEDULE_STATUSES.has(statusRaw) ? (statusRaw as ScheduleStatus) : "active",
+    createdAt: str(value.createdAt) ?? "",
+    updatedAt: str(value.updatedAt) ?? "",
+    nextRunAt: nullableStr(value.nextRunAt),
+    lastRunAt: nullableStr(value.lastRunAt),
+    pausedAt: nullableStr(value.pausedAt),
+    expiresAt: nullableStr(value.expiresAt),
+    maxRuns: typeof value.maxRuns === "number" ? value.maxRuns : null,
+    ...(runsRaw
+      ? {
+          runs: runsRaw
+            .map(parseScheduleRun)
+            .filter((r): r is ScheduleRun => r !== null),
+        }
+      : {}),
+  };
+}
+
+export function parseScheduleRun(value: unknown): ScheduleRun | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  const status = str(value.status);
+  return {
+    id,
+    scheduledFor: str(value.scheduledFor) ?? "",
+    startedAt: str(value.startedAt) ?? "",
+    endedAt: nullableStr(value.endedAt),
+    status: status === "running" || status === "failed" ? status : "succeeded",
+    agentId: nullableStr(value.agentId),
+    output: nullableStr(value.output),
+    error: nullableStr(value.error),
+  };
+}
+
+/** schedule/list 与 schedule/logs 响应（payload.requestId 已由连接层关联）。 */
+export function parseScheduleListResponse(
+  payload: unknown,
+): { schedules: ScheduleSummary[]; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.schedules) ? payload.schedules : [];
+  return {
+    schedules: raw
+      .map(parseScheduleSummary)
+      .filter((s): s is ScheduleSummary => s !== null),
+    error: nullableStr(payload.error),
+  };
+}
+
+export function parseScheduleLogsResponse(
+  payload: unknown,
+): { runs: ScheduleRun[]; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.runs) ? payload.runs : [];
+  return {
+    runs: raw.map(parseScheduleRun).filter((r): r is ScheduleRun => r !== null),
+    error: nullableStr(payload.error),
+  };
+}
+
+/** schedule/create|pause|resume|run-once 响应：schedule 可空 + error。 */
+export function parseScheduleMutationResponse(
+  payload: unknown,
+): { schedule: ScheduleSummary | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  return {
+    schedule: parseScheduleSummary(payload.schedule),
+    error: nullableStr(payload.error),
+  };
+}
+
+export function parseScheduleDeleteResponse(
+  payload: unknown,
+): { scheduleId: string | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  return { scheduleId: nullableStr(payload.scheduleId), error: nullableStr(payload.error) };
+}
+
+/** agent_attention_required 推送 payload。 */
+export function parseAttentionPush(payload: unknown): AttentionPush | null {
+  if (!isRecord(payload)) return null;
+  const agentId = str(payload.agentId);
+  const reason = payload.reason;
+  if (!agentId) return null;
+  if (reason !== "finished" && reason !== "error" && reason !== "permission") return null;
+  const notification = isRecord(payload.notification)
+    ? {
+        title: str(payload.notification.title) ?? "",
+        body: str(payload.notification.body) ?? "",
+      }
+    : undefined;
+  return {
+    agentId,
+    reason,
+    timestamp: str(payload.timestamp) ?? "",
+    shouldNotify: bool(payload.shouldNotify),
+    ...(notification ? { notification } : {}),
+  };
+}
+
+/** fetch_recent_provider_sessions_response payload。 */
+export function parseRecentProviderSessionsResponse(
+  payload: unknown,
+): { entries: RecentProviderSession[]; providerErrors: Array<{ provider: string; message: string }> } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.entries) ? payload.entries : [];
+  const entries = raw
+    .map((value): RecentProviderSession | null => {
+      if (!isRecord(value)) return null;
+      const providerHandleId = str(value.providerHandleId);
+      if (!providerHandleId) return null;
+      return {
+        providerId: str(value.providerId) ?? "",
+        providerLabel: str(value.providerLabel) ?? str(value.providerId) ?? "",
+        providerHandleId,
+        cwd: str(value.cwd) ?? "",
+        title: nullableStr(value.title),
+        firstPromptPreview: nullableStr(value.firstPromptPreview),
+        lastPromptPreview: nullableStr(value.lastPromptPreview),
+        lastActivityAt: str(value.lastActivityAt) ?? "",
+      };
+    })
+    .filter((e): e is RecentProviderSession => e !== null);
+  const errorsRaw = Array.isArray(payload.providerErrors) ? payload.providerErrors : [];
+  const providerErrors = errorsRaw
+    .map((value): { provider: string; message: string } | null => {
+      if (!isRecord(value)) return null;
+      const provider = str(value.provider);
+      if (!provider) return null;
+      return { provider, message: str(value.message) ?? "" };
+    })
+    .filter((e): e is { provider: string; message: string } => e !== null);
+  return { entries, providerErrors };
+}
+
+/** workspace.script.list/start/stop 响应（script 字段可选；list 走 scripts 数组）。 */
+export function parseWorkspaceScriptResponse(
+  payload: unknown,
+): { scripts: WorkspaceScriptInfo[]; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.scripts)
+    ? payload.scripts
+    : payload.script && isRecord(payload.script)
+      ? [payload.script]
+      : [];
+  const scripts = raw
+    .map((value): WorkspaceScriptInfo | null => {
+      if (!isRecord(value)) return null;
+      const scriptName = str(value.scriptName);
+      if (!scriptName) return null;
+      const lifecycleRaw = str(value.lifecycle);
+      const healthRaw = str(value.health);
+      return {
+        scriptName,
+        type: str(value.type) === "script" ? "script" : "service",
+        hostname: str(value.hostname) ?? "",
+        port: typeof value.port === "number" ? value.port : null,
+        proxyUrl: nullableStr(value.proxyUrl ?? value.localProxyUrl),
+        publicProxyUrl: nullableStr(value.publicProxyUrl),
+        lifecycle: lifecycleRaw === "stopped" ? "stopped" : "running",
+        health: healthRaw === "healthy" || healthRaw === "unhealthy" ? healthRaw : null,
+        exitCode: typeof value.exitCode === "number" ? value.exitCode : null,
+        terminalId: nullableStr(value.terminalId),
+      };
+    })
+    .filter((s): s is WorkspaceScriptInfo => s !== null);
+  return { scripts, error: nullableStr(payload.error) };
+}
+
+/** open_project_response payload（注册目录 → 工作区）。 */
+export function parseOpenProjectResponse(
+  payload: unknown,
+): { workspace: WorkspaceDescriptor | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  return {
+    workspace: parseWorkspaceDescriptor(payload.workspace),
+    error: nullableStr(payload.error),
+  };
+}
+
+/** project.github.clone.response payload。 */
+export function parseGithubCloneResponse(
+  payload: unknown,
+): { checkoutPath: string | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  return { checkoutPath: nullableStr(payload.checkoutPath), error: nullableStr(payload.error) };
+}
+
+/** update_agent_response payload。 */
+export function parseUpdateAgentResponse(
+  payload: unknown,
+): { agentId: string; accepted: boolean; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const requestId = str(payload.requestId);
+  if (!requestId) return null;
+  return {
+    agentId: str(payload.agentId) ?? "",
+    accepted: bool(payload.accepted),
+    error: nullableStr(payload.error),
+  };
 }

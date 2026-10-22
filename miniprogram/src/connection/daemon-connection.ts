@@ -19,6 +19,7 @@ import {
   binaryFileKind,
   parseAgentSnapshot,
   parseAgentStreamPayload,
+  parseAttentionPush,
   parseCreateAgentStatusPayload,
   parseDaemonStatusPayload,
   parseFetchAgentsResponse,
@@ -26,16 +27,26 @@ import {
   parseFetchWorkspacesResponse,
   parseFileExplorerResponse,
   parseFileUploadResponse,
+  parseGithubCloneResponse,
   parseListAvailableProvidersResponse,
+  parseOpenProjectResponse,
   parsePermissionRequestPush,
   parsePermissionResolvedPush,
   parseProviderModelsResponse,
   parseProviderModesResponse,
+  parseRecentProviderSessionsResponse,
+  parseScheduleDeleteResponse,
+  parseScheduleListResponse,
+  parseScheduleLogsResponse,
+  parseScheduleMutationResponse,
   parseSendAgentMessageResponse,
   parseServerInfoPayload,
+  parseUpdateAgentResponse,
+  parseWorkspaceScriptResponse,
   type AgentSnapshot,
   type AgentStreamPayload,
   type AgentTimelineEntry,
+  type AttentionPush,
   type CreateAgentOptions,
   type DaemonStatus,
   type FetchWorkspacesResponse,
@@ -48,9 +59,15 @@ import {
   type ProviderAvailability,
   type ProviderModelDefinition,
   type ProviderMode,
+  type RecentProviderSession,
+  type ScheduleCadence,
+  type ScheduleCreateTarget,
+  type ScheduleRun,
+  type ScheduleSummary,
   type ServerInfo,
   type SessionRequestMessage,
   type UploadedFileAttachment,
+  type WorkspaceScriptInfo,
   type WsClientType,
 } from "./protocol-types";
 import {
@@ -89,6 +106,8 @@ export interface DaemonConnectionEvents {
   onPermissionRequest?: (push: PermissionRequestPush) => void;
   /** daemon 推送权限已解决（本端或其他端已回应）。 */
   onPermissionResolved?: (push: PermissionResolvedPush) => void;
+  /** t18：daemon 推送 agent_attention_required（legacy 客户端免订阅）。 */
+  onAttention?: (push: AttentionPush) => void;
   onDisconnect?: (code: number, reason: string) => void;
 }
 
@@ -140,6 +159,11 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
+/** status 推送 payload 里的 error 字段容错读取（t18 导入/恢复共用）。 */
+function strError(value: unknown): string | null {
+  return typeof value === "string" && value ? value : null;
+}
+
 /** 目录排序：目录在前，同级按名称不区分大小写（对齐 app 文件浏览器展示习惯）。 */
 function sortDirectoryEntries(entries: FileExplorerEntry[]): FileExplorerEntry[] {
   return [...entries].sort((a, b) => {
@@ -170,6 +194,8 @@ export class DaemonConnection {
   }> = [];
   private closeReason: { code: number; reason: string } | null = null;
   private lastError: string | null = null;
+  /** agent 目录订阅 id（fetch_agents subscribe 建立；后续 fetch 复用以免叠加订阅）。 */
+  private agentsSubscriptionId: string | null = null;
 
   constructor(
     portFactory: PlaintextPortFactory,
@@ -392,6 +418,13 @@ export class DaemonConnection {
       // requestId 是权限请求 id，通常没有对应 pending；继续走通用分发也无副作用
     }
 
+    // t18：attention 推送（legacy 客户端免订阅，服务端 wantsEvent 直接放行）。
+    if (message.type === "agent_attention_required") {
+      const push = parseAttentionPush(message.payload);
+      if (push) this.events.onAttention?.(push);
+      return;
+    }
+
     // t17：file_explorer_response 只服务二进制读取等待者——
     // acceptBinary 成功路径没有 JSON 响应（daemon 只发帧），这里只会收到
     // 错误响应或无二进制通道的 legacy 内容响应。
@@ -452,12 +485,20 @@ export class DaemonConnection {
     });
   }
 
-  /** 拉取 agent 列表。 */
-  async fetchAgents(): Promise<AgentSnapshot[]> {
-    const response = await this.request<{ type: string; payload: unknown }>({
+  /** 拉取 agent 列表（t18：可选包含归档项 + 建立 agent_update 订阅）。 */
+  async fetchAgents(options?: { includeArchived?: boolean }): Promise<AgentSnapshot[]> {
+    const subscribe = {
+      ...(this.agentsSubscriptionId ? { subscriptionId: this.agentsSubscriptionId } : {}),
+    };
+    const response = await this.request<
+      { type: string; payload: { requestId: string; subscriptionId?: string } }
+    >({
       type: "fetch_agents_request",
+      subscribe,
+      ...(options?.includeArchived ? { filter: { includeArchived: true } } : {}),
     });
     const parsed = parseFetchAgentsResponse(response.payload);
+    if (parsed?.subscriptionId) this.agentsSubscriptionId = parsed.subscriptionId;
     return parsed?.agents ?? [];
   }
 
@@ -596,6 +637,258 @@ export class DaemonConnection {
     if (typeof payload?.agentId === "string" && payload.agentId !== agentId) {
       throw new Error("删除响应的 agentId 不匹配");
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // t18：归档/标签 / attention 清除 / 会话导入 / 项目注册 / 脚本 / 定时任务
+  // ---------------------------------------------------------------------------
+
+  /** 归档 agent（archive_agent_request；应答 agent_archived 推送，requestId 关联）。 */
+  async archiveAgent(agentId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "archive_agent_request",
+      agentId,
+    });
+    const payload = response.payload as { agentId?: unknown; error?: unknown };
+    if (typeof payload?.agentId === "string" && payload.agentId !== agentId) {
+      throw new Error("归档响应的 agentId 不匹配");
+    }
+    if (typeof payload?.error === "string" && payload.error) throw new Error(payload.error);
+  }
+
+  /**
+   * 恢复归档 agent（refresh_agent_request；unarchive 语义，app archived-agent-callout 同款）。
+   * 应答是 status 推送 agent_refreshed / agent_create_failed（requestId 关联）。
+   */
+  async refreshAgent(agentId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "refresh_agent_request",
+      agentId,
+    });
+    const payload = response.payload as { status?: unknown; error?: unknown };
+    if (payload?.status === "agent_create_failed") {
+      throw new Error(strError(payload.error) ?? "恢复失败");
+    }
+  }
+
+  /** 改名 / 打标签（update_agent_request → update_agent_response）。labels 为全量替换。 */
+  async updateAgent(
+    agentId: string,
+    input: { name?: string; labels?: Record<string, string> },
+  ): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "update_agent_request",
+      agentId,
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.labels !== undefined ? { labels: input.labels } : {}),
+    });
+    const parsed = parseUpdateAgentResponse(response.payload);
+    if (!parsed) throw new Error("更新响应解析失败");
+    if (!parsed.accepted) throw new Error(parsed.error ?? "更新被拒绝");
+  }
+
+  /** 清除 attention（clear_agent_attention → clear_agent_attention_response）。 */
+  async clearAgentAttention(agentIds: string[]): Promise<void> {
+    if (agentIds.length === 0) return;
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "clear_agent_attention",
+      agentId: agentIds.length === 1 ? agentIds[0] : agentIds,
+    });
+    const payload = response.payload as { error?: unknown };
+    if (typeof payload?.error === "string" && payload.error) throw new Error(payload.error);
+  }
+
+  /** provider 会话列表（fetch_recent_provider_sessions_request）。 */
+  async fetchRecentProviderSessions(input?: {
+    cwd?: string;
+    limit?: number;
+  }): Promise<{
+    entries: RecentProviderSession[];
+    providerErrors: Array<{ provider: string; message: string }>;
+  }> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fetch_recent_provider_sessions_request",
+      ...(input?.cwd ? { cwd: input.cwd } : {}),
+      ...(input?.limit ? { limit: input.limit } : {}),
+    });
+    const parsed = parseRecentProviderSessionsResponse(response.payload);
+    if (!parsed) throw new Error("会话列表解析失败");
+    return parsed;
+  }
+
+  /**
+   * 导入 provider 会话（import_agent_request）。
+   * 应答是 status 推送 agent_resumed（成功）或 agent_create_failed（失败），requestId 关联。
+   */
+  async importAgent(input: {
+    provider: string;
+    providerHandleId: string;
+    cwd?: string;
+    workspaceId?: string;
+  }): Promise<AgentSnapshot> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "import_agent_request",
+      provider: input.provider,
+      providerHandleId: input.providerHandleId,
+      ...(input.cwd ? { cwd: input.cwd } : {}),
+      ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
+    });
+    const payload = response.payload as { status?: unknown; agent?: unknown; error?: unknown };
+    if (payload?.status === "agent_resumed") {
+      const agent = parseAgentSnapshot(payload.agent);
+      if (agent) return agent;
+    }
+    if (payload?.status === "agent_create_failed") {
+      throw new Error(strError(payload.error) ?? "导入失败");
+    }
+    throw new Error("导入响应解析失败");
+  }
+
+  /** 注册本机目录为项目工作区（open_project_request；新建工作区最小路径）。 */
+  async openProject(cwd: string): Promise<FetchWorkspacesResponse["workspaces"][number]> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      { type: "open_project_request", cwd },
+      30_000,
+    );
+    const parsed = parseOpenProjectResponse(response.payload);
+    if (!parsed) throw new Error("注册响应解析失败");
+    if (parsed.error || !parsed.workspace) throw new Error(parsed.error ?? "目录注册失败");
+    return parsed.workspace;
+  }
+
+  /** GitHub 仓库 clone（project.github.clone.request；clone 可能耗时，超时放宽）。 */
+  async cloneGithubProject(input: {
+    repo: string;
+    targetDirectory: string;
+    cloneProtocol?: "https" | "ssh";
+  }): Promise<{ checkoutPath: string }> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "project.github.clone.request",
+        repo: input.repo,
+        targetDirectory: input.targetDirectory,
+        ...(input.cloneProtocol ? { cloneProtocol: input.cloneProtocol } : {}),
+      },
+      180_000,
+    );
+    const parsed = parseGithubCloneResponse(response.payload);
+    if (!parsed) throw new Error("clone 响应解析失败");
+    if (parsed.error || !parsed.checkoutPath) throw new Error(parsed.error ?? "clone 失败");
+    return { checkoutPath: parsed.checkoutPath };
+  }
+
+  /** workspace scripts 列表（workspace.script.list.request）。 */
+  async listWorkspaceScripts(workspaceId: string): Promise<WorkspaceScriptInfo[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "workspace.script.list.request",
+      workspaceId,
+    });
+    const parsed = parseWorkspaceScriptResponse(response.payload);
+    if (!parsed) throw new Error("脚本列表解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.scripts;
+  }
+
+  /** 触发 workspace script（start/stop；输出走终端流，小程序只展示状态，见 t19 注记）。 */
+  async workspaceScriptAction(
+    action: "start" | "stop",
+    workspaceId: string,
+    scriptName: string,
+  ): Promise<WorkspaceScriptInfo | null> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type:
+        action === "start"
+          ? "workspace.script.start.request"
+          : "workspace.script.stop.request",
+      workspaceId,
+      scriptName,
+    });
+    const parsed = parseWorkspaceScriptResponse(response.payload);
+    if (!parsed) throw new Error("脚本操作解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.scripts[0] ?? null;
+  }
+
+  /** 定时任务列表（schedule/list）。 */
+  async listSchedules(): Promise<ScheduleSummary[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "schedule/list",
+    });
+    const parsed = parseScheduleListResponse(response.payload);
+    if (!parsed) throw new Error("定时任务列表解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.schedules;
+  }
+
+  /** 创建定时任务（schedule/create）。 */
+  async createSchedule(input: {
+    prompt: string;
+    name?: string;
+    cadence: ScheduleCadence;
+    target: ScheduleCreateTarget;
+    maxRuns?: number;
+    runOnCreate?: boolean;
+  }): Promise<ScheduleSummary> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "schedule/create",
+      prompt: input.prompt,
+      cadence: input.cadence,
+      target: input.target,
+      ...(input.name ? { name: input.name } : {}),
+      ...(input.maxRuns ? { maxRuns: input.maxRuns } : {}),
+      ...(input.runOnCreate ? { runOnCreate: true } : {}),
+    });
+    const parsed = parseScheduleMutationResponse(response.payload);
+    if (!parsed) throw new Error("创建响应解析失败");
+    if (parsed.error || !parsed.schedule) throw new Error(parsed.error ?? "创建失败");
+    return parsed.schedule;
+  }
+
+  /** 暂停/恢复定时任务（schedule/pause | resume）。 */
+  async setSchedulePaused(scheduleId: string, paused: boolean): Promise<ScheduleSummary> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: paused ? "schedule/pause" : "schedule/resume",
+      scheduleId,
+    });
+    const parsed = parseScheduleMutationResponse(response.payload);
+    if (!parsed) throw new Error("操作响应解析失败");
+    if (parsed.error || !parsed.schedule) throw new Error(parsed.error ?? "操作失败");
+    return parsed.schedule;
+  }
+
+  /** 手动触发一次（schedule/run-once；返回含 runs 的完整 schedule）。 */
+  async runScheduleOnce(scheduleId: string): Promise<ScheduleSummary> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      { type: "schedule/run-once", scheduleId },
+      30_000,
+    );
+    const parsed = parseScheduleMutationResponse(response.payload);
+    if (!parsed) throw new Error("触发响应解析失败");
+    if (parsed.error || !parsed.schedule) throw new Error(parsed.error ?? "触发失败");
+    return parsed.schedule;
+  }
+
+  /** 删除定时任务（schedule/delete）。 */
+  async deleteSchedule(scheduleId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "schedule/delete",
+      scheduleId,
+    });
+    const parsed = parseScheduleDeleteResponse(response.payload);
+    if (!parsed) throw new Error("删除响应解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+  }
+
+  /** 定时任务执行记录（schedule/logs）。 */
+  async scheduleLogs(scheduleId: string): Promise<ScheduleRun[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "schedule/logs",
+      scheduleId,
+    });
+    const parsed = parseScheduleLogsResponse(response.payload);
+    if (!parsed) throw new Error("执行记录解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.runs;
   }
 
   // ---------------------------------------------------------------------------
@@ -865,6 +1158,7 @@ export class DaemonConnection {
   close(code = 1000, reason = "client close"): void {
     this.failHelloWaiters(new Error("连接已关闭"));
     this.failAllPending(new Error("连接已关闭"));
+    this.agentsSubscriptionId = null; // 订阅随 socket 失效，重连后由下次 fetch 重建
     this.unbindSocket?.();
     this.unbindSocket = null;
     this.socket?.close(code, reason);
