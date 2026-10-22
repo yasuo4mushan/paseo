@@ -18,15 +18,31 @@
 import {
   parseAgentSnapshot,
   parseAgentStreamPayload,
+  parseCreateAgentStatusPayload,
   parseDaemonStatusPayload,
   parseFetchAgentsResponse,
   parseFetchTimelineResponse,
+  parseFetchWorkspacesResponse,
+  parseListAvailableProvidersResponse,
+  parsePermissionRequestPush,
+  parsePermissionResolvedPush,
+  parseProviderModelsResponse,
+  parseProviderModesResponse,
   parseSendAgentMessageResponse,
   parseServerInfoPayload,
   type AgentSnapshot,
   type AgentStreamPayload,
   type AgentTimelineEntry,
+  type CreateAgentOptions,
   type DaemonStatus,
+  type FetchWorkspacesResponse,
+  type PermissionRequestPush,
+  type PermissionResolvedPush,
+  type PermissionResponseMessage,
+  type PermissionResponsePayload,
+  type ProviderAvailability,
+  type ProviderModelDefinition,
+  type ProviderMode,
   type ServerInfo,
   type SessionRequestMessage,
   type WsClientType,
@@ -53,6 +69,10 @@ export interface DaemonConnectionEvents {
   onAgentUpdate?: (
     update: { kind: "upsert"; agent: AgentSnapshot } | { kind: "remove"; agentId: string },
   ) => void;
+  /** daemon 推送权限请求（agent_permission_request，legacy 客户端免订阅）。 */
+  onPermissionRequest?: (push: PermissionRequestPush) => void;
+  /** daemon 推送权限已解决（本端或其他端已回应）。 */
+  onPermissionResolved?: (push: PermissionResolvedPush) => void;
   onDisconnect?: (code: number, reason: string) => void;
 }
 
@@ -282,8 +302,10 @@ export class DaemonConnection {
             waiter.resolve(info);
           }
         }
+        return;
       }
-      return;
+      // 非 server_info 的 status（如 create_agent 的 agent_created/agent_create_failed）
+      // 走 requestId 关联，落到下方通用响应分发。
     }
 
     if (message.type === "agent_stream") {
@@ -305,6 +327,18 @@ export class DaemonConnection {
         this.events.onAgentUpdate?.({ kind: "remove", agentId: payload.agentId });
       }
       return;
+    }
+
+    if (message.type === "agent_permission_request") {
+      const push = parsePermissionRequestPush(message.payload);
+      if (push) this.events.onPermissionRequest?.(push);
+      return;
+    }
+
+    if (message.type === "agent_permission_resolved") {
+      const push = parsePermissionResolvedPush(message.payload);
+      if (push) this.events.onPermissionResolved?.(push);
+      // requestId 是权限请求 id，通常没有对应 pending；继续走通用分发也无副作用
     }
 
     // requestId 关联的 RPC 响应
@@ -402,6 +436,109 @@ export class DaemonConnection {
       type: "daemon.get_status.request",
     });
     return parseDaemonStatusPayload(response.payload);
+  }
+
+  /** 拉取工作区列表（fetch_workspaces_request；含无活跃工作区的项目父级）。 */
+  async fetchWorkspaces(): Promise<FetchWorkspacesResponse> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fetch_workspaces_request",
+    });
+    const parsed = parseFetchWorkspacesResponse(response.payload);
+    if (!parsed) throw new Error("工作区列表解析失败");
+    return parsed;
+  }
+
+  /** 可用 provider 列表（list_available_providers_request）。 */
+  async listAvailableProviders(): Promise<ProviderAvailability[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "list_available_providers_request",
+    });
+    return parseListAvailableProvidersResponse(response.payload) ?? [];
+  }
+
+  /** provider 的模型目录（list_provider_models_request；daemon 不含目录时返回空）。 */
+  async listProviderModels(provider: string, cwd?: string): Promise<ProviderModelDefinition[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "list_provider_models_request",
+      provider,
+      ...(cwd ? { cwd } : {}),
+    });
+    return parseProviderModelsResponse(response.payload) ?? [];
+  }
+
+  /** provider 的模式列表（list_provider_modes_request）。 */
+  async listProviderModes(provider: string, cwd?: string): Promise<ProviderMode[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "list_provider_modes_request",
+      provider,
+      ...(cwd ? { cwd } : {}),
+    });
+    return parseProviderModesResponse(response.payload) ?? [];
+  }
+
+  /**
+   * 创建 agent（create_agent_request）。
+   * 应答不是独立 RPC response，而是 status 推送（agent_created/agent_create_failed），
+   * requestId 在 payload 内，由通用 pending 关联回来后再解析。
+   */
+  async createAgent(options: CreateAgentOptions): Promise<AgentSnapshot> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "create_agent_request",
+      config: {
+        provider: options.provider,
+        cwd: options.cwd,
+        ...(options.model ? { model: options.model } : {}),
+        ...(options.modeId ? { modeId: options.modeId } : {}),
+      },
+      ...(options.workspaceId ? { workspaceId: options.workspaceId } : {}),
+      ...(options.initialPrompt ? { initialPrompt: options.initialPrompt } : {}),
+    });
+    const parsed = parseCreateAgentStatusPayload(response.payload);
+    if (!parsed) throw new Error("创建响应解析失败");
+    if (!parsed.ok) throw new Error(parsed.error);
+    return parsed.agent;
+  }
+
+  /** 中断 agent 当前 turn（cancel_agent_request）。 */
+  async cancelAgent(agentId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "cancel_agent_request",
+      agentId,
+    });
+    const payload = response.payload as { error?: unknown };
+    if (typeof payload?.error === "string" && payload.error) {
+      throw new Error(payload.error);
+    }
+  }
+
+  /** 删除 agent（delete_agent_request；应答是 agent_deleted 推送，requestId 关联）。 */
+  async deleteAgent(agentId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "delete_agent_request",
+      agentId,
+    });
+    const payload = response.payload as { agentId?: unknown };
+    if (typeof payload?.agentId === "string" && payload.agentId !== agentId) {
+      throw new Error("删除响应的 agentId 不匹配");
+    }
+  }
+
+  /**
+   * 回应权限请求（agent_permission_response，fire-and-forget）。
+   * requestId 是权限请求的 id；结果由 agent_permission_resolved 推送告知。
+   */
+  respondToPermission(
+    agentId: string,
+    permissionRequestId: string,
+    response: PermissionResponsePayload,
+  ): void {
+    const message: PermissionResponseMessage = {
+      type: "agent_permission_response",
+      agentId,
+      requestId: permissionRequestId,
+      response,
+    };
+    this.sendEnvelope({ type: "session", message });
   }
 
   close(code = 1000, reason = "client close"): void {
