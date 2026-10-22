@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import Taro, { useLoad } from "@tarojs/taro";
-import { Button, Input, ScrollView, View } from "@tarojs/components";
+import { Button, Image, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
-import type { AgentTimelineEntry, AgentTimelineItem } from "@/connection/protocol-types";
+import type {
+  AgentTimelineEntry,
+  AgentTimelineItem,
+  UploadedFileAttachment,
+} from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
+import { formatFileSize, mimeForFile } from "@/utils/files";
+import { previewImage, readLocalFileBytes } from "@/utils/file-ops";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
 import { formatClock } from "@/utils/time";
 import "./index.css";
@@ -13,15 +20,33 @@ interface DisplayEntry {
   seq: number;
   item: AgentTimelineItem;
   timestamp: string;
+  /** t17：user_message 气泡上的附件卡片（本地台账回配对）。 */
+  attachments?: AttachmentCard[];
 }
 
-function toDisplay(entry: AgentTimelineEntry): DisplayEntry {
+function toDisplay(agentId: string, entry: AgentTimelineEntry): DisplayEntry {
+  const attachments =
+    entry.item.type === "user_message" ? messageAttachmentStore.match(agentId, entry.item) : [];
   return {
     key: `s${entry.seqStart}`,
     seq: entry.seqStart,
     item: entry.item,
     timestamp: entry.timestamp,
+    ...(attachments.length > 0 ? { attachments } : {}),
   };
+}
+
+/** composer 待发送附件（t17）：选图/选文件 → 上传 → 随消息发送。 */
+interface PendingAttachment {
+  key: string;
+  fileName: string;
+  size: number;
+  mimeType: string;
+  localPath?: string;
+  status: "uploading" | "ready" | "error";
+  progress: number;
+  error?: string;
+  attachment?: UploadedFileAttachment;
 }
 
 const TOOL_STATUS_ICON: Record<string, string> = {
@@ -65,6 +90,37 @@ function TodoLines({ items }: { items: Array<{ text: string; completed: boolean 
   );
 }
 
+function AttachmentCards({ cards }: { cards: AttachmentCard[] }) {
+  if (cards.length === 0) return null;
+  return (
+    <View className="attach-cards">
+      {cards.map((card, i) =>
+        card.kind === "image" && card.localPath ? (
+          <Image
+            key={i}
+            className="attach-image"
+            src={card.localPath}
+            mode="aspectFill"
+            onClick={(e) => {
+              // 阻止冒泡：点缩略图全屏预览，不触发气泡其他行为
+              e.stopPropagation?.();
+              previewImage(card.localPath as string);
+            }}
+          />
+        ) : (
+          <View key={i} className="attach-file">
+            <View className="attach-file-icon">📎</View>
+            <View className="attach-file-main">
+              <View className="attach-file-name">{card.fileName}</View>
+              <View className="attach-file-size">{formatFileSize(card.size)}</View>
+            </View>
+          </View>
+        ),
+      )}
+    </View>
+  );
+}
+
 function BubbleContent({ item }: { item: AgentTimelineItem }) {
   switch (item.type) {
     case "tool_call":
@@ -95,6 +151,10 @@ function BubbleContent({ item }: { item: AgentTimelineItem }) {
   }
 }
 
+function createClientMessageId(): string {
+  return `mp-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
+}
+
 export default function AgentPage() {
   const [agentId, setAgentId] = useState("");
   const [title, setTitle] = useState("");
@@ -105,6 +165,7 @@ export default function AgentPage() {
   const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
   const bottomAnchor = useRef(`bottom-${Date.now()}`);
 
   useLoad((options) => {
@@ -126,6 +187,24 @@ export default function AgentPage() {
       setEntries((prev) => {
         const seen = new Set(prev.map((e) => e.key));
         const merged = [...prev];
+        // daemon 回显的 user_message 带 clientMessageId 时，取代同 id 的乐观本地条目
+        // （避免重复气泡；附件卡片由台账 match 挂到回显条目上）。
+        const confirmedIds = new Set(
+          incoming
+            .filter((e) => e.item.type === "user_message" && e.item.clientMessageId)
+            .map((e) => (e.item as { clientMessageId: string }).clientMessageId),
+        );
+        for (let i = merged.length - 1; i >= 0; i -= 1) {
+          const entry = merged[i];
+          if (
+            entry.key.startsWith("local-") &&
+            entry.item.type === "user_message" &&
+            entry.item.clientMessageId &&
+            confirmedIds.has(entry.item.clientMessageId)
+          ) {
+            merged.splice(i, 1);
+          }
+        }
         for (const entry of incoming) {
           if (!seen.has(entry.key)) merged.push(entry);
         }
@@ -147,7 +226,7 @@ export default function AgentPage() {
           Taro.setNavigationBarTitle({ title: navTitle });
         }
         const timeline = await conn.fetchAgentTimeline(agentId, 50);
-        appendEntries(timeline.map(toDisplay));
+        appendEntries(timeline.map((entry) => toDisplay(agentId, entry)));
         await conn.subscribeAgentTimelines([agentId]);
         setError("");
       } catch (err) {
@@ -158,16 +237,16 @@ export default function AgentPage() {
     const unsubscribeStream = connectionManager.onStreamEvent((payload) => {
       if (payload.agentId !== agentId) return;
       switch (payload.event.type) {
-        case "timeline":
-          appendEntries([
-            {
-              key: `s${payload.seq ?? Date.now()}`,
-              seq: payload.seq ?? Date.now(),
-              item: payload.event.item,
-              timestamp: payload.timestamp,
-            },
-          ]);
+        case "timeline": {
+          const display = toDisplay(agentId, {
+            item: payload.event.item,
+            timestamp: payload.timestamp,
+            seqStart: payload.seq ?? Date.now(),
+            seqEnd: payload.seq ?? Date.now(),
+          });
+          appendEntries([display]);
           break;
+        }
         case "turn_started":
           setStatus("running");
           break;
@@ -196,28 +275,131 @@ export default function AgentPage() {
     };
   }, [agentId]);
 
+  // ---- 附件选择与上传（t17） ----
+
+  const uploadPending = async (picked: { fileName: string; size: number; path: string }) => {
+    const key = `p-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const isImage = picked.fileName.match(/\.(png|jpe?g|gif|webp|bmp)$/i) !== null;
+    const pending: PendingAttachment = {
+      key,
+      fileName: picked.fileName,
+      size: picked.size,
+      mimeType: mimeForFile(picked.fileName),
+      localPath: isImage ? picked.path : undefined,
+      status: "uploading",
+      progress: 0,
+    };
+    setPendingFiles((prev) => [...prev, pending]);
+    try {
+      const bytes = await readLocalFileBytes(picked.path);
+      const conn = connectionManager.requireConnection();
+      const attachment = await conn.uploadFile({
+        fileName: picked.fileName,
+        mimeType: pending.mimeType,
+        bytes,
+        onProgress: (sent, total) => {
+          setPendingFiles((prev) =>
+            prev.map((f) =>
+              f.key === key
+                ? { ...f, progress: total > 0 ? Math.round((sent / total) * 100) : 0 }
+                : f,
+            ),
+          );
+        },
+      });
+      setPendingFiles((prev) =>
+        prev.map((f) => (f.key === key ? { ...f, status: "ready", progress: 100, attachment } : f)),
+      );
+    } catch (err) {
+      setPendingFiles((prev) =>
+        prev.map((f) =>
+          f.key === key
+            ? { ...f, status: "error", error: err instanceof Error ? err.message : String(err) }
+            : f,
+        ),
+      );
+    }
+  };
+
+  const pickAttachment = async () => {
+    try {
+      const { tapIndex } = await Taro.showActionSheet({ itemList: ["选择图片", "从聊天选择文件"] });
+      if (tapIndex === 0) {
+        const res = await Taro.chooseMedia({
+          count: 1,
+          mediaType: ["image"],
+          sizeType: ["compressed"],
+        });
+        const file = res.tempFiles?.[0];
+        if (!file) return;
+        await uploadPending({
+          fileName: file.tempFilePath.split("/").pop() ?? "image.png",
+          size: file.size ?? 0,
+          path: file.tempFilePath,
+        });
+      } else {
+        const res = await Taro.chooseMessageFile({ count: 1, type: "file" });
+        const file = res.tempFiles?.[0];
+        if (!file) return;
+        await uploadPending({ fileName: file.name, size: file.size, path: file.path });
+      }
+    } catch {
+      // 用户取消选择，静默
+    }
+  };
+
+  const removePending = (key: string) => {
+    setPendingFiles((prev) => prev.filter((f) => f.key !== key));
+  };
+
   const send = async () => {
     const text = draft.trim();
-    if (!text || !agentId || sending) return;
+    const hasAttachments = pendingFiles.some((f) => f.status === "ready");
+    if ((!text && !hasAttachments) || !agentId || sending) return;
+    if (pendingFiles.some((f) => f.status === "uploading")) {
+      Taro.showToast({ title: "附件还在上传，稍候", icon: "none" });
+      return;
+    }
+    if (pendingFiles.some((f) => f.status === "error")) {
+      Taro.showToast({ title: "有上传失败的附件，请移除", icon: "none" });
+      return;
+    }
     setSending(true);
     setDraft("");
+    const clientMessageId = createClientMessageId();
+    const cards: AttachmentCard[] = pendingFiles.map((f) => ({
+      kind: f.localPath ? "image" : "file",
+      fileName: f.fileName,
+      size: f.size,
+      ...(f.localPath ? { localPath: f.localPath } : {}),
+    }));
+    const attachments = pendingFiles
+      .map((f) => f.attachment)
+      .filter((a): a is UploadedFileAttachment => a !== undefined);
     // 乐观追加本地用户消息（daemon 回推的 user_message 由 seq 去重）
     const localSeq = 9_000_000_000 + (Date.now() % 1_000_000_000);
     setEntries((prev) => [
       ...prev,
       {
-        key: `local-${Date.now()}`,
+        key: `local-${clientMessageId}`,
         seq: localSeq,
-        item: { type: "user_message", text },
+        item: { type: "user_message", text, clientMessageId },
         timestamp: new Date().toISOString(),
+        ...(cards.length > 0 ? { attachments: cards } : {}),
       },
     ]);
     bottomAnchor.current = `bottom-${Date.now()}`;
     try {
       const conn = connectionManager.requireConnection();
-      const result = await conn.sendAgentMessage(agentId, text);
+      messageAttachmentStore.record(agentId, { clientMessageId, text, cards });
+      const result = await conn.sendAgentMessage(agentId, text || "（附件）", {
+        messageId: clientMessageId,
+        ...(attachments.length > 0 ? { attachments } : {}),
+      });
       if (!result.accepted) {
         setError(result.error ?? "消息未被接受");
+      } else {
+        setPendingFiles([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -252,12 +434,15 @@ export default function AgentPage() {
     setDeleting(true);
     try {
       await connectionManager.requireConnection().deleteAgent(agentId);
+      messageAttachmentStore.clear(agentId);
       Taro.navigateBack();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setDeleting(false);
     }
   };
+
+  const sendable = (draft.trim() || pendingFiles.some((f) => f.status === "ready")) && !sending;
 
   return (
     <View className="agent-page">
@@ -278,13 +463,18 @@ export default function AgentPage() {
         ) : (
           entries.map((entry) => (
             <View key={entry.key} className="timeline-item">
-              <View className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}>
+              <View
+                className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}
+              >
                 <View className={bubbleClass(entry.item)}>
+                  {entry.attachments ? <AttachmentCards cards={entry.attachments} /> : null}
                   <BubbleContent item={entry.item} />
                 </View>
               </View>
               {entry.timestamp ? (
-                <View className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}>
+                <View
+                  className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}
+                >
                   {formatClock(entry.timestamp)}
                 </View>
               ) : null}
@@ -318,7 +508,36 @@ export default function AgentPage() {
             </Button>
           </View>
         </View>
+        {pendingFiles.length > 0 ? (
+          <ScrollView className="attach-tray" scrollX enhanced showScrollbar={false}>
+            {pendingFiles.map((file) => (
+              <View key={file.key} className={`attach-chip attach-chip-${file.status}`}>
+                {file.status === "uploading" ? (
+                  <View className="attach-chip-progress num">{file.progress}%</View>
+                ) : (
+                  <View className="attach-chip-icon">
+                    {file.status === "error" ? "⚠️" : file.localPath ? "🖼" : "📎"}
+                  </View>
+                )}
+                <View className="attach-chip-main">
+                  <View className="attach-chip-name">{file.fileName}</View>
+                  <View className="attach-chip-size">
+                    {file.status === "error"
+                      ? (file.error ?? "上传失败").slice(0, 20)
+                      : formatFileSize(file.size)}
+                  </View>
+                </View>
+                <View className="attach-chip-remove" onClick={() => removePending(file.key)}>
+                  ✕
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
         <View className="composer-row">
+          <View className="attach-btn" onClick={() => void pickAttachment()}>
+            ＋
+          </View>
           <Input
             className="composer-input"
             value={draft}
@@ -330,8 +549,8 @@ export default function AgentPage() {
             confirmHold
           />
           <Button
-            className={`btn send-btn ${draft.trim() && !sending ? "send-ready" : ""}`}
-            disabled={sending || !draft.trim()}
+            className={`btn send-btn ${sendable ? "send-ready" : ""}`}
+            disabled={!sendable}
             onClick={() => void send()}
           >
             发送

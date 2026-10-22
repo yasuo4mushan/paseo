@@ -29,13 +29,21 @@ function installRandom(): void {
 function App({ children }: PropsWithChildren) {
   useEffect(() => {
     installRandom();
-    // 自动化验收桥（t16）：devtools automator 经 mini.evaluate(getApp()) 注入
-    // mock 权限推送，驱动全局弹层截图。生产环境无 UI 暴露面，仅内部对象引用。
-    const app = Taro.getApp?.() as unknown as {
-      __automation?: { permissionStore: typeof permissionStore };
-    } | undefined;
+    // 自动化验收桥（t16/t17）：devtools automator 经 mini.evaluate(getApp()) 注入
+    // mock 权限推送 / 读取下载与预览调用记录，驱动全局弹层截图与验收断言。
+    // 生产环境无 UI 暴露面，仅内部对象引用。
+    const app = Taro.getApp?.() as unknown as
+      | {
+          __automation?: {
+            permissionStore: typeof permissionStore;
+            downloadLog?: Array<Record<string, unknown>>;
+          };
+        }
+      | undefined;
     if (app && !app.__automation) {
-      app.__automation = { permissionStore };
+      app.__automation = { permissionStore, downloadLog: [] };
+    } else if (app?.__automation && !app.__automation.downloadLog) {
+      app.__automation.downloadLog = [];
     }
   }, []);
   return children;

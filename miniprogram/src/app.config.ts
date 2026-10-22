@@ -5,6 +5,7 @@ export default defineAppConfig({
     "pages/agents/index",
     "pages/agent/index",
     "pages/create/index",
+    "pages/files/index",
     "pages/pair/index",
     "pages/settings/index",
   ],
