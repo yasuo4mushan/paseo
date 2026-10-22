@@ -106,20 +106,21 @@ export function formatFileSize(size: number): string {
     : `${value >= 100 ? Math.round(value) : value.toFixed(1)} ${SIZE_UNITS[unit]}`;
 }
 
-/** 目录/文件列表的展示图标（emoji：无字体依赖，深浅色通用）。 */
-export function fileIcon(kind: "file" | "directory", name: string): string {
-  if (kind === "directory") return "📁";
+/**
+ * 目录/文件列表的线条图标名（t20 去 emoji）：调用方用 iconUrl() 渲染 PNG。
+ * 生成器见 scripts/gen-icons.mjs（file/project/image/archive）。
+ */
+export type FileIconName = "file" | "project" | "image" | "archive";
+
+export function fileIcon(kind: "file" | "directory", name: string): FileIconName {
+  if (kind === "directory") return "project";
   switch (fileCategory(name)) {
     case "image":
-      return "🖼";
-    case "document":
-      return "📄";
+      return "image";
     case "archive":
-      return "🗜";
-    case "text":
-      return "📝";
+      return "archive";
     default:
-      return "📦";
+      return "file";
   }
 }
 

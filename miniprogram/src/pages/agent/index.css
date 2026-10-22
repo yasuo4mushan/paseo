@@ -1,3 +1,7 @@
+/* 会话详情管理页（t20）：时间线/气泡/附件/斜杠面板样式已提取到 app.css 共享，
+ * 这里只留本页特有——composer 头部管理按钮排布、标签编辑器、子代理轨道、
+ * 上下文计量条、归档提示条。 */
+
 .agent-page {
   display: flex;
   flex-direction: column;
@@ -12,155 +16,7 @@
   box-sizing: border-box;
 }
 
-.error-in-timeline {
-  margin-bottom: 24rpx;
-}
-
-.timeline-item {
-  margin-bottom: 24rpx;
-  display: flex;
-  flex-direction: column;
-}
-
-.timeline-row {
-  display: flex;
-}
-
-.row-user {
-  justify-content: flex-end;
-}
-
-.timeline-clock {
-  font-size: 20rpx;
-  color: var(--text-3);
-  margin-top: 8rpx;
-  padding: 0 8rpx;
-}
-
-.timeline-clock.row-user {
-  text-align: right;
-}
-
-/* ---------- 气泡 ---------- */
-
-.bubble {
-  max-width: 78%;
-  border-radius: var(--radius);
-  padding: 20rpx 24rpx;
-  font-size: 28rpx;
-  word-break: break-all;
-}
-
-.bubble-user {
-  background: var(--brand);
-  color: var(--text-inverse);
-  border-top-right-radius: 4rpx;
-}
-
-.bubble-assistant {
-  background: var(--card);
-  color: var(--text-1);
-  border-top-left-radius: 4rpx;
-  box-shadow: var(--shadow-card);
-}
-
-.bubble-reasoning {
-  background: transparent;
-  color: var(--text-2);
-  border: 2rpx dashed var(--text-3);
-  font-size: 26rpx;
-}
-
-.bubble-tool {
-  background: var(--fill);
-  color: var(--text-1);
-  font-size: 24rpx;
-  max-width: 86%;
-}
-
-.bubble-todo {
-  background: var(--card);
-  color: var(--text-1);
-  border-top-left-radius: 4rpx;
-  box-shadow: var(--shadow-card);
-}
-
-.bubble-error {
-  background: var(--danger-fade);
-  color: var(--danger);
-}
-
-.bubble-notification {
-  background: var(--info-fade);
-  color: var(--text-1);
-}
-
-.bubble-plain {
-  background: var(--fill);
-  color: var(--text-2);
-  font-size: 24rpx;
-  text-align: center;
-  max-width: 100%;
-}
-
-.bubble-text {
-  white-space: pre-wrap;
-}
-
-/* 工具调用 */
-
-.tool-head {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
-
-.tool-icon {
-  margin-right: 10rpx;
-}
-
-.tool-name {
-  font-variant-numeric: tabular-nums;
-}
-
-.tool-summary {
-  margin-top: 8rpx;
-  color: var(--text-2);
-}
-
-.tool-error {
-  margin-top: 8rpx;
-  color: var(--danger);
-}
-
-/* todo */
-
-.todo-line {
-  display: flex;
-  align-items: flex-start;
-  padding: 4rpx 0;
-}
-
-.todo-check {
-  color: var(--brand);
-  margin-right: 12rpx;
-  flex-shrink: 0;
-}
-
-.todo-done .todo-check {
-  color: var(--brand);
-}
-
-.todo-done .todo-text {
-  color: var(--text-3);
-  text-decoration: line-through;
-}
-
-.todo-text {
-  flex: 1;
-}
-
-/* ---------- 输入区 ---------- */
+/* ---------- composer 头部（管理按钮排布） ---------- */
 
 .composer {
   background: var(--card);
@@ -199,24 +55,6 @@
   border-width: 2rpx;
 }
 
-.composer-row {
-  display: flex;
-  align-items: center;
-}
-
-.composer-input {
-  flex: 1;
-  background: var(--fill);
-  border-radius: var(--radius-round);
-  padding: 14rpx 28rpx;
-  font-size: 28rpx;
-  color: var(--text-1);
-}
-
-.composer-placeholder {
-  color: var(--text-3);
-}
-
 .send-btn {
   margin-left: 16rpx;
   background: var(--fill);
@@ -237,151 +75,6 @@
 .send-btn[disabled] {
   background: var(--fill) !important;
   color: var(--text-3) !important;
-}
-
-.timeline-bottom {
-  height: 8rpx;
-}
-
-/* ---------- t17 附件 ---------- */
-
-/* 气泡内附件卡片 */
-.attach-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
-}
-
-.attach-image {
-  width: 240rpx;
-  height: 240rpx;
-  border-radius: var(--radius);
-  background: var(--fill);
-}
-
-.attach-file {
-  display: flex;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.12);
-  border-radius: var(--radius);
-  padding: 14rpx 20rpx;
-}
-
-.bubble-assistant .attach-file,
-.bubble-reasoning .attach-file {
-  background: var(--fill);
-}
-
-.attach-file-icon {
-  font-size: 32rpx;
-  margin-right: 16rpx;
-}
-
-.attach-file-main {
-  min-width: 0;
-}
-
-.attach-file-name {
-  font-size: 24rpx;
-  max-width: 320rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.attach-file-size {
-  font-size: 20rpx;
-  opacity: 0.75;
-  margin-top: 2rpx;
-}
-
-/* composer 待发送附件托盘 */
-.attach-tray {
-  white-space: nowrap;
-  margin: 16rpx 0 4rpx;
-  width: 100%;
-}
-
-.attach-chip {
-  display: inline-flex;
-  align-items: center;
-  background: var(--fill);
-  border-radius: var(--radius);
-  padding: 14rpx 20rpx;
-  margin-right: 16rpx;
-  max-width: 420rpx;
-}
-
-.attach-chip-ready {
-  background: var(--brand-fade);
-}
-
-.attach-chip-error {
-  background: var(--danger-fade);
-}
-
-.attach-chip-icon {
-  font-size: 30rpx;
-  margin-right: 12rpx;
-}
-
-.attach-chip-progress {
-  font-size: 24rpx;
-  color: var(--brand);
-  margin-right: 12rpx;
-  font-weight: 600;
-}
-
-.attach-chip-main {
-  min-width: 0;
-}
-
-.attach-chip-name {
-  font-size: 24rpx;
-  color: var(--text-1);
-  max-width: 240rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.attach-chip-size {
-  font-size: 20rpx;
-  color: var(--text-2);
-  margin-top: 2rpx;
-}
-
-.attach-chip-remove {
-  color: var(--text-3);
-  font-size: 28rpx;
-  padding: 4rpx 8rpx 4rpx 20rpx;
-}
-
-/* composer ＋ 按钮 */
-.attach-btn {
-  width: 68rpx;
-  height: 68rpx;
-  border-radius: 50%;
-  background: var(--fill);
-  color: var(--text-2);
-  font-size: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-right: 16rpx;
-  line-height: 1;
-  padding-bottom: 4rpx;
-  box-sizing: border-box;
-}
-
-.attach-btn:active {
-  background: var(--divider);
-}
-
-.composer-row .composer-input {
-  width: auto;
 }
 
 /* ---------- t18：归档提示条 + 标签编辑器 ---------- */
@@ -445,6 +138,8 @@
   padding: 0 12rpx;
   color: var(--info);
   opacity: 0.7;
+  display: flex;
+  align-items: center;
 }
 
 .label-editor-row {
@@ -475,7 +170,7 @@
   padding-top: 20rpx;
 }
 
-/* ---------- t19：subagents 轨道 / 斜杠命令 / 上下文计量 / 重命名 ---------- */
+/* ---------- t19：subagents 轨道 / 上下文计量 / 重命名 ---------- */
 
 .subagent-panel {
   background: var(--card);
@@ -578,41 +273,6 @@
 
 .subagent-status-failed {
   color: #fa5151;
-}
-
-.slash-panel {
-  max-height: 320rpx;
-  background: var(--card);
-  border-radius: var(--radius) var(--radius) 0 0;
-  border-bottom: 2rpx solid var(--fill);
-}
-
-.slash-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16rpx;
-  padding: 16rpx 24rpx;
-  border-bottom: 2rpx solid var(--fill);
-}
-
-.slash-row:last-child {
-  border-bottom: none;
-}
-
-.slash-name {
-  font-size: 25rpx;
-  color: var(--brand);
-  font-family: "SF Mono", Menlo, Consolas, monospace;
-  flex-shrink: 0;
-}
-
-.slash-desc {
-  font-size: 23rpx;
-  color: var(--text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ctx-gauge {

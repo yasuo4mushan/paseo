@@ -7,11 +7,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, View } from "@tarojs/components";
+import { Button, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { WorkspaceScriptInfo } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useThemeClass } from "@/hooks/use-theme";
+import { iconUrl } from "@/utils/icons";
 import { workspaceStore } from "@/stores/workspace-store";
 import "./index.css";
 
@@ -90,13 +91,13 @@ export default function ScriptsPage() {
       {error ? <View className="error-inline">{error}</View> : null}
       {!hasWorkspace ? (
         <View className="card empty">
-          <View className="empty-icon">📦</View>
+          <Image className="icon icon-xl" src={iconUrl("terminal")} />
           <View className="empty-title">未选择工作区</View>
           <View className="empty-desc">先在会话页顶部选择一个工作区。</View>
         </View>
       ) : scripts.length === 0 ? (
         <View className="card empty">
-          <View className="empty-icon">🧰</View>
+          <Image className="icon icon-xl" src={iconUrl("terminal")} />
           <View className="empty-title">无工作区脚本</View>
           <View className="empty-desc">
             该工作区 package.json 未定义 scripts（service 脚本由 daemon 目录发现）。

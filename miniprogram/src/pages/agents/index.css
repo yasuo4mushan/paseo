@@ -39,9 +39,7 @@
 }
 
 .ws-bar-arrow {
-  color: var(--text-3);
   margin-left: 12rpx;
-  font-size: 22rpx;
   flex-shrink: 0;
 }
 
@@ -62,8 +60,6 @@
 }
 
 .create-entry-icon {
-  font-size: 30rpx;
-  line-height: 1;
   margin-right: 6rpx;
 }
 
@@ -89,8 +85,6 @@
 }
 
 .tool-entry-icon {
-  font-size: 26rpx;
-  line-height: 1;
   margin-right: 6rpx;
 }
 
@@ -181,10 +175,7 @@
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: var(--brand-fade);
-  color: var(--brand);
-  font-size: 32rpx;
-  font-weight: 700;
+  background: var(--fill);
   display: flex;
   align-items: center;
   justify-content: center;

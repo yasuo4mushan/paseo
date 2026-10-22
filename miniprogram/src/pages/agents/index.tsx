@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Taro, { useDidShow, usePullDownRefresh } from "@tarojs/taro";
-import { Button, View } from "@tarojs/components";
+import { Button, Image, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { AgentSnapshot, WorkspaceDescriptor } from "@/connection/protocol-types";
 import { attentionStore } from "@/stores/attention-store";
@@ -9,6 +9,8 @@ import { PermissionOverlay } from "@/components/permission-overlay";
 import { WorkspacePicker } from "@/components/workspace-picker";
 import { useThemeClass } from "@/hooks/use-theme";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
+import { iconUrl, providerIconUrl } from "@/utils/icons";
+import { safeNavigateTo, safeSwitchTab } from "@/utils/navigation";
 import {
   AGENT_FILTER_LABELS,
   displayLabels,
@@ -109,7 +111,7 @@ export default function AgentsPage() {
       .getConnection()
       ?.clearAgentAttention([id])
       .catch(() => {});
-    Taro.navigateTo({ url: `/pages/agent/index?id=${encodeURIComponent(id)}` });
+    void safeNavigateTo(`/pages/agent/index?id=${encodeURIComponent(id)}`);
   };
 
   const onWorkspaceSelected = (ws: WorkspaceDescriptor) => {
@@ -125,7 +127,7 @@ export default function AgentsPage() {
     return (
       <View className={`page ${themeClass}`}>
         <View className="card empty">
-          <View className="empty-icon">{state.status === "error" ? "⚠️" : "📡"}</View>
+          <Image className="icon icon-xl" src={iconUrl(state.status === "error" ? "warning" : "devices")} />
           <View className="empty-title">
             {state.status === "error" ? "连接中断" : "未连接设备"}
           </View>
@@ -134,7 +136,7 @@ export default function AgentsPage() {
           </View>
           <Button
             className="btn btn-mini"
-            onClick={() => Taro.switchTab({ url: "/pages/devices/index" })}
+            onClick={() => void safeSwitchTab("/pages/devices/index")}
           >
             去设备页
           </Button>
@@ -151,38 +153,38 @@ export default function AgentsPage() {
         <View className="ws-bar-main" onClick={() => setPickerVisible(true)}>
           <View className="ws-bar-label">工作区</View>
           <View className="ws-bar-value">{workspace?.label ?? "选择工作区"}</View>
-          <View className="ws-bar-arrow">▾</View>
+          <Image className="icon icon-sm" src={iconUrl("chevron-down")} />
         </View>
-        <View className="tool-entry" onClick={() => Taro.navigateTo({ url: "/pages/files/index" })}>
-          <View className="tool-entry-icon">📂</View>
+        <View className="tool-entry" onClick={() => void safeNavigateTo("/pages/files/index")}>
+          <Image className="icon" src={iconUrl("file")} />
           <View className="tool-entry-text">文件</View>
         </View>
         <View
           className="tool-entry"
-          onClick={() => Taro.navigateTo({ url: "/pages/changes/index" })}
+          onClick={() => void safeNavigateTo("/pages/changes/index")}
         >
-          <View className="tool-entry-icon">🔀</View>
+          <Image className="icon" src={iconUrl("diff")} />
           <View className="tool-entry-text">改动</View>
         </View>
         <View
           className="tool-entry"
-          onClick={() => Taro.navigateTo({ url: "/pages/schedules/index" })}
+          onClick={() => void safeNavigateTo("/pages/schedules/index")}
         >
-          <View className="tool-entry-icon">⏰</View>
+          <Image className="icon" src={iconUrl("schedule")} />
           <View className="tool-entry-text">定时</View>
         </View>
         <View
           className="tool-entry"
-          onClick={() => Taro.navigateTo({ url: "/pages/scripts/index" })}
+          onClick={() => void safeNavigateTo("/pages/scripts/index")}
         >
-          <View className="tool-entry-icon">🧰</View>
+          <Image className="icon" src={iconUrl("terminal")} />
           <View className="tool-entry-text">脚本</View>
         </View>
         <View
           className="create-entry"
-          onClick={() => Taro.navigateTo({ url: "/pages/create/index" })}
+          onClick={() => void safeNavigateTo("/pages/create/index")}
         >
-          <View className="create-entry-icon">＋</View>
+          <Image className="icon" src={iconUrl("plus", "-active")} />
           <View className="create-entry-text">新建</View>
         </View>
       </View>
@@ -204,7 +206,7 @@ export default function AgentsPage() {
 
       {visibleAgents.length === 0 ? (
         <View className="card empty">
-          <View className="empty-icon">🤖</View>
+          <Image className="icon icon-xl" src={iconUrl("bot")} />
           <View className="empty-title">
             {filter === "archived" ? "没有归档的 Agent" : "暂无 Agent"}
           </View>
@@ -224,7 +226,7 @@ export default function AgentsPage() {
               className={`card agent-card ${highlighted ? "agent-card-attention" : ""}`}
               onClick={() => openAgent(agent.id)}
             >
-              <View className="agent-avatar">{agent.provider.slice(0, 1).toUpperCase()}</View>
+              <Image className="agent-avatar" src={providerIconUrl(agent.provider)} />
               <View className="agent-main">
                 <View className="agent-title-row">
                   <View className="agent-title">{agent.title ?? agent.id.slice(0, 8)}</View>

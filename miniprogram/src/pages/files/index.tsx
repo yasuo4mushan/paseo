@@ -18,13 +18,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, ScrollView, Textarea, View } from "@tarojs/components";
+import { Button, ScrollView, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { FileExplorerEntry } from "@/connection/protocol-types";
 import { decodeUtf8 } from "@/connection/utf8";
 import { useThemeClass } from "@/hooks/use-theme";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { fileCategory, fileIcon, formatFileSize } from "@/utils/files";
+import { iconUrl } from "@/utils/icons";
 import {
   documentFileType,
   openDocument,
@@ -633,7 +634,7 @@ export default function FilesPage() {
       Taro.navigateTo({
         url: `/pages/terminal/index?terminalId=${encodeURIComponent(terminal.id)}&title=${encodeURIComponent(
           workspace?.label ?? "工作区终端",
-        )}`,
+        )}&kill=1`,
       });
     } catch (err) {
       Taro.hideLoading();
@@ -645,7 +646,7 @@ export default function FilesPage() {
     return (
       <View className={`page ${themeClass}`}>
         <View className="card empty">
-          <View className="empty-icon">📂</View>
+          <Image className="icon icon-xl" src={iconUrl("project")} />
           <View className="empty-title">未选择工作区</View>
           <View className="empty-desc">
             文件浏览基于当前工作区，先在 Agent 列表顶部选择一个工作区。
@@ -687,7 +688,7 @@ export default function FilesPage() {
           </View>
           {/* t19：新建文件/文件夹入口 */}
           <View className="crumbs-add" onClick={() => void createEntry()}>
-            ＋
+            <Image className="icon" src={iconUrl("plus")} />
           </View>
           {/* t19：工作区终端（create_terminal → 简化终端视图） */}
           <View className="crumbs-term" onClick={() => void openWorkspaceTerminal()}>
@@ -721,7 +722,7 @@ export default function FilesPage() {
         </View>
       ) : !loading && entries.length === 0 && !error ? (
         <View className="card empty">
-          <View className="empty-icon">🗂</View>
+          <Image className="icon icon-xl" src={iconUrl("project")} />
           <View className="empty-title">空目录</View>
         </View>
       ) : (
@@ -735,7 +736,7 @@ export default function FilesPage() {
               }
               onLongPress={() => void entryActions(entry)}
             >
-              <View className="file-icon">{fileIcon(entry.kind, entry.name)}</View>
+              <Image className="icon file-icon" src={iconUrl(fileIcon(entry.kind, entry.name))} />
               <View className="file-main">
                 <View className="file-name">{entry.name}</View>
                 <View className="muted num file-meta">
@@ -757,7 +758,7 @@ export default function FilesPage() {
           <View className="preview-head">
             <View className="preview-title">{textPreview.fileName}</View>
             <View className="preview-close" onClick={() => setTextPreview(null)}>
-              ✕
+              <Image className="icon" src={iconUrl("close")} />
             </View>
           </View>
           <ScrollView className="preview-body" scrollY enhanced showScrollbar={false}>
@@ -797,7 +798,7 @@ export default function FilesPage() {
           <View className="preview-head">
             <View className="preview-title">编辑 · {editor.name}</View>
             <View className="preview-close" onClick={() => void closeEditor()}>
-              ✕
+              <Image className="icon" src={iconUrl("close")} />
             </View>
           </View>
           {remoteChanged ? (

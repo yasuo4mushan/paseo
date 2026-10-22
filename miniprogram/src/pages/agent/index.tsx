@@ -1,46 +1,29 @@
+/**
+ * 会话详情管理页（t20 重构：时间线渲染与订阅提取到 hooks/use-agent-session +
+ * components/timeline 共用；本页保留管理面——归档/标签/重命名/导出/子代理轨道/
+ * 斜杠命令/上下文计量）。对话主入口移至 pages/chat（豆包式直达）。
+ */
+
 import { useEffect, useRef, useState } from "react";
 import Taro, { useLoad } from "@tarojs/taro";
 import { Button, Image, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
-  AgentSnapshot,
-  AgentTimelineEntry,
-  AgentTimelineItem,
   ProviderSubagentSummary,
   SlashCommand,
   UploadedFileAttachment,
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
-import { MarkdownView } from "@/components/markdown";
+import { TimelineView } from "@/components/timeline";
+import { useAgentSession, } from "@/hooks/use-agent-session";
 import { useThemeClass } from "@/hooks/use-theme";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
 import { displayLabels, setDisplayLabels } from "@/utils/agent-directory";
 import { formatFileSize, mimeForFile } from "@/utils/files";
-import { previewImage, readLocalFileBytes } from "@/utils/file-ops";
+import { readLocalFileBytes } from "@/utils/file-ops";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
-import { formatClock } from "@/utils/time";
+import { iconUrl } from "@/utils/icons";
 import "./index.css";
-
-interface DisplayEntry {
-  key: string;
-  seq: number;
-  item: AgentTimelineItem;
-  timestamp: string;
-  /** t17：user_message 气泡上的附件卡片（本地台账回配对）。 */
-  attachments?: AttachmentCard[];
-}
-
-function toDisplay(agentId: string, entry: AgentTimelineEntry): DisplayEntry {
-  const attachments =
-    entry.item.type === "user_message" ? messageAttachmentStore.match(agentId, entry.item) : [];
-  return {
-    key: `s${entry.seqStart}`,
-    seq: entry.seqStart,
-    item: entry.item,
-    timestamp: entry.timestamp,
-    ...(attachments.length > 0 ? { attachments } : {}),
-  };
-}
 
 /** composer 待发送附件（t17）：选图/选文件 → 上传 → 随消息发送。 */
 interface PendingAttachment {
@@ -55,13 +38,6 @@ interface PendingAttachment {
   attachment?: UploadedFileAttachment;
 }
 
-const TOOL_STATUS_ICON: Record<string, string> = {
-  running: "⏳",
-  completed: "✓",
-  failed: "✗",
-  canceled: "–",
-};
-
 /** t19：subagent 状态文案（ProviderSubagentDescriptorPayload.status）。 */
 const SUBAGENT_STATUS_LABEL: Record<string, string> = {
   running: "运行中",
@@ -70,114 +46,6 @@ const SUBAGENT_STATUS_LABEL: Record<string, string> = {
   canceled: "取消",
 };
 
-function bubbleClass(item: AgentTimelineItem): string {
-  switch (item.type) {
-    case "user_message":
-      return "bubble bubble-user";
-    case "assistant_message":
-      return "bubble bubble-assistant";
-    case "reasoning":
-      return "bubble bubble-reasoning";
-    case "tool_call":
-      return "bubble bubble-tool";
-    case "todo":
-      return "bubble bubble-todo";
-    case "error":
-      return "bubble bubble-error";
-    case "notification":
-      return "bubble bubble-notification";
-    default:
-      return "bubble bubble-plain";
-  }
-}
-
-function TodoLines({ items }: { items: Array<{ text: string; completed: boolean }> }) {
-  return (
-    <View>
-      {items.map((task, i) => (
-        <View key={i} className={`todo-line ${task.completed ? "todo-done" : ""}`}>
-          <View className="todo-check">{task.completed ? "✓" : "○"}</View>
-          <View className="todo-text">{task.text}</View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-function AttachmentCards({ cards }: { cards: AttachmentCard[] }) {
-  if (cards.length === 0) return null;
-  return (
-    <View className="attach-cards">
-      {cards.map((card, i) =>
-        card.kind === "image" && card.localPath ? (
-          <Image
-            key={i}
-            className="attach-image"
-            src={card.localPath}
-            mode="aspectFill"
-            onClick={(e) => {
-              // 阻止冒泡：点缩略图全屏预览，不触发气泡其他行为
-              e.stopPropagation?.();
-              previewImage(card.localPath as string);
-            }}
-          />
-        ) : (
-          <View key={i} className="attach-file">
-            <View className="attach-file-icon">📎</View>
-            <View className="attach-file-main">
-              <View className="attach-file-name">{card.fileName}</View>
-              <View className="attach-file-size">{formatFileSize(card.size)}</View>
-            </View>
-          </View>
-        ),
-      )}
-    </View>
-  );
-}
-
-function BubbleContent({ item }: { item: AgentTimelineItem }) {
-  switch (item.type) {
-    case "tool_call":
-      return (
-        <View>
-          <View className="tool-head">
-            <View className="tool-icon">{TOOL_STATUS_ICON[item.status] ?? "⏳"}</View>
-            <View className="tool-name">{item.tool}</View>
-          </View>
-          {item.summary ? <View className="tool-summary">{item.summary}</View> : null}
-          {item.error ? <View className="tool-error">{item.error}</View> : null}
-        </View>
-      );
-    case "todo":
-      return <TodoLines items={item.items} />;
-    case "error":
-      return <View>{item.message}</View>;
-    case "notification":
-      return <View>{item.message}</View>;
-    case "compaction":
-      return <View>{item.status === "completed" ? "上下文压缩完成" : "上下文压缩中…"}</View>;
-    case "user_message":
-      return <View className="bubble-text">{item.text}</View>;
-    case "assistant_message":
-      // t19：assistant 输出走轻量 Markdown 渲染（标题/列表/代码块/表格/链接）。
-      return <MarkdownView text={item.text} />;
-    case "reasoning":
-      return <View className="bubble-text">{item.text}</View>;
-    default:
-      return <View className="bubble-text">（暂不支持展示的条目类型）</View>;
-  }
-}
-
-/** 自动化/调试桥：记录页面级事件（app.ts 安装 __automation 时生效，否则静默）。 */
-function recordAutomationEvent(event: Record<string, unknown>): void {
-  const app = Taro.getApp?.() as unknown as
-    | {
-        __automation?: { downloadLog?: Array<Record<string, unknown>> };
-      }
-    | undefined;
-  app?.__automation?.downloadLog?.push({ ...event, at: Date.now() });
-}
-
 function createClientMessageId(): string {
   return `mp-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
 }
@@ -185,18 +53,13 @@ function createClientMessageId(): string {
 export default function AgentPage() {
   const themeClass = useThemeClass();
   const [agentId, setAgentId] = useState("");
-  const [title, setTitle] = useState("");
-  const [entries, setEntries] = useState<DisplayEntry[]>([]);
-  const [status, setStatus] = useState("");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
   const bottomAnchor = useRef(`bottom-${Date.now()}`);
   // t18：归档态 + 标签编辑
-  const [snapshot, setSnapshot] = useState<AgentSnapshot | null>(null);
   const [labelEditing, setLabelEditing] = useState(false);
   const [labelDraft, setLabelDraft] = useState("");
   const [labelSaving, setLabelSaving] = useState(false);
@@ -217,106 +80,40 @@ export default function AgentPage() {
     if (id) setAgentId(id);
   });
 
+  // 共享会话状态（快照/时间线/流订阅；乐观追加）
+  const session = useAgentSession(agentId);
+  const snapshot = session.snapshot;
+  const entries = session.entries;
+  const status = session.status;
+  const error = session.error;
+  const title = snapshot?.title ?? "";
+
+  useEffect(() => {
+    if (snapshot) {
+      const navTitle = snapshot.title ?? snapshot.id.slice(0, 8);
+      setNameDraft(snapshot.title ?? "");
+      Taro.setNavigationBarTitle({ title: navTitle });
+    }
+  }, [snapshot?.title, snapshot?.id, snapshot]);
+
+  // t19：打开 subagents 面板时拉取列表（此后由推送维护）
+  useEffect(() => {
+    if (!subagentsOpen || !agentId) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    void conn
+      .listSubagents(agentId)
+      .then((list) => setSubagents([...list].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))))
+      .catch((err) => {
+        setSubagents([]);
+        void err;
+      });
+  }, [subagentsOpen, agentId]);
+
+  // t19：subagents 轨道实时更新（upsert/remove；打开面板时可见）
   useEffect(() => {
     if (!agentId) return;
-    let disposed = false;
-    const conn = connectionManager.getConnection();
-    if (!conn) {
-      setError("未连接设备，请返回重连");
-      return;
-    }
-
-    const appendEntries = (incoming: DisplayEntry[]) => {
-      if (disposed || incoming.length === 0) return;
-      setEntries((prev) => {
-        const seen = new Set(prev.map((e) => e.key));
-        const merged = [...prev];
-        // daemon 回显的 user_message 带 clientMessageId 时，取代同 id 的乐观本地条目
-        // （避免重复气泡；附件卡片由台账 match 挂到回显条目上）。
-        const confirmedIds = new Set(
-          incoming
-            .filter((e) => e.item.type === "user_message" && e.item.clientMessageId)
-            .map((e) => (e.item as { clientMessageId: string }).clientMessageId),
-        );
-        for (let i = merged.length - 1; i >= 0; i -= 1) {
-          const entry = merged[i];
-          if (
-            entry.key.startsWith("local-") &&
-            entry.item.type === "user_message" &&
-            entry.item.clientMessageId &&
-            confirmedIds.has(entry.item.clientMessageId)
-          ) {
-            merged.splice(i, 1);
-          }
-        }
-        for (const entry of incoming) {
-          if (!seen.has(entry.key)) merged.push(entry);
-        }
-        merged.sort((a, b) => a.seq - b.seq);
-        // 只保留最近 200 条，防止长会话内存膨胀
-        return merged.slice(-200);
-      });
-      bottomAnchor.current = `bottom-${Date.now()}`;
-    };
-
-    void (async () => {
-      try {
-        const agents = await conn.fetchAgents({ includeArchived: true });
-        const self = agents.find((a) => a.id === agentId);
-        if (self) {
-          setStatus(self.status);
-          setSnapshot(self);
-          const navTitle = self.title ?? self.id.slice(0, 8);
-          setTitle(navTitle);
-          setNameDraft(self.title ?? "");
-          Taro.setNavigationBarTitle({ title: navTitle });
-        }
-        const timeline = await conn.fetchAgentTimeline(agentId, 50);
-        appendEntries(timeline.map((entry) => toDisplay(agentId, entry)));
-        await conn.subscribeAgentTimelines([agentId]);
-        setError("");
-      } catch (err) {
-        if (!disposed) setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
-
-    const unsubscribeStream = connectionManager.onStreamEvent((payload) => {
-      if (payload.agentId !== agentId) return;
-      switch (payload.event.type) {
-        case "timeline": {
-          const display = toDisplay(agentId, {
-            item: payload.event.item,
-            timestamp: payload.timestamp,
-            seqStart: payload.seq ?? Date.now(),
-            seqEnd: payload.seq ?? Date.now(),
-          });
-          appendEntries([display]);
-          break;
-        }
-        case "turn_started":
-          setStatus("running");
-          break;
-        case "turn_completed":
-        case "turn_canceled":
-          setStatus("idle");
-          break;
-        case "turn_failed":
-          setStatus("error");
-          break;
-        default:
-          break;
-      }
-    });
-
-    const unsubscribeAgents = connectionManager.onAgentUpdate((update) => {
-      if (update.kind === "upsert" && update.agent.id === agentId) {
-        setStatus(update.agent.status);
-        setSnapshot(update.agent);
-      }
-    });
-
-    // t19：subagents 轨道实时更新（upsert/remove；打开面板时可见）
-    const unsubscribeSubagents = connectionManager.onSubagentUpdate((update) => {
+    return connectionManager.onSubagentUpdate((update) => {
       if (update.kind === "upsert") {
         if (update.subagent.parentAgentId !== agentId) return;
         setSubagents((prev) => {
@@ -328,27 +125,7 @@ export default function AgentPage() {
         setSubagents((prev) => prev.filter((s) => s.id !== update.subagentId));
       }
     });
-
-    return () => {
-      disposed = true;
-      unsubscribeStream();
-      unsubscribeAgents();
-      unsubscribeSubagents();
-    };
   }, [agentId]);
-
-  // t19：打开 subagents 面板时拉取列表（此后由推送维护）
-  useEffect(() => {
-    if (!subagentsOpen || !agentId) return;
-    const conn = connectionManager.getConnection();
-    if (!conn) return;
-    void conn
-      .listSubagents(agentId)
-      .then((list) => setSubagents([...list].sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))))
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : String(err));
-      });
-  }, [subagentsOpen, agentId]);
 
   // t19：首次输入 / 时拉取斜杠命令目录（每 agent 一次）
   useEffect(() => {
@@ -359,18 +136,9 @@ export default function AgentPage() {
     commandsLoadedFor.current = agentId;
     void conn
       .listCommands(agentId)
-      .then((list) => {
-        setCommands(list);
-        // 自动化证据：真实 daemon 返回的命令目录大小（空目录 = 面板不弹，属正常）
-        recordAutomationEvent({ kind: "slash_commands", agentId, count: list.length });
-      })
-      .catch((err) => {
+      .then((list) => setCommands(list))
+      .catch(() => {
         commandsLoadedFor.current = ""; // 失败允许重试
-        recordAutomationEvent({
-          kind: "slash_commands_error",
-          agentId,
-          error: err instanceof Error ? err.message : String(err),
-        });
       });
   }, [draft, agentId, commands]);
 
@@ -447,10 +215,6 @@ export default function AgentPage() {
     }
   };
 
-  const removePending = (key: string) => {
-    setPendingFiles((prev) => prev.filter((f) => f.key !== key));
-  };
-
   const send = async () => {
     const text = draft.trim();
     const hasAttachments = pendingFiles.some((f) => f.status === "ready");
@@ -476,17 +240,7 @@ export default function AgentPage() {
       .map((f) => f.attachment)
       .filter((a): a is UploadedFileAttachment => a !== undefined);
     // 乐观追加本地用户消息（daemon 回推的 user_message 由 seq 去重）
-    const localSeq = 9_000_000_000 + (Date.now() % 1_000_000_000);
-    setEntries((prev) => [
-      ...prev,
-      {
-        key: `local-${clientMessageId}`,
-        seq: localSeq,
-        item: { type: "user_message", text, clientMessageId },
-        timestamp: new Date().toISOString(),
-        ...(cards.length > 0 ? { attachments: cards } : {}),
-      },
-    ]);
+    session.appendOptimisticUser(text || "（附件）", clientMessageId, cards.length > 0 ? cards : undefined);
     bottomAnchor.current = `bottom-${Date.now()}`;
     try {
       const conn = connectionManager.requireConnection();
@@ -500,12 +254,12 @@ export default function AgentPage() {
           : {}),
       });
       if (!result.accepted) {
-        setError(result.error ?? "消息未被接受");
+        Taro.showToast({ title: result.error ?? "消息未被接受", icon: "none" });
       } else {
         setPendingFiles([]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
     } finally {
       setSending(false);
     }
@@ -516,9 +270,8 @@ export default function AgentPage() {
     setCancelling(true);
     try {
       await connectionManager.requireConnection().cancelAgent(agentId);
-      setStatus("idle");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
     } finally {
       setCancelling(false);
     }
@@ -540,7 +293,7 @@ export default function AgentPage() {
       messageAttachmentStore.clear(agentId);
       Taro.navigateBack();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
       setDeleting(false);
     }
   };
@@ -557,10 +310,9 @@ export default function AgentPage() {
       setArchiving(true);
       try {
         await conn.refreshAgent(agentId);
-        setSnapshot((prev) => (prev ? { ...prev, archivedAt: null } : prev));
         Taro.showToast({ title: "已恢复", icon: "success" });
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
       } finally {
         setArchiving(false);
       }
@@ -576,10 +328,9 @@ export default function AgentPage() {
     setArchiving(true);
     try {
       await conn.archiveAgent(agentId);
-      setSnapshot((prev) => (prev ? { ...prev, archivedAt: new Date().toISOString() } : prev));
       Taro.showToast({ title: "已归档", icon: "none" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
     } finally {
       setArchiving(false);
     }
@@ -609,9 +360,8 @@ export default function AgentPage() {
     try {
       const labels = setDisplayLabels(snapshot?.labels, next);
       await conn.updateAgent(agentId, { labels });
-      setSnapshot((prev) => (prev ? { ...prev, labels } : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
     } finally {
       setLabelSaving(false);
     }
@@ -628,12 +378,10 @@ export default function AgentPage() {
     setLabelSaving(true);
     try {
       await conn.updateAgent(agentId, { name });
-      setSnapshot((prev) => (prev ? { ...prev, title: name } : prev));
-      setTitle(name);
       Taro.setNavigationBarTitle({ title: name });
       Taro.showToast({ title: "已重命名", icon: "success" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
     } finally {
       setLabelSaving(false);
     }
@@ -721,7 +469,7 @@ export default function AgentPage() {
                     className="label-chip-remove"
                     onClick={() => (labelSaving ? undefined : removeLabel(label))}
                   >
-                    ✕
+                    <Image className="icon icon-sm" src={iconUrl("close")} />
                   </View>
                 </View>
               ))}
@@ -803,30 +551,12 @@ export default function AgentPage() {
         ) : null}
         {entries.length === 0 ? (
           <View className="card empty">
-            <View className="empty-icon">💬</View>
+            <Image className="icon icon-xl" src={iconUrl("chat")} />
             <View className="empty-title">暂无消息</View>
             <View className="empty-desc">在下方输入框给 agent 发第一条指令。</View>
           </View>
         ) : (
-          entries.map((entry) => (
-            <View key={entry.key} className="timeline-item">
-              <View
-                className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}
-              >
-                <View className={bubbleClass(entry.item)}>
-                  {entry.attachments ? <AttachmentCards cards={entry.attachments} /> : null}
-                  <BubbleContent item={entry.item} />
-                </View>
-              </View>
-              {entry.timestamp ? (
-                <View
-                  className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}
-                >
-                  {formatClock(entry.timestamp)}
-                </View>
-              ) : null}
-            </View>
-          ))
+          <TimelineView entries={entries} />
         )}
         <View id={bottomAnchor.current} className="timeline-bottom" />
       </ScrollView>
@@ -913,9 +643,10 @@ export default function AgentPage() {
                 {file.status === "uploading" ? (
                   <View className="attach-chip-progress num">{file.progress}%</View>
                 ) : (
-                  <View className="attach-chip-icon">
-                    {file.status === "error" ? "⚠️" : file.localPath ? "🖼" : "📎"}
-                  </View>
+                  <Image
+                    className="icon icon-sm"
+                    src={iconUrl(file.status === "error" ? "warning" : file.localPath ? "image" : "paperclip")}
+                  />
                 )}
                 <View className="attach-chip-main">
                   <View className="attach-chip-name">{file.fileName}</View>
@@ -925,8 +656,11 @@ export default function AgentPage() {
                       : formatFileSize(file.size)}
                   </View>
                 </View>
-                <View className="attach-chip-remove" onClick={() => removePending(file.key)}>
-                  ✕
+                <View
+                  className="attach-chip-remove"
+                  onClick={() => setPendingFiles((prev) => prev.filter((f) => f.key !== file.key))}
+                >
+                  <Image className="icon icon-sm" src={iconUrl("close")} />
                 </View>
               </View>
             ))}
@@ -957,7 +691,7 @@ export default function AgentPage() {
         ) : null}
         <View className="composer-row">
           <View className="attach-btn" onClick={() => void pickAttachment()}>
-            ＋
+            <Image className="icon" src={iconUrl("plus")} />
           </View>
           <Input
             className="composer-input"
