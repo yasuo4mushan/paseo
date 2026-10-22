@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import Taro from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { hub, hubErrorMessage, hasSession } from "@/hub/hub-client";
 import { useThemeClass } from "@/hooks/use-theme";
+import { safeSwitchTab } from "@/utils/navigation";
 import "./index.css";
 
 type Mode = "login" | "register";
@@ -15,10 +15,10 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  // 已有会话时直接进入设备页（例如退出登录后误触返回）
+  // 已有会话时直接进对话主页（t20 豆包式直达；例如退出登录后误触返回）
   useEffect(() => {
     if (hasSession()) {
-      Taro.switchTab({ url: "/pages/devices/index" });
+      void safeSwitchTab("/pages/chat/index");
     }
   }, []);
 
@@ -43,7 +43,8 @@ export default function LoginPage() {
       } else {
         await hub.login(username, password);
       }
-      Taro.switchTab({ url: "/pages/devices/index" });
+      // t20：登录即落对话主页（中心 tab，未连接设备时引导连接）
+      await safeSwitchTab("/pages/chat/index");
     } catch (err) {
       setError(hubErrorMessage(err));
     } finally {

@@ -1,0 +1,93 @@
+/* 配置选择器半屏 sheet（t20）：遮罩 + 底部滑出列表。 */
+
+.cp-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.cp-sheet {
+  background: var(--card);
+  border-radius: 24rpx 24rpx 0 0;
+  max-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.cp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx 12rpx;
+}
+
+.cp-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.cp-close {
+  padding: 8rpx;
+}
+
+.cp-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 52vh;
+  padding: 0 16rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.cp-row {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 20rpx;
+  border-radius: var(--radius);
+}
+
+.cp-row-active {
+  background: var(--brand-fade);
+}
+
+.cp-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 4rpx;
+}
+
+.cp-row:not(.cp-row-active) .cp-main {
+  margin-left: 0;
+}
+
+.cp-row > .icon {
+  margin-right: 16rpx;
+}
+
+.cp-label {
+  font-size: 28rpx;
+  color: var(--text-1);
+}
+
+.cp-row-active .cp-label {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.cp-desc {
+  font-size: 22rpx;
+  color: var(--text-2);
+  margin-top: 4rpx;
+}
+
+.cp-empty {
+  text-align: center;
+  color: var(--text-3);
+  font-size: 24rpx;
+  padding: 48rpx 0;
+}

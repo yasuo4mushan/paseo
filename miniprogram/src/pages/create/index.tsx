@@ -8,11 +8,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
-import { Button, Input, Picker, Textarea, View } from "@tarojs/components";
+import { Button, Input, Picker, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
   ProviderAvailability,
   ProviderMode,
+  ProviderModelDefinition,
   RecentProviderSession,
   WorkspaceDescriptor,
 } from "@/connection/protocol-types";
@@ -21,6 +22,7 @@ import { PermissionOverlay } from "@/components/permission-overlay";
 import { WorkspacePicker } from "@/components/workspace-picker";
 import { useThemeClass } from "@/hooks/use-theme";
 import { formatRelativeTime } from "@/utils/time";
+import { iconUrl } from "@/utils/icons";
 import {
   hasErrors,
   providerDisabledReason,
@@ -46,8 +48,10 @@ export default function CreateAgentPage() {
   const [tab, setTab] = useState<PageTab>("create");
   const [providers, setProviders] = useState<ProviderAvailability[] | null>(null);
   const [provider, setProvider] = useState("");
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<ProviderModelDefinition[]>([]);
   const [modelIndex, setModelIndex] = useState(0);
+  // t20：thinking 档位（所选模型的 thinkingOptions；无档位的模型隐藏）
+  const [thinkingOptionId, setThinkingOptionId] = useState("");
   const [modes, setModes] = useState<ProviderMode[]>([]);
   const [modeId, setModeId] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -100,6 +104,7 @@ export default function CreateAgentPage() {
     setModelIndex(0);
     setModes([]);
     setModeId("");
+    setThinkingOptionId("");
     void (async () => {
       try {
         const [modelList, modeList] = await Promise.all([
@@ -107,10 +112,17 @@ export default function CreateAgentPage() {
           conn.listProviderModes(provider, workspace?.directory).catch(() => []),
         ]);
         if (disposed) return;
-        const labels = modelList.map((m) => m.label || m.id);
-        setModels(labels);
+        setModels(modelList);
         const defaultIndex = modelList.findIndex((m) => m.isDefault);
-        setModelIndex(defaultIndex >= 0 ? defaultIndex : 0);
+        const index = defaultIndex >= 0 ? defaultIndex : 0;
+        setModelIndex(index);
+        // t20：默认模型的默认 thinking 档（defaultThinkingOptionId > isDefault > 首项）
+        const model = modelList[index];
+        const thinking =
+          model?.thinkingOptions?.find((o) => o.id === model.defaultThinkingOptionId) ??
+          model?.thinkingOptions?.find((o) => o.isDefault) ??
+          model?.thinkingOptions?.[0];
+        setThinkingOptionId(thinking?.id ?? "");
         setModes(modeList);
         if (modeList.length > 0) setModeId(modeList[0].id);
       } finally {
@@ -191,8 +203,9 @@ export default function CreateAgentPage() {
       const agent = await conn.createAgent({
         provider,
         cwd: workspace.directory,
-        ...(models.length > 0 ? { model: models[modelIndex] } : {}),
+        ...(models.length > 0 ? { model: models[modelIndex].id } : {}),
         ...(modeId ? { modeId } : {}),
+        ...(thinkingOptionId ? { thinkingOptionId } : {}),
         workspaceId: workspace.workspaceId,
         initialPrompt: prompt.trim(),
         // t19：worktree 隔离（create_agent_request.worktree；branch-off）
@@ -212,7 +225,7 @@ export default function CreateAgentPage() {
     return (
       <View className={`page ${themeClass}`}>
         <View className="card empty">
-          <View className="empty-icon">⚠️</View>
+          <Image className="icon icon-xl" src={iconUrl("warning")} />
           <View className="empty-title">无法创建</View>
           <View className="empty-desc">{fatal}</View>
           <Button className="btn btn-mini btn-ghost" onClick={() => Taro.navigateBack()}>
@@ -249,7 +262,7 @@ export default function CreateAgentPage() {
               <View className={`ws-select-text ${workspace ? "" : "ws-select-placeholder"}`}>
                 {workspace?.label ?? "选择目标工作区"}
               </View>
-              <View className="ws-bar-arrow">▾</View>
+              <Image className="icon icon-sm ws-bar-arrow" src={iconUrl("chevron-down")} />
             </View>
             {errors.workspace ? <View className="field-error">{errors.workspace}</View> : null}
           </View>
@@ -288,22 +301,51 @@ export default function CreateAgentPage() {
             ) : models.length > 0 ? (
               <Picker
                 mode="selector"
-                range={models}
+                range={models.map((m) => m.label || m.id)}
                 value={modelIndex}
-                onChange={(e) => setModelIndex(Number(e.detail.value))}
+                onChange={(e) => {
+                  const next = Number(e.detail.value);
+                  setModelIndex(next);
+                  // t20：换模型 → 重置 thinking 到该模型默认档
+                  const model = models[next];
+                  const thinking =
+                    model?.thinkingOptions?.find((o) => o.id === model.defaultThinkingOptionId) ??
+                    model?.thinkingOptions?.find((o) => o.isDefault) ??
+                    model?.thinkingOptions?.[0];
+                  setThinkingOptionId(thinking?.id ?? "");
+                }}
               >
                 <View className="picker-value">
-                  <View className="picker-text">{models[modelIndex]}</View>
-                  <View className="ws-bar-arrow">▾</View>
+                  <View className="picker-text">
+                    {models[modelIndex]?.label || models[modelIndex]?.id}
+                  </View>
+                  <Image className="icon icon-sm ws-bar-arrow" src={iconUrl("chevron-down")} />
                 </View>
               </Picker>
             ) : (
               <View className="muted">使用 provider 默认模型</View>
             )}
 
+            {/* t20：thinking 档位（list_provider_models 返回的 thinkingOptions） */}
+            {models[modelIndex]?.thinkingOptions?.length ? (
+              <View>
+                <View className="field-label mode-label">Thinking effort</View>
+                <View className="chip-row">
+                  {models[modelIndex].thinkingOptions.map((option) => (
+                    <View
+                      key={option.id}
+                      className={`chip ${thinkingOptionId === option.id ? "chip-active" : ""}`}
+                      onClick={() => setThinkingOptionId(option.id)}
+                    >
+                      {option.label}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
             {modes.length > 0 ? (
               <View>
-                <View className="field-label mode-label">模式</View>
+                <View className="field-label mode-label">审批模式</View>
                 <View className="chip-row">
                   {modes.map((mode) => (
                     <View

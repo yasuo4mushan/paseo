@@ -8,10 +8,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, ScrollView, View } from "@tarojs/components";
+import { Button, ScrollView, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { CheckoutCommit, ParsedDiffFile } from "@/connection/protocol-types";
 import { useThemeClass } from "@/hooks/use-theme";
+import { iconUrl } from "@/utils/icons";
 import { workspaceStore } from "@/stores/workspace-store";
 import { formatClock } from "@/utils/time";
 import "./index.css";
@@ -104,7 +105,7 @@ export default function ChangesPage() {
       {error ? <View className="error-inline">{error}</View> : null}
       {!hasWorkspace ? (
         <View className="card empty">
-          <View className="empty-icon">🔀</View>
+          <Image className="icon icon-xl" src={iconUrl("diff")} />
           <View className="empty-title">未选择工作区</View>
           <View className="empty-desc">改动浏览基于当前工作区的 git 仓库。</View>
         </View>
@@ -114,7 +115,7 @@ export default function ChangesPage() {
         </View>
       ) : commits.length === 0 && !error ? (
         <View className="card empty">
-          <View className="empty-icon">🌱</View>
+          <Image className="icon icon-xl" src={iconUrl("spark")} />
           <View className="empty-title">没有 commit</View>
           <View className="empty-desc">该工作区（或基准分支）上暂无可展示的提交。</View>
         </View>
@@ -131,7 +132,7 @@ export default function ChangesPage() {
                     {commit.isOnRemote ? "已推送" : "本地"}
                   </View>
                 </View>
-                <View className="faint commit-chevron">{expanded === commit.sha ? "▾" : "▸"}</View>
+                <Image className="icon icon-sm commit-chevron" src={iconUrl("chevron-down")} style={{ transform: expanded === commit.sha ? "rotate(0deg)" : "rotate(-90deg)" }} />
               </View>
               {expanded === commit.sha ? (
                 <View className="commit-files">
@@ -173,7 +174,7 @@ export default function ChangesPage() {
               className="preview-close"
               onClick={() => (setDiffFile(null), setDiffLoading(false))}
             >
-              ✕
+              <Image className="icon" src={iconUrl("close")} />
             </View>
           </View>
           {diffLoading ? (

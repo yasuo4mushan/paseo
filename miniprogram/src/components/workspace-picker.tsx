@@ -5,9 +5,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
-import { ScrollView, View } from "@tarojs/components";
+import { ScrollView, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { WorkspaceDescriptor } from "@/connection/protocol-types";
+import { iconUrl } from "@/utils/icons";
 import "./workspace-picker.css";
 
 export interface WorkspacePickerProps {
@@ -112,7 +113,7 @@ export function WorkspacePicker({ visible, selectedId, onClose, onSelect }: Work
                           {ws.workspaceDirectory ?? ws.projectRootPath}
                         </View>
                       </View>
-                      {ws.id === selectedId ? <View className="ws-row-check">✓</View> : null}
+                      {ws.id === selectedId ? <View className="ws-row-check"><Image className="icon icon-sm" src={iconUrl("check", "-active")} /></View> : null}
                     </View>
                   ))}
                 </View>
@@ -125,7 +126,7 @@ export function WorkspacePicker({ visible, selectedId, onClose, onSelect }: Work
               Taro.navigateTo({ url: "/pages/new-workspace/index" });
             }}
           >
-            <View className="ws-new-icon">＋</View>
+            <View className="ws-new-icon"><Image className="icon" src={iconUrl("plus")} /></View>
             <View className="ws-new-text">新建工作区（注册本机目录 / GitHub 克隆）</View>
           </View>
         </ScrollView>

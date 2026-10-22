@@ -418,3 +418,353 @@ page {
   padding: 16rpx 24rpx;
   margin-bottom: 24rpx;
 }
+
+/* ---------- 线条图标基元（t20）：图标一律 PNG（assets/icons），尺寸档位 ---------- */
+
+.icon {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+}
+
+.icon-sm {
+  width: 28rpx;
+  height: 28rpx;
+}
+
+.icon-lg {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.icon-xl {
+  width: 96rpx;
+  height: 96rpx;
+}
+
+/* ---------- 共享时间线（t20 从 pages/agent 提取，chat/agent 两页共用） ---------- */
+
+.timeline-item {
+  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-row {
+  display: flex;
+}
+
+.row-user {
+  justify-content: flex-end;
+}
+
+.timeline-clock {
+  font-size: 20rpx;
+  color: var(--text-3);
+  margin-top: 8rpx;
+  padding: 0 8rpx;
+}
+
+.timeline-clock.row-user {
+  text-align: right;
+}
+
+.timeline-bottom {
+  height: 8rpx;
+}
+
+.error-in-timeline {
+  margin-bottom: 24rpx;
+}
+
+.bubble {
+  max-width: 78%;
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  word-break: break-all;
+}
+
+.bubble-user {
+  background: var(--brand);
+  color: var(--text-inverse);
+  border-top-right-radius: 4rpx;
+}
+
+.bubble-assistant {
+  background: var(--card);
+  color: var(--text-1);
+  border-top-left-radius: 4rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.bubble-reasoning {
+  background: transparent;
+  color: var(--text-2);
+  border: 2rpx dashed var(--text-3);
+  font-size: 26rpx;
+}
+
+.bubble-tool {
+  background: var(--fill);
+  color: var(--text-1);
+  font-size: 24rpx;
+  max-width: 86%;
+}
+
+.bubble-todo {
+  background: var(--card);
+  color: var(--text-1);
+  border-top-left-radius: 4rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.bubble-error {
+  background: var(--danger-fade);
+  color: var(--danger);
+}
+
+.bubble-notification {
+  background: var(--info-fade);
+  color: var(--text-1);
+}
+
+.bubble-plain {
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 24rpx;
+  text-align: center;
+  max-width: 100%;
+}
+
+.bubble-text {
+  white-space: pre-wrap;
+}
+
+.tool-head {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.tool-head .icon {
+  margin-right: 10rpx;
+}
+
+.tool-name {
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-summary {
+  margin-top: 8rpx;
+  color: var(--text-2);
+}
+
+.tool-error {
+  margin-top: 8rpx;
+  color: var(--danger);
+}
+
+.todo-line {
+  display: flex;
+  align-items: flex-start;
+  padding: 4rpx 0;
+}
+
+.todo-mark {
+  margin-right: 12rpx;
+  margin-top: 4rpx;
+}
+
+.todo-done .todo-text {
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+
+.todo-text {
+  flex: 1;
+}
+
+/* ---------- 共享 composer 基元（chat/agent 两页共用） ---------- */
+
+.composer-row {
+  display: flex;
+  align-items: center;
+}
+
+.composer-input {
+  flex: 1;
+  background: var(--fill);
+  border-radius: var(--radius-round);
+  padding: 14rpx 28rpx;
+  font-size: 28rpx;
+  color: var(--text-1);
+}
+
+.composer-placeholder {
+  color: var(--text-3);
+}
+
+.attach-btn {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: var(--fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 16rpx;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.attach-btn:active {
+  background: var(--divider);
+}
+
+.attach-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.attach-image {
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: var(--radius);
+  background: var(--fill);
+}
+
+.attach-file {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius);
+  padding: 14rpx 20rpx;
+}
+
+.bubble-assistant .attach-file,
+.bubble-reasoning .attach-file {
+  background: var(--fill);
+}
+
+.attach-file .icon {
+  margin-right: 16rpx;
+}
+
+.attach-file-main {
+  min-width: 0;
+}
+
+.attach-file-name {
+  font-size: 24rpx;
+  max-width: 320rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-file-size {
+  font-size: 20rpx;
+  opacity: 0.75;
+  margin-top: 2rpx;
+}
+
+.attach-tray {
+  white-space: nowrap;
+  margin: 16rpx 0 4rpx;
+  width: 100%;
+}
+
+.attach-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 14rpx 20rpx;
+  margin-right: 16rpx;
+  max-width: 420rpx;
+}
+
+.attach-chip .icon {
+  margin-right: 12rpx;
+}
+
+.attach-chip-ready {
+  background: var(--brand-fade);
+}
+
+.attach-chip-error {
+  background: var(--danger-fade);
+}
+
+.attach-chip-progress {
+  font-size: 24rpx;
+  color: var(--brand);
+  margin-right: 12rpx;
+  font-weight: 600;
+}
+
+.attach-chip-main {
+  min-width: 0;
+}
+
+.attach-chip-name {
+  font-size: 24rpx;
+  color: var(--text-1);
+  max-width: 240rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-chip-size {
+  font-size: 20rpx;
+  color: var(--text-2);
+  margin-top: 2rpx;
+}
+
+.attach-chip-remove {
+  padding: 4rpx 8rpx 4rpx 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- 共享斜杠命令面板 ---------- */
+
+.slash-panel {
+  max-height: 320rpx;
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 2rpx solid var(--fill);
+}
+
+.slash-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  border-bottom: 2rpx solid var(--fill);
+}
+
+.slash-row:last-child {
+  border-bottom: none;
+}
+
+.slash-name {
+  font-size: 25rpx;
+  color: var(--brand);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  flex-shrink: 0;
+}
+
+.slash-desc {
+  font-size: 23rpx;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

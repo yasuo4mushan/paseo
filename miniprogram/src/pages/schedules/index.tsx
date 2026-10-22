@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, Input, Textarea, View } from "@tarojs/components";
+import { Button, Input, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
   AgentSnapshot,
@@ -18,6 +18,7 @@ import type {
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useThemeClass } from "@/hooks/use-theme";
+import { iconUrl } from "@/utils/icons";
 import { workspaceStore } from "@/stores/workspace-store";
 import {
   CADENCE_PRESETS,
@@ -250,7 +251,7 @@ export default function SchedulesPage() {
 
       {!formVisible ? (
         <Button className="btn btn-block sch-create-btn" onClick={() => void openForm()}>
-          ＋ 新建定时任务
+          新建定时任务
         </Button>
       ) : (
         <View className="card sch-form">
@@ -345,13 +346,13 @@ export default function SchedulesPage() {
           <View className="sch-switches">
             <View className="sch-switch" onClick={() => setForm((f) => ({ ...f, maxRunsEnabled: !f.maxRunsEnabled }))}>
               <View className={`sch-checkbox ${form.maxRunsEnabled ? "sch-checkbox-on" : ""}`}>
-                {form.maxRunsEnabled ? "✓" : ""}
+                {form.maxRunsEnabled ? <Image className="icon icon-sm" src={iconUrl("check", "-active")} /> : null}
               </View>
               <View>一次性任务（只执行一次）</View>
             </View>
             <View className="sch-switch" onClick={() => setForm((f) => ({ ...f, runOnCreate: !f.runOnCreate }))}>
               <View className={`sch-checkbox ${form.runOnCreate ? "sch-checkbox-on" : ""}`}>
-                {form.runOnCreate ? "✓" : ""}
+                {form.runOnCreate ? <Image className="icon icon-sm" src={iconUrl("check", "-active")} /> : null}
               </View>
               <View>创建后立即执行一次</View>
             </View>
@@ -369,7 +370,7 @@ export default function SchedulesPage() {
 
       {schedules.length === 0 && !loading ? (
         <View className="card empty">
-          <View className="empty-icon">⏰</View>
+          <Image className="icon icon-xl" src={iconUrl("schedule")} />
           <View className="empty-title">暂无定时任务</View>
           <View className="empty-desc">创建后 daemon 会按 cadence 自动触发 agent。</View>
         </View>

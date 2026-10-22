@@ -1,5 +1,7 @@
 export default defineAppConfig({
   pages: [
+    // 对话主页是默认启动页（t20：豆包式——打开即上次活跃会话/快捷输入框）
+    "pages/chat/index",
     "pages/devices/index",
     "pages/login/index",
     "pages/agents/index",
@@ -33,6 +35,12 @@ export default defineAppConfig({
         text: "设备",
         iconPath: "assets/tabbar/devices.png",
         selectedIconPath: "assets/tabbar/devices-active.png",
+      },
+      {
+        pagePath: "pages/chat/index",
+        text: "对话",
+        iconPath: "assets/tabbar/chat.png",
+        selectedIconPath: "assets/tabbar/chat-active.png",
       },
       {
         pagePath: "pages/settings/index",

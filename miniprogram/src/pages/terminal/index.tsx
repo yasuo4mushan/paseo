@@ -60,15 +60,19 @@ export default function TerminalPage() {
   const [status, setStatus] = useState<"connecting" | "live" | "closed">("connecting");
   const [error, setError] = useState("");
   const bufferRef = useRef(new TerminalBuffer());
+  const killOnExitRef = useRef(false);
   const detachRef = useRef<(() => void) | null>(null);
   const lineIdRef = useRef(0);
   const bottomAnchor = useRef(`term-bottom-${Date.now()}`);
 
+  // t20：kill=1 表示该终端是本端 create_terminal 打开的（如工作区终端），
+  // 页面退出时 kill_terminal 清 PTY（t19 遗留：脚本终端是 daemon 管理的，不 kill）。
   useLoad((options) => {
     const id = options?.terminalId ? decodeURIComponent(options.terminalId) : "";
     const title = options?.title ? decodeURIComponent(options.title) : "";
     if (id) setTerminalId(id);
     if (title) setHeadTitle(title);
+    killOnExitRef.current = options?.kill === "1";
   });
 
   useEffect(() => {
@@ -140,6 +144,10 @@ export default function TerminalPage() {
       unsubscribeExit();
       detachRef.current?.();
       detachRef.current = null;
+      // t20：验收后清 PTY（kill_terminal_request）。失败静默——终端可能已退出。
+      if (killOnExitRef.current) {
+        void conn.killTerminal(terminalId).catch(() => {});
+      }
     };
   }, [terminalId]);
 

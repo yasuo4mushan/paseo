@@ -1,24 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, View } from "@tarojs/components";
+import { Button, Image, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { hasSession, hub, hubErrorMessage, isAuthExpired } from "@/hub/hub-client";
 import type { HubDevice } from "@/hub/hub-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useThemeClass } from "@/hooks/use-theme";
 import { formatRelativeTime } from "@/utils/time";
+import { iconUrl } from "@/utils/icons";
+import { safeReLaunch, safeSwitchTab } from "@/utils/navigation";
 import "./index.css";
 
-const OS_META: Record<string, { label: string; icon: string }> = {
-  darwin: { label: "macOS", icon: "🍎" },
-  macos: { label: "macOS", icon: "🍎" },
-  win32: { label: "Windows", icon: "🪟" },
-  windows: { label: "Windows", icon: "🪟" },
-  linux: { label: "Linux", icon: "🐧" },
+const OS_META: Record<string, string> = {
+  darwin: "macOS",
+  macos: "macOS",
+  win32: "Windows",
+  windows: "Windows",
+  linux: "Linux",
 };
 
-function osMeta(os: string): { label: string; icon: string } {
-  return OS_META[os.toLowerCase()] ?? { label: os || "未知系统", icon: "🖥" };
+function osMeta(os: string): { label: string } {
+  return { label: OS_META[os.toLowerCase()] ?? (os || "未知系统") };
 }
 
 export default function DevicesPage() {
@@ -32,6 +34,8 @@ export default function DevicesPage() {
   const [devices, setDevices] = useState<HubDevice[] | null>(null);
   const [error, setError] = useState("");
   const [connectingId, setConnectingId] = useState("");
+  // P0-0：连接中的同步互斥（state 异步生效，双击会在 setConnectingId 前都通过守卫）
+  const connectingRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!hasSession()) {
@@ -55,7 +59,7 @@ export default function DevicesPage() {
   useEffect(() => {
     if (!authed) {
       connectionManager.disconnect();
-      Taro.reLaunch({ url: "/pages/login/index" });
+      void safeReLaunch("/pages/login/index");
     }
   }, [authed]);
 
@@ -72,21 +76,25 @@ export default function DevicesPage() {
   const connected = connectionState.status === "connected";
 
   const connectDevice = async (device: HubDevice) => {
-    if (connectingId) return;
+    if (connectingRef.current) return;
     if (!device.online || !device.offer) {
       Taro.showToast({ title: "设备离线，无法连接", icon: "none" });
       return;
     }
+    connectingRef.current = true;
     setConnectingId(device.deviceId);
     try {
       await connectionManager.connectOffer(device.offer, {
         deviceId: device.deviceId,
         name: device.name,
       });
-      Taro.navigateTo({ url: "/pages/agents/index" });
+      // t20：连上即达对话主页（switchTab 不入页面栈——修复旧版 navigateTo:fail
+      // timeout 的结构性根因：await 长握手后与用户连点/其他转场并发导航）。
+      await safeSwitchTab("/pages/chat/index");
     } catch (err) {
       Taro.showToast({ title: hubErrorMessage(err), icon: "none" });
     } finally {
+      connectingRef.current = false;
       setConnectingId("");
     }
   };
@@ -110,7 +118,7 @@ export default function DevicesPage() {
         </>
       ) : devices.length === 0 ? (
         <View className="card empty">
-          <View className="empty-icon">🖥</View>
+          <Image className="icon icon-xl" src={iconUrl("devices")} />
           <View className="empty-title">还没有设备</View>
           <View className="empty-desc">
             在你的开发机上安装 aaswitch daemon 并登录同一账号，设备会自动出现在这里。
@@ -128,7 +136,9 @@ export default function DevicesPage() {
                 className={`card device-card ${device.online ? "device-online" : "device-offline"}`}
                 onClick={() => void connectDevice(device)}
               >
-                <View className="device-icon">{meta.icon}</View>
+                <View className="device-icon">
+                  <Image className="icon icon-lg" src={iconUrl("devices")} />
+                </View>
                 <View className="device-main">
                   <View className="device-name">{device.name}</View>
                   <View className="muted device-sub">

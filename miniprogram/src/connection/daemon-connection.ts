@@ -53,6 +53,8 @@ import {
   parseSubscribeTerminalResponse,
   parseTerminalInfo,
   parseUpdateAgentResponse,
+  parseAgentActionResponse,
+  parseKillTerminalResponse,
   parseWorkspaceScriptResponse,
   type AgentSnapshot,
   type AgentStreamPayload,
@@ -688,6 +690,7 @@ export class DaemonConnection {
         cwd: options.cwd,
         ...(options.model ? { model: options.model } : {}),
         ...(options.modeId ? { modeId: options.modeId } : {}),
+        ...(options.thinkingOptionId ? { thinkingOptionId: options.thinkingOptionId } : {}),
       },
       ...(options.workspaceId ? { workspaceId: options.workspaceId } : {}),
       ...(options.initialPrompt ? { initialPrompt: options.initialPrompt } : {}),
@@ -780,6 +783,57 @@ export class DaemonConnection {
     });
     const payload = response.payload as { error?: unknown };
     if (typeof payload?.error === "string" && payload.error) throw new Error(payload.error);
+  }
+
+  // ---------------------------------------------------------------------------
+  // t20：会话中配置切换（composer 四 pill → set_agent_mode/model/thinking）。
+  // 三个 RPC 的响应同为 AgentActionResponsePayload（accepted/error/notice）。
+  // ---------------------------------------------------------------------------
+
+  /** 审批模式切换（set_agent_mode_request；provider modes 见 listProviderModes）。 */
+  async setAgentMode(agentId: string, modeId: string): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "set_agent_mode_request",
+      agentId,
+      modeId,
+    });
+    const parsed = parseAgentActionResponse(response.payload);
+    if (!parsed) throw new Error("模式切换响应解析失败");
+    if (!parsed.accepted) throw new Error(parsed.error ?? "模式切换被拒绝");
+  }
+
+  /** 模型切换（set_agent_model_request；null = 清除自定义回 provider 默认）。 */
+  async setAgentModel(agentId: string, modelId: string | null): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "set_agent_model_request",
+      agentId,
+      modelId,
+    });
+    const parsed = parseAgentActionResponse(response.payload);
+    if (!parsed) throw new Error("模型切换响应解析失败");
+    if (!parsed.accepted) throw new Error(parsed.error ?? "模型切换被拒绝");
+  }
+
+  /** thinking 档位切换（set_agent_thinking_request；null = 清除）。 */
+  async setAgentThinking(agentId: string, thinkingOptionId: string | null): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "set_agent_thinking_request",
+      agentId,
+      thinkingOptionId,
+    });
+    const parsed = parseAgentActionResponse(response.payload);
+    if (!parsed) throw new Error("thinking 切换响应解析失败");
+    if (!parsed.accepted) throw new Error(parsed.error ?? "thinking 切换被拒绝");
+  }
+
+  /** t20：终止终端 PTY（kill_terminal_request；验收后清理，页面退出时按需调用）。 */
+  async killTerminal(terminalId: string): Promise<boolean> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      { type: "kill_terminal_request", terminalId },
+      15_000,
+    );
+    const parsed = parseKillTerminalResponse(response.payload);
+    return parsed?.success ?? false;
   }
 
   /** provider 会话列表（fetch_recent_provider_sessions_request）。 */

@@ -33,6 +33,16 @@ export interface AgentSnapshot {
   lastUserMessageAt: string | null;
   archivedAt?: string | null;
   requiresAttention?: boolean;
+  /**
+   * t20：composer 四 pill 的会话态数据源。
+   * thinkingOptionId/effectiveThinkingOptionId（AgentSnapshotPayload 同名字段，
+   * effective 是 provider 侧实际生效值）；currentModeId/availableModes（快照
+   * payload 独有，agent_update upsert 推送同样带全量快照，列表拉取即有）。
+   */
+  thinkingOptionId?: string | null;
+  effectiveThinkingOptionId?: string | null;
+  currentModeId?: string | null;
+  availableModes?: ProviderMode[];
   /** messages.ts AgentListItemPayload.labels：t18 归档/标签用（内部 paseo.* 前缀不展示）。 */
   labels?: Record<string, string>;
   /** messages.ts AgentListItemPayload.attentionReason：finished | error | permission。 */
@@ -250,12 +260,23 @@ export interface ProviderAvailability {
   error?: string | null;
 }
 
-/** messages.ts: AgentModelDefinitionSchema（子集） */
+/** messages.ts: AgentSelectOptionSchema（thinking 档位等选择器选项）。 */
+export interface AgentSelectOption {
+  id: string;
+  label: string;
+  description?: string;
+  isDefault?: boolean;
+}
+
+/** messages.ts: AgentModelDefinitionSchema（子集；t20 补 thinkingOptions）。 */
 export interface ProviderModelDefinition {
   id: string;
   label: string;
   description?: string;
   isDefault?: boolean;
+  /** t20：模型档位（如 GLM 的 thinking 高低档）；空 = 该模型无 thinking 选择。 */
+  thinkingOptions?: AgentSelectOption[];
+  defaultThinkingOptionId?: string;
 }
 
 /** messages.ts: AgentModeSchema（子集） */
@@ -308,6 +329,8 @@ export interface CreateAgentOptions {
   cwd: string;
   model?: string;
   modeId?: string;
+  /** t20：thinking 档位（AgentSessionConfigSchema.thinkingOptionId）。 */
+  thinkingOptionId?: string;
   workspaceId?: string;
   initialPrompt?: string;
 }
@@ -835,11 +858,39 @@ export type SessionRequestMessage =
       parentAgentId: string;
     }
   | {
-      /** t19：composer 斜杠命令目录（list_commands_request）。 */
-      type: "list_commands_request";
-      requestId: string;
-      agentId: string;
-    };
+    /** t19：composer 斜杠命令目录（list_commands_request）。 */
+    type: "list_commands_request";
+    requestId: string;
+    agentId: string;
+  }
+  // --- t20：会话中配置切换（composer 四 pill 的审批模式/模型/thinking） ---
+  | {
+    /** messages.ts SetAgentModeRequestMessageSchema（审批模式切换）。 */
+    type: "set_agent_mode_request";
+    agentId: string;
+    modeId: string;
+    requestId: string;
+  }
+  | {
+    /** messages.ts SetAgentModelRequestMessageSchema（modelId null = 回默认）。 */
+    type: "set_agent_model_request";
+    agentId: string;
+    modelId: string | null;
+    requestId: string;
+  }
+  | {
+    /** messages.ts SetAgentThinkingRequestMessageSchema（thinking 档位；null = 清除）。 */
+    type: "set_agent_thinking_request";
+    agentId: string;
+    thinkingOptionId: string | null;
+    requestId: string;
+  }
+  | {
+    /** t20：验收后清理 PTY（messages.ts KillTerminalRequestSchema）。 */
+    type: "kill_terminal_request";
+    terminalId: string;
+    requestId: string;
+  };
 
 /**
  * 权限回应（messages.ts AgentPermissionResponseMessageSchema）。
@@ -937,6 +988,27 @@ function bool(value: unknown): boolean {
 
 const LIFECYCLE_STATUSES = new Set(["initializing", "idle", "running", "error", "closed"]);
 
+/** messages.ts AgentSelectOptionSchema 容错解析（thinking 档位）。 */
+function parseSelectOption(value: unknown): AgentSelectOption | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  return {
+    id,
+    label: str(value.label) ?? id,
+    description: nullableStr(value.description) ?? undefined,
+    isDefault: bool(value.isDefault) || undefined,
+  };
+}
+
+/** AgentModeSchema 容错解析（快照 availableModes 用）。 */
+function parseProviderMode(value: unknown): ProviderMode | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  return { id, label: str(value.label) ?? id, description: nullableStr(value.description) ?? undefined };
+}
+
 export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
   if (!isRecord(value)) return null;
   const id = str(value.id);
@@ -947,6 +1019,10 @@ export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
     statusRaw && LIFECYCLE_STATUSES.has(statusRaw)
       ? (statusRaw as AgentLifecycleStatus)
       : "initializing";
+  const availableModesRaw = Array.isArray(value.availableModes) ? value.availableModes : [];
+  const availableModes = availableModesRaw
+    .map(parseProviderMode)
+    .filter((m): m is ProviderMode => m !== null);
   return {
     id,
     title: nullableStr(value.title),
@@ -959,6 +1035,10 @@ export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
     lastUserMessageAt: nullableStr(value.lastUserMessageAt),
     archivedAt: nullableStr(value.archivedAt),
     requiresAttention: bool(value.requiresAttention),
+    thinkingOptionId: nullableStr(value.thinkingOptionId),
+    effectiveThinkingOptionId: nullableStr(value.effectiveThinkingOptionId),
+    currentModeId: nullableStr(value.currentModeId),
+    ...(availableModes.length > 0 ? { availableModes } : {}),
     labels: parseLabels(value.labels),
     attentionReason:
       value.attentionReason === "finished" || value.attentionReason === "error"
@@ -1289,11 +1369,19 @@ export function parseProviderModelsResponse(payload: unknown): ProviderModelDefi
       if (!isRecord(raw)) return null;
       const id = str(raw.id);
       if (!id) return null;
+      const thinkingRaw = Array.isArray(raw.thinkingOptions) ? raw.thinkingOptions : [];
+      const thinkingOptions = thinkingRaw
+        .map(parseSelectOption)
+        .filter((o): o is AgentSelectOption => o !== null);
       return {
         id,
         label: str(raw.label) ?? id,
         description: nullableStr(raw.description) ?? undefined,
         isDefault: bool(raw.isDefault) || undefined,
+        ...(thinkingOptions.length > 0 ? { thinkingOptions } : {}),
+        ...(str(raw.defaultThinkingOptionId)
+          ? { defaultThinkingOptionId: str(raw.defaultThinkingOptionId) ?? "" }
+          : {}),
       };
     })
     .filter((m): m is ProviderModelDefinition => m !== null);
@@ -1750,6 +1838,26 @@ export function parseUpdateAgentResponse(
     accepted: bool(payload.accepted),
     error: nullableStr(payload.error),
   };
+}
+
+/**
+ * t20：set_agent_mode/model/thinking 与 agent.config.apply 共用的
+ * AgentActionResponsePayload（requestId/agentId/accepted/error/notice）。
+ */
+export function parseAgentActionResponse(
+  payload: unknown,
+): { agentId: string; accepted: boolean; error: string | null } | null {
+  return parseUpdateAgentResponse(payload);
+}
+
+/** t20：kill_terminal_response payload（terminalId/success/requestId）。 */
+export function parseKillTerminalResponse(
+  payload: unknown,
+): { terminalId: string; success: boolean } | null {
+  if (!isRecord(payload)) return null;
+  const terminalId = str(payload.terminalId);
+  if (!terminalId) return null;
+  return { terminalId, success: bool(payload.success) };
 }
 
 // ---------------------------------------------------------------------------
