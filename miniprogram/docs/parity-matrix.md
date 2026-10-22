@@ -1,7 +1,12 @@
 # 功能对齐矩阵（移动端 Web UI ↔ 微信小程序）
 
 对照 `packages/app`（移动端 Web UI，Expo/Taro 之外的官方端）逐项盘点功能要素，
-标注小程序当前覆盖状态。这是国产化验收的核对单（t19 终审版）。
+标注小程序当前覆盖状态。这是国产化验收的核对单（t20 终审版）。
+
+t20 结构性重构：三 tab 导航（设备 | **对话** | 设置），对话主页为默认启动页
+（豆包式直达——进入即上次活跃会话，无则快捷输入框），底部 composer 常驻四选择
+pill（Agent 框架/模型/thinking effort/审批模式），右侧会话抽屉承载全部会话管理；
+全端线条图标体系（30 图标，emoji 归零）。
 
 图例：
 
@@ -11,7 +16,20 @@
 - ⏸ —— 适配项：依赖小程序平台能力，单独评估（非照搬实现）
 - ➖ —— 不适用：官方端也仅限桌面/Electron 或浏览器形态
 
-状态基线：develop-xdb @ t19 终审（worktree `t19-miniprogram-final`）。
+状态基线：develop-xdb @ t19 终审 + t20 对话主页重构（worktree `t20-miniprogram-home`）。
+
+## 0. 对话为中心的导航与 composer（t20 重构）
+
+| 功能要素 | app 参照 | 小程序状态 | 说明 |
+| --- | --- | --- | --- |
+| 三 tab 导航（对话为中心） | 底部 tab + session rail | ✅t20 | 设备 \| 对话（中间，默认启动页）\| 设置；设备页连上设备 switchTab 直达对话主页（替代旧 navigateTo，兼修 navigateTo:fail timeout） |
+| 豆包式直达（进入即上次活跃会话） | startup restore | ✅t20 | sessionStore 持久化活跃会话（storage 按连接），失效（归档/删除）回退最新未归档会话；无会话时空态 + 快捷输入框 |
+| 会话展开栏（session rail 移动版） | `session-rail` | ✅t20 | 右滑/顶部按钮呼出右侧抽屉：全部会话（进行中/全部/需注意/归档筛选）、当前高亮、新建入口（点按快捷新对话；长按高级表单）；长按行归档/恢复/删除/详情管理 |
+| composer 四选择 pill | `composer/agent-controls` | ✅t20（移动简化版） | Agent 框架（list_available_providers）/ 模型（list_provider_models，含 thinkingOptions）/ thinking effort（所选模型档位；无档位隐藏）/ 审批模式（list_provider_modes）；状态机 `utils/composer-config` 单测覆盖 |
+| 会话中配置切换 | set_agent_mode/model/thinking | ✅t20 | 会话态下 model/mode/thinking 改动即发 set_agent_model / set_agent_mode / set_agent_thinking（AgentActionResponsePayload accepted）；provider 会话中锁定（协议无 per-agent 切换） |
+| 发送即创建 | composer draft | ✅t20 | 无活跃会话时发送 = create_agent（config 带 model/modeId/thinkingOptionId + workspace cwd）；需要已选工作区，未选时拉起选择器 |
+| 线条图标体系 | design tokens | ✅t20 | 30 图标 1.5px 线条风（scripts/gen-icons.mjs 纯 Node 生成，81x81@3x 抗锯齿）+ tabBar 三图标重制；中性灰单档适配深浅主题；emoji 图标归零（icon-assets 测试含回归门） |
+| 导航健壮性 | - | ✅t20 | utils/navigation：串行队列 + 连点去重 + 深栈（>=9）自动 redirectTo 降级；自动化回归步覆盖双击连接与 8 层深栈 |
 
 ## 1. 账号与设备（Hub）
 
@@ -32,17 +50,17 @@
 | 选中持久化（按设备隔离）              | workspace store                  | ✅t16           | Taro storage，断开清理                                      |
 | 新建工作区（git clone/worktree/fork） | `screens/new-workspace-screen`   | ✅t18（最小）   | 本地目录注册（open_project）+ GitHub clone（github.clone）；worktree/fork 隔离建仓未做——`create_paseo_worktree_request`/fork 链路需独立建页，且 agent 侧 worktree 隔离（见 §3）已覆盖主场景 → 🔄t20 |
 | 工作区状态轮询/attention              | workspace header                 | ✅t16（列表态） | 状态桶展示                                                  |
-| 项目设置/工作区归档                   | `project-settings-screen`        | 🔄t20           | 低频管理面：需 worktree 列表/归档 RPC（paseo_worktree_archive）+ 项目设置页；建议独立小批次 |
+| 项目设置/工作区归档                   | `project-settings-screen`        | 🔄t20（未做）   | 本批未做：低频管理面，需 worktree 列表/归档 RPC（paseo_worktree_archive）+ 项目设置页；留后续批次 |
 
 ## 3. Agent 会话
 
 | 功能要素                                           | app 参照                                 | 小程序状态    | 说明                                        |
 | -------------------------------------------------- | ---------------------------------------- | ------------- | ------------------------------------------- |
 | Agent 列表（状态/provider/attention）              | `components/agent-list`                  | ✅t15/t18     | t18：agent_update 订阅修复（fetch_agents subscribe）+ 归档/需注意/全部筛选 |
-| 创建 Agent（provider/model/mode/prompt）           | `composer` + create flow                 | ✅t16/t19     | 真实 provider 目录；t19：worktree 隔离选项（create_agent worktree branch-off，开关+新分支名） |
+| 创建 Agent（provider/model/mode/prompt）           | `composer` + create flow                 | ✅t16/t19/t20 | 真实 provider 目录；t19：worktree 隔离选项（create_agent worktree branch-off，开关+新分支名）；t20：thinking effort（模型目录 thinkingOptions，默认档联动）+ 对话主页发送即创建（见 §0） |
 | 时间线（user/assistant/reasoning/tool/todo/error） | `agent-stream/`                          | ✅t15         | 气泡体系 + seq 去重 + 乐观追加              |
 | Markdown 渲染（代码块/表格/链接）                  | `markdown-renderer`                      | ✅t19         | 自写轻量渲染器（block/inline 两级 AST→View，无 eval）：标题/有序无序列表（两层）/引用/GFM 表格/分隔线/代码围栏（等宽+横向滚动+复制）/行内码/粗斜删/链接（复制+浏览器打开提示）。对照 app 原生引擎的简化：行内标记不嵌套、无 mermaid/数学/HTML/tasklist、无流式分块渲染——矩阵终审接受 |
-| 发消息（steer/queue 行为）                         | composer submit                          | ✅t15/t19     | t19：运行中发送行为 toggle（steer 插入 / interrupt 先中断），activeTurnBehavior 随消息声明 |
+| 发消息（steer/queue 行为）                         | composer submit                          | ✅t15/t19/t20 | t19：运行中发送行为 toggle（steer 插入 / interrupt 先中断），activeTurnBehavior 随消息声明；t20：composer 常驻对话主页（附件/斜杠命令随迁） |
 | 中断 / 删除 Agent                                  | `agent-controls`                         | ✅t16         | cancel_agent / delete_agent                 |
 | 归档 / 恢复                                        | agent archive                            | ✅t18         | archive_agent / refresh_agent（unarchive）  |
 | Subagents 轨道                                     | `subagents/`                             | ✅t19         | provider_subagents.list + update 推送（upsert/remove 实时维护）；标题/描述/副题/状态四态点。子代理时间线详情（timeline.get + 独立视图）未做 → 低频，🔄t20 备注 |
@@ -82,7 +100,7 @@
 
 | 功能要素                          | app 参照                     | 小程序状态      | 说明                                                                                          |
 | --------------------------------- | ---------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
-| 工作区终端（PTY 流）              | `terminal/` + terminal-panel | ✅t19（适配版） | subscribe_terminal（visible-snapshot 回放）→ TerminalStream 帧（Restore/Output/Snapshot）→ ANSI 剥离纯文本行 + 行输入（terminal_input）。对照 app xterm 的简化：无 ANSI 着色/光标定位/键级输入/resize；工作区终端（create_terminal）+ 脚本输出两个入口 |
+| 工作区终端（PTY 流）              | `terminal/` + terminal-panel | ✅t19/t20（适配版） | subscribe_terminal（visible-snapshot 回放）→ TerminalStream 帧（Restore/Output/Snapshot）→ ANSI 剥离纯文本行 + 行输入（terminal_input）。对照 app xterm 的简化：无 ANSI 着色/光标定位/键级输入/resize；工作区终端（create_terminal）+ 脚本输出两个入口；t20：create_terminal 打开的终端退出时 kill_terminal 清 PTY（t19 遗留） |
 | 浏览器面板（webview/Browser Use） | `desktop/browser`            | ➖              | Electron 专属（webviewTag）                                                                   |
 | 服务代理公网 URL                  | `service-proxy`              | ✅t18           | 脚本页展示 publicProxyUrl 主机；不承载反代                                                    |
 
@@ -111,7 +129,7 @@
 | daemon 状态（版本/relay 端点）     | daemon status         | ✅t15         | daemon.get_status                          |
 | 深色模式                           | appearance            | ✅t15/t18     | t18：三档主题（跟随系统/浅色/深色）——页面 tokens 双轨覆盖 + 导航/tabBar wx API 显式着色 |
 | 语言/i18n                          | `i18n/`               | ✅t15（中文） | 多语言未排期（t18 砍尾项）                 |
-| 集成（forge/editor/browser tools） | settings integrations | 🔄t20         | 纯管理面、低频；providers snapshot/mcp 配置 RPC 族需整组考古，建议随 MCP 管理合并批次 |
+| 集成（forge/editor/browser tools） | settings integrations | 🔄t20（未做） | 本批未做（t20 聚焦对话主页重构，管理面批次顺延）；providers snapshot/mcp 配置 RPC 族需整组考古 |
 | 关于/诊断                          | settings              | ✅t15（基础） | 版本/连接信息展示；诊断导出未做 → 错误信息已就地展示，价值低，归入 t20 集成批次顺带 |
 
 ## 10. 其他平台面
@@ -121,18 +139,20 @@
 | 语音输入/听写                  | `audio/` `dictation/` | ⏸                   | wx 录音 API 可行，转写链路单独评估          |
 | 图片消息（base64 images 直发） | composer images       | ✅t17（经附件通道） | 小程序统一走 uploaded_file 附件（协议等价） |
 | 插件/原生面                    | `plugins/`            | ➖                   | 桌面端专属                                  |
-| MCP 服务器管理                 | settings mcp          | 🔄t20               | mcp.\* RPC 族未考古；管理面低频，与集成设置合并批次 |
+| MCP 服务器管理                 | settings mcp          | 🔄t20（未做）       | 本批未做；mcp.* RPC 族未考古；管理面低频，与集成设置合并批次 |
 
-## 覆盖统计（终审）
+## 覆盖统计（t20 终审）
 
-按上表逐行计（共 60 行）：
+按上表逐行计（共 69 行）：
 
-- ✅ 已覆盖 **51** 项（其中 t19 新增 12 项：Markdown 富渲染、activeTurnBehavior、subagents 轨道、重命名、斜杠命令、会话导出、上下文计量条、文件订阅变更、文件写回、条目操作、文件 diff、适配版终端流（含脚本输出））
-- 🔄t20 待做 **3** 项：项目设置/工作区归档（低频管理面）、集成设置+诊断导出（RPC 族整组考古）、MCP 服务器管理（同前）
+- ✅ 已覆盖 **59** 项（其中 t20 新增 8 项：三 tab 对话导航、豆包式直达、会话抽屉、composer 四 pill、会话中配置切换（set_agent_*）、发送即创建、线条图标体系、导航健壮性；另有 thinking effort 创建表单、kill_terminal、深色适配新页面并入既有行）
+- 🔄t20 待做 **3** 项（本批未做，管理面批次顺延）：项目设置/工作区归档、集成设置+诊断导出（RPC 族整组考古）、MCP 服务器管理（同前）；另 t19 遗留备注：子代理时间线详情、全局命令面板
 - ⏸ 适配评估 **2** 项：后台推送订阅消息（微信模板审批门槛）、语音听写（转写链路）
 - ➖ 不适用 **4** 项：daemon 侧设备注册（桌面承担）、工作区文件拖拽（无拖拽能力）、浏览器面板（Electron 专属）、插件原生面（桌面专属）
 
-结论：移动端运营面（连接/会话/权限/文件/终端输出/定时/脚本/通知/外观）已全链路闭环；剩余 3 项均为低频管理面，可并入一个收尾小批次（t20），2 项平台适配项单独评估。
+结论：移动端运营面（连接/会话/权限/文件/终端输出/定时/脚本/通知/外观）已全链路闭环，
+且 t20 起以对话为中心（打开即聊、四 pill 直选 agent/模型/thinking/审批模式）；
+剩余 3 项均为低频管理面，2 项平台适配项单独评估。
 
 ## 验收证据
 
