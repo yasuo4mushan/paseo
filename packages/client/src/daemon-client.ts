@@ -5228,6 +5228,71 @@ export class DaemonClient {
     });
   }
 
+  /**
+   * aaswitch Hub account RPCs (device registration hub). Gated on the
+   * `hubAccountRpc` capability so an old host reports an update prompt
+   * instead of an RPC error.
+   */
+  private requireHubAccountSupport(): void {
+    if (!this.lastServerInfoMessage) throw new DaemonConnectionError("Transport not connected");
+    if (this.lastServerInfoMessage?.features?.hubAccountRpc !== true) {
+      throw new Error("Update the host to manage the aaswitch account.");
+    }
+  }
+
+  async getHubAccountStatus(requestId?: string) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: { type: "hub.status.request" },
+      responseType: "hub.status.response",
+    });
+  }
+
+  async loginHubAccount(
+    input: { baseUrl?: string; username: string; password: string },
+    requestId?: string,
+  ) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: {
+        type: "hub.login.request",
+        ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
+        username: input.username,
+        password: input.password,
+      },
+      responseType: "hub.login.response",
+    });
+  }
+
+  async registerHubAccount(
+    input: { baseUrl?: string; username: string; password: string; deviceName?: string },
+    requestId?: string,
+  ) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: {
+        type: "hub.register.request",
+        ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
+        username: input.username,
+        password: input.password,
+        ...(input.deviceName ? { deviceName: input.deviceName } : {}),
+      },
+      responseType: "hub.register.response",
+    });
+  }
+
+  async logoutHubAccount(requestId?: string) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: { type: "hub.logout.request" },
+      responseType: "hub.logout.response",
+    });
+  }
+
   async getDaemonPairingOffer(
     options?: DaemonPairingOfferOptions,
   ): Promise<DaemonPairingOfferPayload> {

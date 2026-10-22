@@ -1420,6 +1420,35 @@ export const HubManagementDaemonPermissionsUpdateRequestSchema = z.object({
   revoke: z.array(DaemonPermissionSchema).default([]),
 });
 
+// aaswitch Hub account bridge (device registration hub, distinct from the Paseo
+// Hub relationship RPCs above). Contract: POST <base>/api/<method>. `baseUrl` is
+// optional on login/register: the daemon falls back to its resolved hub config
+// (env override, persisted value, or the built-in default), so the standard
+// sign-in flow sends only username and password.
+export const HubAccountStatusRequestSchema = z.object({
+  type: z.literal("hub.status.request"),
+  requestId: z.string(),
+});
+export const HubAccountLoginRequestSchema = z.object({
+  type: z.literal("hub.login.request"),
+  requestId: z.string(),
+  baseUrl: z.string().min(1).optional(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+export const HubAccountRegisterRequestSchema = z.object({
+  type: z.literal("hub.register.request"),
+  requestId: z.string(),
+  baseUrl: z.string().min(1).optional(),
+  username: z.string().min(1),
+  password: z.string().min(1),
+  deviceName: z.string().min(1).optional(),
+});
+export const HubAccountLogoutRequestSchema = z.object({
+  type: z.literal("hub.logout.request"),
+  requestId: z.string(),
+});
+
 export const DiagnosticsRequestSchema = z.object({
   type: z.literal("diagnostics.request"),
   requestId: z.string(),
@@ -3238,6 +3267,10 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   HubManagementDaemonGetStatusRequestSchema,
   HubManagementDaemonDisconnectRequestSchema,
   HubManagementDaemonPermissionsUpdateRequestSchema,
+  HubAccountStatusRequestSchema,
+  HubAccountLoginRequestSchema,
+  HubAccountRegisterRequestSchema,
+  HubAccountLogoutRequestSchema,
   DiagnosticsRequestSchema,
   PluginCatalogGetRequestSchema,
   PluginListRequestSchema,
@@ -3579,6 +3612,8 @@ export const ServerInfoStatusPayloadSchema = z
         creationLifecycle: z.boolean().optional(),
         // COMPAT(hubAgentRpc): added in v0.8.0; remove gate after 2027-03-05.
         hubAgentRpc: z.boolean().optional(),
+        // COMPAT(hubAccountRpc): added in v0.13.0; remove gate after 2027-10-01.
+        hubAccountRpc: z.boolean().optional(),
         // COMPAT(internalAgents): added in v0.9.0; remove gate after 2027-03-17.
         internalAgents: z.boolean().optional(),
         // COMPAT(internalWorkspaces): added in v0.9.0; remove gate after 2027-03-17.
@@ -5057,6 +5092,46 @@ export const HubManagementDaemonDisconnectResponseSchema = z.object({
 export const HubManagementDaemonPermissionsUpdateResponseSchema = z.object({
   type: z.literal("hub.management.daemon.permissions.update.response"),
   payload: z.object({ requestId: z.string(), status: HubRelationshipStatusSchema }),
+});
+
+export const HubAccountStatusSchema = z.object({
+  /** A hub base URL is configured (persisted or environment). */
+  configured: z.boolean(),
+  /** A login token is held. The hub may still reject it; `lastError` reports that. */
+  loggedIn: z.boolean(),
+  baseUrl: z.string().nullable(),
+  username: z.string().nullable(),
+  deviceName: z.string().nullable(),
+  deviceId: z.string().nullable(),
+  /** The device-registration loop currently holds a registration. */
+  registered: z.boolean(),
+  relayEnabled: z.boolean(),
+  lastError: z.string().nullable(),
+});
+export type HubAccountStatus = z.infer<typeof HubAccountStatusSchema>;
+export const HubAccountStatusResponseSchema = z.object({
+  type: z.literal("hub.status.response"),
+  payload: z.object({ requestId: z.string(), status: HubAccountStatusSchema }),
+});
+export const HubAccountLoginResponseSchema = z.object({
+  type: z.literal("hub.login.response"),
+  payload: z.object({
+    requestId: z.string(),
+    accountId: z.string(),
+    username: z.string(),
+  }),
+});
+export const HubAccountRegisterResponseSchema = z.object({
+  type: z.literal("hub.register.response"),
+  payload: z.object({
+    requestId: z.string(),
+    accountId: z.string(),
+    username: z.string(),
+  }),
+});
+export const HubAccountLogoutResponseSchema = z.object({
+  type: z.literal("hub.logout.response"),
+  payload: z.object({ requestId: z.string() }),
 });
 
 export const DaemonGetPairingOfferResponseSchema = z.object({
@@ -6957,6 +7032,10 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   HubManagementDaemonGetStatusResponseSchema,
   HubManagementDaemonDisconnectResponseSchema,
   HubManagementDaemonPermissionsUpdateResponseSchema,
+  HubAccountStatusResponseSchema,
+  HubAccountLoginResponseSchema,
+  HubAccountRegisterResponseSchema,
+  HubAccountLogoutResponseSchema,
   DiagnosticsResponseSchema,
   GetDaemonConfigResponseMessageSchema,
   SetDaemonConfigResponseMessageSchema,

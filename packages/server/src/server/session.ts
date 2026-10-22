@@ -186,8 +186,10 @@ import { WorkspaceFilesSession } from "./session/files/workspace-files-session.j
 import { AgentConfigSession } from "./session/agent-config/agent-config-session.js";
 import { ProjectConfigSession } from "./session/project-config/project-config-session.js";
 import { DaemonSession, type DaemonRuntimeConfig } from "./session/daemon/daemon-session.js";
+import { HubAccountSession } from "./session/daemon/hub-account-session.js";
 import type { DaemonWebSocketRuntimeDiagnosticSnapshot } from "./session/daemon/diagnostics.js";
 import type { HubRelationshipManagement } from "./hub/relationship-controller.js";
+import type { HubAccountManager } from "./hub-account.js";
 import { HubExecutionController } from "./hub/execution-controller.js";
 import type { HubExecutionAgents } from "./hub/daemon-executions.js";
 import { DownloadTokenStore } from "./file-download/token-store.js";
@@ -293,6 +295,15 @@ function errorToFriendlyMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return "Unknown error";
+}
+
+function createHubAccountSession(
+  hubAccount: HubAccountManager | undefined,
+  emit: (msg: SessionOutboundMessage) => void,
+  logger: pino.Logger,
+): HubAccountSession | null {
+  if (!hubAccount) return null;
+  return new HubAccountSession({ host: { emit }, hubAccount, logger });
 }
 
 function isAppVersionAtLeast(appVersion: string | null, minVersion: string): boolean {
@@ -529,6 +540,7 @@ export interface SessionOptions {
   providerSnapshotManager: ProviderSnapshotManager;
   hubExecutionAgents?: HubExecutionAgents;
   hubRelationships?: HubRelationshipManagement;
+  hubAccount?: HubAccountManager;
   serviceProxy?: ServiceProxySubsystem;
   scriptRuntimeStore?: WorkspaceScriptRuntimeStore;
   workspaceSetupSnapshots?: Map<string, WorkspaceSetupSnapshot>;
@@ -796,6 +808,7 @@ export class Session {
   private readonly agentConfigSession: AgentConfigSession;
   private readonly projectConfigSession: ProjectConfigSession;
   private readonly daemonSession: DaemonSession;
+  private readonly hubAccountSession: HubAccountSession | null;
   private readonly hubExecutionController: HubExecutionController | null;
   private readonly workspaceScripts: WorkspaceScriptsService;
   private readonly messageReceipts: Pick<MessageReceipts, "send">;
@@ -1069,6 +1082,11 @@ export class Session {
       hubRelationships: options.hubRelationships,
       reloadConfig: () => daemonConfigStore.reload(),
     });
+    this.hubAccountSession = createHubAccountSession(
+      options.hubAccount,
+      (msg) => this.emit(msg),
+      this.sessionLogger,
+    );
     this.hubExecutionController = options.hubExecutionAgents
       ? new HubExecutionController({
           agents: options.hubExecutionAgents,
@@ -2328,7 +2346,7 @@ export class Session {
       this.dispatchHubExecutionMessage(msg) ??
       this.dispatchCreationMessage(msg, source) ??
       this.dispatchAgentLifecycleMessage(msg) ??
-      this.dispatchAgentConfigMessage(msg) ??
+      this.dispatchDaemonSettingsMessage(msg) ??
       this.dispatchCheckoutMessage(msg) ??
       this.dispatchWorkspaceLifecycleMessage(msg) ??
       this.dispatchWorkspaceFileMessage(msg, source) ??
@@ -2785,6 +2803,23 @@ export class Session {
         return this.handleAgentPermissionResponse(msg.agentId, msg.requestId, msg.response);
       case "clear_agent_attention":
         return this.handleClearAgentAttention(msg.agentId, msg.requestId);
+      default:
+        return undefined;
+    }
+  }
+
+  private dispatchDaemonSettingsMessage(msg: SessionInboundMessage): Promise<void> | undefined {
+    return this.dispatchHubAccountMessage(msg) ?? this.dispatchAgentConfigMessage(msg);
+  }
+
+  private dispatchHubAccountMessage(msg: SessionInboundMessage): Promise<void> | undefined {
+    switch (msg.type) {
+      case "hub.status.request":
+      case "hub.login.request":
+      case "hub.register.request":
+      case "hub.logout.request":
+        if (!this.hubAccountSession) throw new Error("Hub account integration is unavailable");
+        return this.hubAccountSession.handleRequest(msg);
       default:
         return undefined;
     }

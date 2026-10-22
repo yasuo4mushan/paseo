@@ -286,6 +286,54 @@ interface ResolvedServiceProxy {
   standaloneListen: string | null;
 }
 
+export interface ResolvedHubAccount {
+  baseUrl: string;
+  token: string | null;
+  username: string | null;
+  deviceName: string | null;
+  tokenFromEnv: boolean;
+}
+
+/**
+ * Zero-config default for the aaswitch device hub. Users sign in with just a
+ * username and password; the address only changes via persisted config or
+ * `PASEO_HUB_URL` (for example when a self-hosted hub or the final aaswitch
+ * domain is used). Swap this constant when the aaswitch domain is ready.
+ */
+export const DEFAULT_HUB_BASE_URL = "http://remoteagent.agentsworkforyou.cn/api";
+
+/**
+ * Normalize a hub base URL to its origin form. Users paste `http://host/`,
+ * `http://host/api`, or `http://host/api/`; the client always requests
+ * `<origin>/api/<method>`, so trailing slashes and a trailing `/api` segment
+ * are stripped rather than rejected.
+ */
+export function normalizeHubBaseUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const withoutTrailingSlashes = trimmed.replace(/\/+$/, "");
+  const withoutApiSuffix = withoutTrailingSlashes.replace(/\/api$/i, "");
+  return withoutApiSuffix || null;
+}
+
+function resolveHubAccountConfig(
+  env: NodeJS.ProcessEnv,
+  persisted: PersistedConfig,
+): ResolvedHubAccount {
+  return {
+    baseUrl:
+      normalizeHubBaseUrl(env.PASEO_HUB_URL) ??
+      normalizeHubBaseUrl(persisted.hub?.baseUrl) ??
+      normalizeHubBaseUrl(DEFAULT_HUB_BASE_URL)!,
+    token: nonEmptyEnv(env.PASEO_HUB_TOKEN) ?? persisted.hub?.token ?? null,
+    username: persisted.hub?.username?.trim() || null,
+    deviceName: persisted.hub?.deviceName?.trim() || null,
+    tokenFromEnv: Boolean(nonEmptyEnv(env.PASEO_HUB_TOKEN)),
+  };
+}
+
 function resolveTlsFromEnv(
   envValue: string | undefined,
   persistedValue: boolean | undefined,
@@ -639,6 +687,7 @@ export function resolveConfigFromPersisted(
     relayPublicEndpoint: relay.publicEndpoint,
     relayUseTls: relay.useTls,
     relayPublicUseTls: relay.publicUseTls,
+    hub: resolveHubAccountConfig(env, persisted),
     serviceProxy,
     webUi,
     appBaseUrl,
@@ -699,6 +748,7 @@ function resolveDaemonOverrideControlledPaths(
     ...resolveCoreDaemonOverridePaths(env, cli),
     ...resolveRelayOverridePaths(env, cli),
     ...resolveServiceAndWebUiOverridePaths(env, cli),
+    ...resolveHubOverridePaths(env),
   ];
 }
 
@@ -748,6 +798,13 @@ function resolveRelayOverridePaths(
   if (env.PASEO_RELAY_PUBLIC_USE_TLS !== undefined) {
     paths.push("daemon.relay.publicUseTls");
   }
+  return paths;
+}
+
+function resolveHubOverridePaths(env: NodeJS.ProcessEnv): string[] {
+  const paths: string[] = [];
+  if (nonEmptyEnv(env.PASEO_HUB_URL) !== undefined) paths.push("hub.baseUrl");
+  if (nonEmptyEnv(env.PASEO_HUB_TOKEN) !== undefined) paths.push("hub.token");
   return paths;
 }
 
