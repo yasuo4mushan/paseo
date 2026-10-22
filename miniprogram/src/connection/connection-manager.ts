@@ -9,7 +9,12 @@
 
 import Taro from "@tarojs/taro";
 import { DaemonConnection, type DaemonConnectionState } from "./daemon-connection";
-import { buildRelayClientWebSocketUrl, parseConnectionInput, type RelayOffer } from "./relay-offer";
+import {
+  buildRelayClientWebSocketUrl,
+  buildRelayUriFromOffer,
+  parseConnectionInput,
+  type RelayOffer,
+} from "./relay-offer";
 import { createRelayPlaintextSocket } from "./relay-transport";
 import { createWxSocket } from "./wx-socket";
 import type { AgentSnapshot, AgentStreamPayload, DaemonStatus, ServerInfo } from "./protocol-types";
@@ -19,6 +24,12 @@ const STORAGE_KEY = "paseo_mp_connection";
 export type StoredConnection =
   | { kind: "relay"; input: string; offer: RelayOffer }
   | { kind: "direct"; input: string; url: string };
+
+/** 当前连接的 hub 设备（仅内存态；设置页展示用）。 */
+export interface ActiveDevice {
+  deviceId: string;
+  name: string;
+}
 
 export type ManagerState =
   | { status: "disconnected" }
@@ -42,6 +53,7 @@ class ConnectionManager {
   private connection: DaemonConnection | null = null;
   private stored: StoredConnection | null = null;
   private state: ManagerState = { status: "disconnected" };
+  private activeDevice: ActiveDevice | null = null;
   private listeners = new Set<Listener>();
   private streamListeners = new Set<(payload: AgentStreamPayload) => void>();
   private agentUpdateListeners = new Set<
@@ -55,6 +67,10 @@ class ConnectionManager {
 
   getStored(): StoredConnection | null {
     return this.stored;
+  }
+
+  getActiveDevice(): ActiveDevice | null {
+    return this.activeDevice;
   }
 
   subscribe(listener: Listener): () => void {
@@ -132,7 +148,21 @@ class ConnectionManager {
       if (!stored) throw new Error("没有已保存的连接");
       target = stored;
     }
+    this.activeDevice = null;
+    return this.connectTarget(target);
+  }
 
+  /**
+   * 设备页入口：用 hub 返回的 offer 走 relay E2EE 连接。
+   * offer → relay:// URI 往返构造，与手动配对共用一条路径。
+   */
+  async connectOffer(offer: RelayOffer, device: ActiveDevice): Promise<ServerInfo> {
+    this.disconnect();
+    this.activeDevice = device;
+    return this.connectTarget({ kind: "relay", input: buildRelayUriFromOffer(offer), offer });
+  }
+
+  private async connectTarget(target: StoredConnection): Promise<ServerInfo> {
     this.stored = target;
     this.setState({
       status: "connecting",
@@ -199,6 +229,7 @@ class ConnectionManager {
       this.connection.close(1000, "user disconnect");
       this.connection = null;
     }
+    this.activeDevice = null;
     this.setState({ status: "disconnected" });
   }
 

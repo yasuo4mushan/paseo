@@ -8,3 +8,17 @@ export const STATUS_LABELS: Record<AgentLifecycleStatus | string, string> = {
   error: "错误",
   closed: "已关闭",
 };
+
+/** agent 状态 → 胶囊样式（pill-* 定义在 app.css tokens 体系里）。 */
+export function statusPillClass(status: AgentLifecycleStatus | string): string {
+  switch (status) {
+    case "running":
+      return "pill pill-running";
+    case "error":
+      return "pill pill-error";
+    case "initializing":
+      return "pill pill-warn";
+    default:
+      return "pill";
+  }
+}
