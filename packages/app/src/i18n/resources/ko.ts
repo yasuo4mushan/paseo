@@ -2113,6 +2113,7 @@ export const ko: TranslationResources = {
       sendFailedTitle: "테스트 알림을 보낼 수 없음",
     },
     hostSections: {
+      account: "계정",
       projects: "프로젝트",
       connections: "연결",
       agents: "에이전트",
@@ -2496,6 +2497,34 @@ export const ko: TranslationResources = {
         title: "기기 페어링",
         rowTitle: "기기 페어링",
         rowHint: "QR 코드를 스캔하거나 링크를 복사하여 휴대폰을 이 호스트에 연결하세요",
+      },
+      account: {
+        signInTitle: "aaswitch account",
+        signInHint:
+          "Sign in to register this device with the aaswitch hub so the miniprogram can reach it",
+        deviceName: "Device name",
+        registration: "Device registration",
+        registrationActive: "Registered — the hub lists this device",
+        registrationIdle: "Not registered",
+        updateHost: "Update this host to manage the aaswitch account.",
+        disconnected: "Connect to this host to manage the aaswitch account.",
+        relayDisabled:
+          "Relay is disabled on this host. Turn on relay so remote devices can connect.",
+        loading: "Loading account status...",
+        fields: {
+          username: "Username",
+          usernamePlaceholder: "Username",
+          password: "Password",
+          passwordPlaceholder: "Password",
+          baseUrl: "Hub address",
+          deviceName: "Device name (optional)",
+          deviceNameHint: "Defaults to this machine's hostname",
+        },
+        actions: {
+          login: "Sign in",
+          register: "Create account",
+          logout: "Sign out",
+        },
       },
       skills: {
         ...en.settings.host.skills,

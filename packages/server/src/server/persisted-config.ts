@@ -90,6 +90,22 @@ const BcryptHashSchema = z.string().regex(/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/
   message: "Expected a bcrypt hash",
 });
 
+// aaswitch Hub account for device registration (t13). `baseUrl` is the hub origin
+// such as `http://hub.example.cn`; the daemon appends `/api/<method>` itself.
+// `deviceId` is assigned by `devices.register` and reused for heartbeats;
+// registration is idempotent per account+device name, so the id survives
+// re-registration after offer changes or daemon restarts.
+const HubAccountConfigSchema = z
+  .object({
+    baseUrl: z.string().trim().min(1).optional(),
+    token: z.string().min(1).optional(),
+    deviceName: z.string().trim().min(1).optional(),
+    username: z.string().trim().min(1).optional(),
+    deviceId: z.string().min(1).optional(),
+  })
+  .strict()
+  .optional();
+
 const DaemonAuthSchema = z
   .object({
     password: BcryptHashSchema.optional(),
@@ -326,6 +342,8 @@ export const PersistedConfigSchema = z
       })
       .strict()
       .optional(),
+
+    hub: HubAccountConfigSchema,
 
     providers: ProvidersSchema.optional(),
     pluginRegistries: PluginRegistriesSchema.optional(),

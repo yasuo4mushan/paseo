@@ -152,7 +152,11 @@ import { CheckoutDiffManager } from "./checkout-diff-manager.js";
 import { ScheduleService } from "./schedule/service.js";
 import { DaemonConfigStore, type MutableDaemonConfig } from "./daemon-config-store.js";
 import { createOrchestrationSkills } from "./orchestration-skills/index.js";
-import { resolveConfigFromPersisted, type CliConfigOverrides } from "./config.js";
+import {
+  resolveConfigFromPersisted,
+  type CliConfigOverrides,
+  type ResolvedHubAccount,
+} from "./config.js";
 import { resolvePaseoToolPolicy } from "./agent/paseo-tool-policy.js";
 import { BrowserToolsBroker } from "./browser-tools/broker.js";
 import { DaemonConfigBrowserToolsPolicy } from "./browser-tools/policy.js";
@@ -171,6 +175,7 @@ import { createConfiguredTerminalManager } from "../terminal/terminal-manager-fa
 import { applyTerminalAgentHookSetting } from "../terminal/agent-hooks/terminal-agent-hook-setting.js";
 import { loadOrCreateDaemonKeyPair } from "./daemon-keypair.js";
 import { createRelayRuntime, type RelayRuntime } from "./relay-runtime.js";
+import { createHubAccountManager } from "./hub-account.js";
 import type { PushNotificationSender } from "./push/index.js";
 import { getOrCreateServerId } from "./server-id.js";
 import { resolveDaemonVersion } from "./daemon-version.js";
@@ -426,6 +431,7 @@ export interface PaseoDaemonConfig {
   relayPublicEndpoint?: string;
   relayUseTls?: boolean;
   relayPublicUseTls?: boolean;
+  hub?: ResolvedHubAccount;
   serviceProxy?: {
     publicBaseUrl: string | null;
     standaloneListen: string | null;
@@ -537,6 +543,44 @@ function resolveExpressTrustProxySetting(config: PaseoDaemonConfig): true | stri
   return config.trustedProxies ?? ["loopback"];
 }
 
+function resolveHubAccountInitial(hub: ResolvedHubAccount | undefined): {
+  baseUrl: string | null;
+  token: string | null;
+  username: string | null;
+  deviceName: string | null;
+} {
+  return {
+    baseUrl: hub?.baseUrl ?? null,
+    token: hub?.token ?? null,
+    username: hub?.username ?? null,
+    deviceName: hub?.deviceName ?? null,
+  };
+}
+
+/**
+ * Hub device offers must advertise the relay endpoint remote clients can
+ * reach. The live runtime wins once attached; before that, fall back to the
+ * resolved boot config.
+ */
+function resolveHubRelaySnapshot(
+  relayRuntime: RelayRuntime | null,
+  config: PaseoDaemonConfig,
+): { enabled: boolean; publicEndpoint: string; publicUseTls: boolean } {
+  const relay = relayRuntime?.getConfig();
+  if (relay) {
+    return {
+      enabled: relay.enabled,
+      publicEndpoint: relay.publicEndpoint,
+      publicUseTls: relay.publicUseTls,
+    };
+  }
+  return {
+    enabled: config.relayEnabled === true,
+    publicEndpoint: config.relayPublicEndpoint ?? config.relayEndpoint ?? "",
+    publicUseTls: config.relayPublicUseTls ?? config.relayUseTls ?? false,
+  };
+}
+
 function createInitialMutableDaemonConfig(config: PaseoDaemonConfig): MutableDaemonConfig {
   const providers = config.providerOverrides ?? {};
 
@@ -642,6 +686,16 @@ export async function createPaseoDaemon(
     logger.warn({ err: error }, "Failed to reconcile managed helper process ledger");
   });
   let relayRuntime: RelayRuntime | null = null;
+  // Created before the WS server so sessions can reach it; reads the live relay
+  // config through the closure because relayRuntime attaches later in start().
+  const hubAccountRuntime = createHubAccountManager({
+    paseoHome: config.paseoHome,
+    logger,
+    serverId,
+    daemonPublicKeyB64: daemonKeyPair.publicKeyB64,
+    getRelayConfig: () => resolveHubRelaySnapshot(relayRuntime, config),
+    initial: resolveHubAccountInitial(config.hub),
+  });
 
   const staticDir = config.staticDir;
   const downloadTokenTtlMs = config.downloadTokenTtlMs ?? 60000;
@@ -1744,6 +1798,7 @@ export async function createPaseoDaemon(
               serviceProxyPublicBaseUrl,
               browserToolsBroker,
               hubRelationships,
+              hubAccountRuntime,
               workspaceSetupRuntime,
               pluginRuntime,
               orchestrationSkills,
@@ -1773,6 +1828,7 @@ export async function createPaseoDaemon(
               relayRuntime?.setEnabled(value === true);
             });
             await hubRelationships.start();
+            hubAccountRuntime.start();
           };
 
           logAndResolve().then(resolve, reject);
@@ -1818,6 +1874,9 @@ export async function createPaseoDaemon(
     // they serve has been closed, further down.
     unsubscribePluginProviders();
     await hubRelationships.stop();
+    await hubAccountRuntime.stop().catch((error) => {
+      logger.warn({ err: error }, "Failed to stop hub account runtime");
+    });
     workspaceReconciliation.dispose();
     scriptHealthMonitor.stop();
     // Freeze both ingress and registration before taking the agent closure snapshot.

@@ -2102,6 +2102,7 @@ export const ar: TranslationResources = {
       sendFailedTitle: "تعذر إرسال إشعار الاختبار",
     },
     hostSections: {
+      account: "الحساب",
       projects: "المشاريع",
       connections: "اتصالات",
       agents: "Agents",
@@ -2485,6 +2486,34 @@ export const ar: TranslationResources = {
         title: "إقران الأجهزة",
         rowTitle: "إقران جهاز",
         rowHint: "امسح رمز QR ضوئيًا أو انسخ رابطًا لتوصيل هاتفك بهذا المضيف",
+      },
+      account: {
+        signInTitle: "aaswitch account",
+        signInHint:
+          "Sign in to register this device with the aaswitch hub so the miniprogram can reach it",
+        deviceName: "Device name",
+        registration: "Device registration",
+        registrationActive: "Registered — the hub lists this device",
+        registrationIdle: "Not registered",
+        updateHost: "Update this host to manage the aaswitch account.",
+        disconnected: "Connect to this host to manage the aaswitch account.",
+        relayDisabled:
+          "Relay is disabled on this host. Turn on relay so remote devices can connect.",
+        loading: "Loading account status...",
+        fields: {
+          username: "Username",
+          usernamePlaceholder: "Username",
+          password: "Password",
+          passwordPlaceholder: "Password",
+          baseUrl: "Hub address",
+          deviceName: "Device name (optional)",
+          deviceNameHint: "Defaults to this machine's hostname",
+        },
+        actions: {
+          login: "Sign in",
+          register: "Create account",
+          logout: "Sign out",
+        },
       },
       skills: {
         ...en.settings.host.skills,

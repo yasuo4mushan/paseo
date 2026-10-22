@@ -2150,6 +2150,7 @@ export const es: TranslationResources = {
       sendFailedTitle: "No se pudo enviar la notificación de prueba",
     },
     hostSections: {
+      account: "Cuenta",
       projects: "Proyectos",
       connections: "Conexiones",
       agents: "Agents",
@@ -2539,6 +2540,34 @@ export const es: TranslationResources = {
         title: "Emparejar dispositivos",
         rowTitle: "Emparejar un dispositivo",
         rowHint: "Escanee un códigoQRo copie un enlace para conectar su teléfono a este host",
+      },
+      account: {
+        signInTitle: "aaswitch account",
+        signInHint:
+          "Sign in to register this device with the aaswitch hub so the miniprogram can reach it",
+        deviceName: "Device name",
+        registration: "Device registration",
+        registrationActive: "Registered — the hub lists this device",
+        registrationIdle: "Not registered",
+        updateHost: "Update this host to manage the aaswitch account.",
+        disconnected: "Connect to this host to manage the aaswitch account.",
+        relayDisabled:
+          "Relay is disabled on this host. Turn on relay so remote devices can connect.",
+        loading: "Loading account status...",
+        fields: {
+          username: "Username",
+          usernamePlaceholder: "Username",
+          password: "Password",
+          passwordPlaceholder: "Password",
+          baseUrl: "Hub address",
+          deviceName: "Device name (optional)",
+          deviceNameHint: "Defaults to this machine's hostname",
+        },
+        actions: {
+          login: "Sign in",
+          register: "Create account",
+          logout: "Sign out",
+        },
       },
       skills: {
         ...en.settings.host.skills,
