@@ -275,7 +275,7 @@ describe("diagnostics message contract", () => {
       type: "diagnostics.response",
       payload: {
         requestId: "diag-2",
-        diagnostic: "Paseo diagnostics\n  Status: ok",
+        diagnostic: "aaswitch diagnostics\n  Status: ok",
       },
     });
 

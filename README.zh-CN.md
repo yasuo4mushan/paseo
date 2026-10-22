@@ -4,6 +4,8 @@
 
 <h1 align="center">Paseo</h1>
 
+<p align="center"><strong>aaswitch</strong> — 本发行版面向用户的产品名。aaswitch 基于开源项目 Paseo。</p>
+
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="README.zh-CN.md">简体中文</a> ·

@@ -5,7 +5,10 @@ import { fileURLToPath } from "node:url";
 import { app } from "electron";
 import { tailFile } from "./tail-file.js";
 
-const SHIPIT_DIRECTORY_NAME = "sh.paseo.desktop.ShipIt";
+// Mirrors the macOS Squirrel update cache directory name, derived from the
+// electron-builder appId (cn.aaswitch.desktop). Keep in sync with
+// packages/desktop/electron-builder.yml.
+const SHIPIT_DIRECTORY_NAME = "cn.aaswitch.desktop.ShipIt";
 const SHIPIT_LOG_TAIL_LINES = 100;
 
 export interface DesktopUpdaterDiagnosticFile {

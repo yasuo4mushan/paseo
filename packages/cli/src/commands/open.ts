@@ -6,7 +6,10 @@ import { buildAgentDeepLink, type AgentDeepLinkTarget } from "@getpaseo/protocol
 
 function findDesktopApp(): string | null {
   if (process.platform === "darwin") {
+    // aaswitch first; keep legacy Paseo paths for installs built before the rename.
     const candidates = [
+      "/Applications/aaswitch.app",
+      path.join(homedir(), "Applications", "aaswitch.app"),
       "/Applications/Paseo.app",
       path.join(homedir(), "Applications", "Paseo.app"),
     ];
@@ -21,7 +24,11 @@ function findDesktopApp(): string | null {
   }
 
   if (process.platform === "linux") {
+    // aaswitch first; keep legacy Paseo paths for installs built before the rename.
     const candidates = [
+      "/usr/bin/aaswitch",
+      "/opt/aaswitch/aaswitch",
+      path.join(homedir(), "Applications", "aaswitch.AppImage"),
       "/usr/bin/Paseo",
       "/opt/Paseo/Paseo",
       path.join(homedir(), "Applications", "Paseo.AppImage"),
@@ -42,8 +49,17 @@ function findDesktopApp(): string | null {
       return null;
     }
 
-    const candidate = path.join(localAppData, "Programs", "Paseo", "Paseo.exe");
-    return existsSync(candidate) ? candidate : null;
+    // aaswitch first; keep the legacy Paseo install dir for pre-rename builds.
+    const candidates = [
+      path.join(localAppData, "Programs", "aaswitch", "aaswitch.exe"),
+      path.join(localAppData, "Programs", "Paseo", "Paseo.exe"),
+    ];
+    for (const candidate of candidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   return null;
@@ -70,13 +86,13 @@ function spawnDetached(command: string, args: string[]): void {
 
 function launchDesktop(args: string[]): void {
   if (process.env.PASEO_DESKTOP_CLI === "1") {
-    throw new Error("Cannot open Paseo Desktop while running in desktop CLI passthrough mode.");
+    throw new Error("Cannot open aaswitch Desktop while running in desktop CLI passthrough mode.");
   }
 
   const desktopApp = findDesktopApp();
   if (!desktopApp) {
     throw new Error(
-      "Paseo desktop app not found. Install it from https://github.com/getpaseo/paseo/releases",
+      "aaswitch desktop app not found. Install it from https://github.com/getpaseo/paseo/releases",
     );
   }
 

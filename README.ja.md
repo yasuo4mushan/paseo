@@ -4,6 +4,8 @@
 
 <h1 align="center">Paseo</h1>
 
+<p align="center"><strong>aaswitch</strong> — 本ディストリビューションのユーザー向けブランド名。aaswitch はオープンソースの Paseo プロジェクトをベースにしています。</p>
+
 <p align="center">
   <a href="README.md">English</a> ·
   <a href="README.zh-CN.md">简体中文</a> ·
