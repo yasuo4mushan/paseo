@@ -28,9 +28,11 @@ import type {
 import { permissionStore } from "@/permission/permission-store";
 import { attentionStore } from "@/stores/attention-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
+import { sessionStore } from "@/stores/session-store";
 
 const STORAGE_KEY = "paseo_mp_connection";
 const WORKSPACE_STORAGE_KEY = "paseo_mp_workspace";
+const LAST_AGENT_STORAGE_KEY = "paseo_mp_last_agent";
 
 export type StoredConnection =
   | { kind: "relay"; input: string; offer: RelayOffer }
@@ -95,6 +97,14 @@ class ConnectionManager {
       (value) => {
         if (value) Taro.setStorageSync(WORKSPACE_STORAGE_KEY, JSON.stringify(value));
         else Taro.removeStorageSync(WORKSPACE_STORAGE_KEY);
+      },
+    );
+    // t20：活跃会话持久化（对话主页豆包式直达；sessionStore 自身在断线时清内存态）
+    sessionStore.installStorage(
+      () => Taro.getStorageSync<string>(LAST_AGENT_STORAGE_KEY) || null,
+      (value) => {
+        if (value) Taro.setStorageSync(LAST_AGENT_STORAGE_KEY, value);
+        else Taro.removeStorageSync(LAST_AGENT_STORAGE_KEY);
       },
     );
   }
@@ -246,6 +256,8 @@ class ConnectionManager {
         },
         onAgentUpdate: (update) => {
           if (update.kind === "upsert") attentionStore.syncAgentSnapshot(update.agent);
+          // t20：会话目录 store 增量维护（对话主页/抽屉共用同一数据源）
+          sessionStore.applyAgentUpdate(update);
           for (const listener of this.agentUpdateListeners) listener(update);
         },
         onPermissionRequest: (push) => {
@@ -294,12 +306,13 @@ class ConnectionManager {
     }
   }
 
-  /** 断开/连接失败时清理会话级状态（权限队列、attention、工作区选择）。 */
+  /** 断开/连接失败时清理会话级状态（权限队列、attention、工作区选择、会话目录）。 */
   private teardownSessionState(): void {
     permissionStore.bindSender(null);
     permissionStore.clearAll();
     attentionStore.clearAll();
     workspaceStore.clear(false);
+    sessionStore.reset();
   }
 
   getConnection(): DaemonConnection | null {
