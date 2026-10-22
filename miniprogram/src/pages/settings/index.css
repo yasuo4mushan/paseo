@@ -1,33 +1,47 @@
-.row {
-  display: flex;
-  padding: 12rpx 0;
+.settings-page {
+  padding-top: 8rpx;
+}
+
+.settings-action {
+  margin: 8rpx 0 24rpx;
+}
+
+.cell-tappable:active {
+  background: var(--fill);
+}
+
+.cell-danger {
+  color: var(--danger);
+}
+
+.value-ok {
+  color: var(--brand);
+}
+
+.value-bad {
+  color: var(--danger);
+}
+
+.hub-editor {
+  padding: 24rpx 0;
+}
+
+.hub-input {
   font-size: 26rpx;
 }
 
-.row-label {
-  width: 180rpx;
-  flex-shrink: 0;
-  color: #8f959e;
-}
-
-.row-value {
-  flex: 1;
-  word-break: break-all;
-}
-
-.row-value.ok {
-  color: #1a7f37;
-}
-
-.row-value.bad {
-  color: #d4380d;
-}
-
-.action-btn {
+.hub-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
   margin-top: 20rpx;
 }
 
-.about {
-  margin-top: 40rpx;
+.hub-editor-actions .btn {
+  margin-left: 16rpx;
+}
+
+.settings-note {
+  padding: 0 8rpx 8rpx;
   line-height: 1.6;
 }

@@ -1,12 +1,40 @@
-.agent-row {
+.agents-page {
+  padding-top: 24rpx;
+}
+
+.agent-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  padding: 28rpx 32rpx;
+}
+
+.agent-card:active {
+  background: var(--fill);
+}
+
+.agent-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--brand-fade);
+  color: var(--brand);
+  font-size: 32rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex-shrink: 0;
 }
 
 .agent-main {
   flex: 1;
   min-width: 0;
+}
+
+.agent-title-row {
+  display: flex;
+  align-items: center;
 }
 
 .agent-title {
@@ -17,58 +45,18 @@
   white-space: nowrap;
 }
 
+.attention-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--danger);
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+
 .agent-sub {
   margin-top: 8rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.badge {
-  flex-shrink: 0;
-  margin-left: 16rpx;
-  font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 999rpx;
-}
-
-.badge-initializing,
-.badge-closed {
-  background: #f2f3f5;
-  color: #8f959e;
-}
-
-.badge-idle {
-  background: #e6f4ea;
-  color: #1a7f37;
-}
-
-.badge-running {
-  background: #e8f1ff;
-  color: #1f6feb;
-}
-
-.badge-error {
-  background: #fdebe9;
-  color: #d4380d;
-}
-
-.empty {
-  text-align: center;
-  padding: 80rpx 24rpx;
-}
-
-.empty-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  margin-bottom: 16rpx;
-}
-
-.error-card {
-  color: #d4380d;
-  font-size: 26rpx;
-}
-
-.retry-btn {
-  margin-top: 16rpx;
 }

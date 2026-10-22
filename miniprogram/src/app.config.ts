@@ -1,20 +1,40 @@
 export default defineAppConfig({
-  pages: ["pages/pair/index", "pages/agents/index", "pages/agent/index", "pages/settings/index"],
+  pages: [
+    "pages/devices/index",
+    "pages/login/index",
+    "pages/agents/index",
+    "pages/agent/index",
+    "pages/pair/index",
+    "pages/settings/index",
+  ],
   window: {
-    backgroundTextStyle: "light",
-    navigationBarBackgroundColor: "#ffffff",
-    navigationBarTitleText: "Paseo",
-    navigationBarTextStyle: "black",
-    backgroundColor: "#f5f6f7",
+    backgroundTextStyle: "@bgTxtStyle",
+    navigationBarBackgroundColor: "@navBgColor",
+    navigationBarTitleText: "aaswitch",
+    navigationBarTextStyle: "@navTxtStyle",
+    backgroundColor: "@bgColor",
   },
   tabBar: {
-    color: "#7f7f7f",
-    selectedColor: "#1f6feb",
-    backgroundColor: "#ffffff",
-    borderStyle: "black",
+    color: "@tabColor",
+    selectedColor: "@tabSelectedColor",
+    backgroundColor: "@tabBgColor",
+    // 微信 darkmode 支持 borderStyle 引用 theme.json 变量；Taro 类型未跟上，局部断言
+    borderStyle: "@tabBorderStyle" as "white",
     list: [
-      { pagePath: "pages/agents/index", text: "Agent 列表" },
-      { pagePath: "pages/settings/index", text: "设置" },
+      {
+        pagePath: "pages/devices/index",
+        text: "设备",
+        iconPath: "assets/tabbar/devices.png",
+        selectedIconPath: "assets/tabbar/devices-active.png",
+      },
+      {
+        pagePath: "pages/settings/index",
+        text: "设置",
+        iconPath: "assets/tabbar/settings.png",
+        selectedIconPath: "assets/tabbar/settings-active.png",
+      },
     ],
   },
+  darkmode: true,
+  themeLocation: "theme.json",
 });

@@ -19,7 +19,7 @@ export default function PairPage() {
     setError("");
     try {
       await connectionManager.connect(trimmed);
-      Taro.switchTab({ url: "/pages/agents/index" });
+      Taro.redirectTo({ url: "/pages/agents/index" });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -45,10 +45,10 @@ export default function PairPage() {
   };
 
   return (
-    <View className="page">
+    <View className="page pair-page">
       <View className="card">
-        <View className="section-title">连接你的 Paseo</View>
-        <View className="muted tip">
+        <View className="pair-title">手动配对</View>
+        <View className="muted pair-tip">
           粘贴 daemon 输出的 relay:// 配对链接（等同密码，请勿转发），或扫描二维码。
           开发调试也可以直接填 ws:// 地址。
         </View>
@@ -57,24 +57,25 @@ export default function PairPage() {
           value={input}
           onInput={(e) => setInput(e.detail.value)}
           placeholder="relay://host:port/serverId?key=..."
+          placeholderClass="pair-placeholder"
           maxlength={2000}
           autoHeight
         />
-        {error ? <View className="pair-error">{error}</View> : null}
+        {error ? <View className="field-error">{error}</View> : null}
         <Button
-          className="button"
+          className="btn"
           disabled={busy}
           loading={busy}
           onClick={() => void doConnect(input)}
         >
           {busy ? "连接中…" : "连接"}
         </Button>
-        <Button className="button button-secondary scan-btn" disabled={busy} onClick={onScan}>
+        <Button className="btn btn-ghost pair-scan" disabled={busy} onClick={onScan}>
           扫二维码
         </Button>
       </View>
       <View className="card">
-        <View className="muted">
+        <View className="muted pair-security">
           安全说明：中继模式端到端加密（X25519 + XSalsa20-Poly1305），中继服务器只能看到密文。
         </View>
       </View>

@@ -3,13 +3,12 @@ import Taro, { usePullDownRefresh } from "@tarojs/taro";
 import { Button, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { AgentSnapshot } from "@/connection/protocol-types";
-import { STATUS_LABELS } from "@/constants/status";
+import { STATUS_LABELS, statusPillClass } from "@/constants/status";
 import "./index.css";
 
 function agentSubtitle(agent: AgentSnapshot): string {
   const parts = [agent.provider, agent.model ?? ""].filter(Boolean);
-  const updated = agent.updatedAt ? agent.updatedAt.slice(5, 16).replace("T", " ") : "";
-  return updated ? `${parts.join(" · ")} · ${updated}` : parts.join(" · ");
+  return parts.join(" · ");
 }
 
 export default function AgentsPage() {
@@ -59,24 +58,18 @@ export default function AgentsPage() {
     return (
       <View className="page">
         <View className="card empty">
+          <View className="empty-icon">{state.status === "error" ? "⚠️" : "📡"}</View>
           <View className="empty-title">
-            {state.status === "error" ? `连接失败：${state.message}` : "未连接"}
+            {state.status === "error" ? "连接中断" : "未连接设备"}
+          </View>
+          <View className="empty-desc">
+            {state.status === "error" ? state.message : "先从设备列表选择一台在线设备连接。"}
           </View>
           <Button
-            className="button"
-            onClick={() =>
-              connectionManager
-                .connect()
-                .catch(() => Taro.showToast({ title: "重连失败", icon: "none" }))
-            }
+            className="btn btn-mini"
+            onClick={() => Taro.switchTab({ url: "/pages/devices/index" })}
           >
-            重新连接
-          </Button>
-          <Button
-            className="button button-secondary retry-btn"
-            onClick={() => Taro.navigateTo({ url: "/pages/pair/index" })}
-          >
-            重新配对
+            去设备页
           </Button>
         </View>
       </View>
@@ -84,21 +77,30 @@ export default function AgentsPage() {
   }
 
   return (
-    <View className="page">
-      {error ? <View className="card error-card">{error}</View> : null}
+    <View className="page agents-page">
+      {error ? <View className="error-inline">{error}</View> : null}
       {agents.length === 0 ? (
         <View className="card empty">
+          <View className="empty-icon">🤖</View>
           <View className="empty-title">暂无 Agent</View>
-          <View className="muted">在你的开发机上创建 agent 后，下拉刷新即可看到。</View>
+          <View className="empty-desc">在你的开发机上创建 agent 后，下拉刷新即可看到。</View>
         </View>
       ) : (
         agents.map((agent) => (
-          <View key={agent.id} className="card agent-row" onClick={() => openAgent(agent.id)}>
+          <View
+            key={agent.id}
+            className="card agent-card"
+            onClick={() => openAgent(agent.id)}
+          >
+            <View className="agent-avatar">{agent.provider.slice(0, 1).toUpperCase()}</View>
             <View className="agent-main">
-              <View className="agent-title">{agent.title ?? agent.id.slice(0, 8)}</View>
+              <View className="agent-title-row">
+                <View className="agent-title">{agent.title ?? agent.id.slice(0, 8)}</View>
+                {agent.requiresAttention ? <View className="attention-dot" /> : null}
+              </View>
               <View className="muted agent-sub">{agentSubtitle(agent)}</View>
             </View>
-            <View className={`badge badge-${agent.status}`}>
+            <View className={statusPillClass(agent.status)}>
               {STATUS_LABELS[agent.status] ?? agent.status}
             </View>
           </View>

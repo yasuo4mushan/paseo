@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "配对",
+  navigationBarTitleText: "手动配对",
 });
