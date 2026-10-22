@@ -72,6 +72,33 @@
   font-weight: 600;
 }
 
+/* t17 文件入口：与新建同款胶囊，中性填充色区分 */
+.files-entry {
+  display: flex;
+  align-items: center;
+  background: var(--fill);
+  color: var(--text-1);
+  border-radius: var(--radius-round);
+  padding: 12rpx 28rpx;
+  margin-left: 24rpx;
+  flex-shrink: 0;
+}
+
+.files-entry:active {
+  background: var(--divider);
+}
+
+.files-entry-icon {
+  font-size: 28rpx;
+  line-height: 1;
+  margin-right: 6rpx;
+}
+
+.files-entry-text {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
 .agent-card {
   display: flex;
   align-items: center;

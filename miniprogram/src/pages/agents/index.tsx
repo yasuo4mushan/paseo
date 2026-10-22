@@ -105,7 +105,17 @@ export default function AgentsPage() {
           <View className="ws-bar-value">{workspace?.label ?? "选择工作区"}</View>
           <View className="ws-bar-arrow">▾</View>
         </View>
-        <View className="create-entry" onClick={() => Taro.navigateTo({ url: "/pages/create/index" })}>
+        <View
+          className="files-entry"
+          onClick={() => Taro.navigateTo({ url: "/pages/files/index" })}
+        >
+          <View className="files-entry-icon">📂</View>
+          <View className="files-entry-text">文件</View>
+        </View>
+        <View
+          className="create-entry"
+          onClick={() => Taro.navigateTo({ url: "/pages/create/index" })}
+        >
           <View className="create-entry-icon">＋</View>
           <View className="create-entry-text">新建</View>
         </View>
@@ -118,11 +128,7 @@ export default function AgentsPage() {
         </View>
       ) : (
         agents.map((agent) => (
-          <View
-            key={agent.id}
-            className="card agent-card"
-            onClick={() => openAgent(agent.id)}
-          >
+          <View key={agent.id} className="card agent-card" onClick={() => openAgent(agent.id)}>
             <View className="agent-avatar">{agent.provider.slice(0, 1).toUpperCase()}</View>
             <View className="agent-main">
               <View className="agent-title-row">

@@ -1,0 +1,218 @@
+/* 文件浏览器（t17）：目录浏览 / 预览 / 下载进度。 */
+
+.files-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 24rpx 32rpx;
+}
+
+.files-header {
+  margin-bottom: 20rpx;
+}
+
+.files-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.crumbs-back {
+  color: var(--brand);
+  font-size: 28rpx;
+  padding: 8rpx 16rpx 8rpx 0;
+  flex-shrink: 0;
+}
+
+.crumbs-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.crumbs-part {
+  display: flex;
+  align-items: center;
+}
+
+.crumbs-sep {
+  color: var(--text-3);
+  margin: 0 8rpx;
+}
+
+.crumbs-name {
+  color: var(--text-2);
+  font-size: 26rpx;
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumbs-current {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.files-ws {
+  margin: 8rpx 0 0 44rpx;
+}
+
+/* ---------- 下载进度 ---------- */
+
+.download-card {
+  padding: 24rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.download-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.download-name {
+  font-size: 26rpx;
+  color: var(--text-1);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-bar {
+  height: 8rpx;
+  border-radius: var(--radius-round);
+  background: var(--fill);
+  overflow: hidden;
+}
+
+.download-bar-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: var(--radius-round);
+  transition: width 0.2s ease-out;
+}
+
+/* ---------- 列表 ---------- */
+
+.files-list {
+  flex: 1;
+  min-height: 0;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  margin-bottom: 16rpx;
+}
+
+.file-icon {
+  font-size: 40rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.file-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 28rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-meta {
+  margin-top: 4rpx;
+}
+
+.file-arrow {
+  font-size: 32rpx;
+  margin-left: 16rpx;
+}
+
+.files-hint {
+  text-align: center;
+  padding: 16rpx 0 calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------- 文本预览浮层 ---------- */
+
+.preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid var(--divider);
+  background: var(--card);
+}
+
+.preview-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-close {
+  font-size: 36rpx;
+  color: var(--text-2);
+  padding: 8rpx 16rpx;
+}
+
+.preview-body {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 32rpx;
+  box-sizing: border-box;
+}
+
+.preview-text {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--text-1);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.preview-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 20rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--divider);
+  background: var(--card);
+  align-items: stretch;
+}
+
+.preview-note {
+  text-align: center;
+}
+
+.preview-download {
+  align-self: center;
+  min-width: 320rpx;
+}

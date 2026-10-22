@@ -59,3 +59,29 @@ mock 确认后走真实 `delete_agent_request`）。
 推送路由见 `tests/protocol-t16.test.ts`（`agent_permission_request` 推送 +
 `agent_permission_response` 回应）。深色模式限制同上节（新组件全部复用既有
 tokens，`prefers-color-scheme: dark` 自动适配）。
+
+## t17 批次：文件体系（浏览/预览/下载保存/附件上传）
+
+由 `scripts/ui-automation-t17.mjs`（端口 9423）对**真实 hub + 真实 daemon** 驱动生成：
+探针账号 `t17probe-*`（脚本自动注册 + `devices.register` 预置带真实 relay offer 的
+`t17-mac-dev` 设备），连接走真实 relay E2EE。文件数据来自 daemon 真实工作区
+（chemflow：`method.pdf` 301KB / `method.out` 3.4KB / `chemflow/README.md`）。
+文件读写经 daemon WebSocket 的**二进制帧通道**（FileBegin/Chunk/End，
+`file_explorer_request` + `file.upload.request`）。**配额纪律：全程只创建一个
+真实 agent（短 prompt"只回复 ok"）用于附件验证，验证后已删除。**
+
+| 文件 | 页面 | 说明 |
+| --- | --- | --- |
+| `t17-01-agents-files-entry.png` | Agent 列表 | 工作区栏新增"文件"入口（工作区已选中） |
+| `t17-02-files-root.png` | 文件浏览器 | 真实 `file_explorer_request` mode:list：29 个条目，目录优先、图标/大小/时间、面包屑 |
+| `t17-03-files-subdir-chemflow.png` | 文件浏览器 | 进入 `chemflow` 子目录（README.md 等真实文件） |
+| `t17-04-text-preview.png` | 文本预览 | `README.md` 二进制帧读取 → 内嵌渲染（等宽字体 + 下载保存按钮 + 截断提示） |
+| `t17-05-pdf-download-opendocument.png` | PDF 下载 | `method.pdf` 301KB 真实二进制流下载（进度条）→ `USER_DATA_PATH/paseo-files` → `wx.openDocument` 成功（页面 automation log 记录 ok:true） |
+| `t17-06-smallfile-download.png` | 下载保存 | `method.out` 长按 → 下载落地 3483B → 转发另存弹层（showModal mock 关闭） |
+| `t17-07-attach-uploaded.png` | Agent 详情 | composer "+"（mock chooseMedia 上传真实 PNG 字节）→ `file.upload.request` + 二进制帧 → 绿色 ready 胶囊（文件名+大小） |
+| `t17-08-attach-sent-timeline.png` | Agent 详情 | 发送带附件消息（`send_agent_message` attachments + messageId 幂等）→ 时间线用户气泡渲染图片缩略附件卡片 |
+| `t17-09-verification-agent-deleted.png` | Agent 列表 | 验证 agent 已删除（配额处置） |
+
+二进制帧编解码/文件树协议/上传下载状态机见 `tests/file-transfer-frames.test.ts`、
+`tests/files-protocol.test.ts`；附件回配对（clientMessageId → 时间线 user_message）
+见 `tests/message-attachment-store.test.ts`。功能覆盖全景见 `docs/parity-matrix.md`。

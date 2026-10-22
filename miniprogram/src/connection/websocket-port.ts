@@ -22,7 +22,7 @@ export interface SocketErrorEvent {
 
 export interface SocketMessageEvent {
   type: "message";
-  /** 文本帧为 string，二进制帧为 ArrayBuffer（MVP 只消费文本 JSON 帧）。 */
+  /** 文本帧为 string，二进制帧为 ArrayBuffer（t17：文件传输二进制帧走此通道）。 */
   data: string | ArrayBuffer;
 }
 
@@ -35,9 +35,9 @@ export type SocketPortEvent =
 export type SocketEventHandler = (event: SocketPortEvent) => void;
 
 export interface SocketPort {
-  /** 发送文本帧（daemon 协议全部走 JSON 文本帧）。 */
+  /** 发送文本帧（daemon 协议的 JSON 会话消息）。 */
   send(data: string): void;
-  /** 发送二进制帧（仅 E2EE binaryCiphertext 协商后的密文可能用到）。 */
+  /** 发送二进制帧（E2EE 密文与 t17 文件传输帧：FileBegin/Chunk/End）。 */
   sendBinary?(data: ArrayBuffer): void;
   close(code?: number, reason?: string): void;
   onEvent(handler: SocketEventHandler): () => void;

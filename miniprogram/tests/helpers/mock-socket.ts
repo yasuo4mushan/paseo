@@ -6,10 +6,14 @@ import type { SocketPort, SocketEventHandler } from "../../src/connection/websoc
 export interface MockDaemonSide {
   /** 客户端发出的原始文本帧。 */
   sentFrames: string[];
+  /** 客户端发出的原始二进制帧（t17 文件传输）。 */
+  sentBinaryFrames: ArrayBuffer[];
   /** 解析后的最后一个 session 请求。 */
   lastRequest(): ({ type: string; requestId: string } & Record<string, unknown>) | null;
   /** 以 daemon 身份向客户端推送一条 JSON（外层 WS 信封）。 */
   pushSession(message: unknown): void;
+  /** 以 daemon 身份向客户端推送一个二进制帧（t17 文件传输）。 */
+  pushBinary(bytes: Uint8Array): void;
   emitOpen(): void;
   emitClose(code: number, reason: string): void;
 }
@@ -17,6 +21,7 @@ export interface MockDaemonSide {
 export function createMockSocketPair(): { clientPort: SocketPort; server: MockDaemonSide } {
   const handlers = new Set<SocketEventHandler>();
   const sentFrames: string[] = [];
+  const sentBinaryFrames: ArrayBuffer[] = [];
 
   const emit = (event: Parameters<SocketEventHandler>[0]) => {
     for (const handler of handlers) handler(event);
@@ -27,7 +32,7 @@ export function createMockSocketPair(): { clientPort: SocketPort; server: MockDa
       sentFrames.push(data);
     },
     sendBinary(data) {
-      sentFrames.push(`<binary:${data.byteLength}>`);
+      sentBinaryFrames.push(data);
     },
     close() {
       emit({ type: "close", code: 1000, reason: "closed" });
@@ -40,6 +45,7 @@ export function createMockSocketPair(): { clientPort: SocketPort; server: MockDa
 
   const server: MockDaemonSide = {
     sentFrames,
+    sentBinaryFrames,
     lastRequest() {
       for (let i = sentFrames.length - 1; i >= 0; i -= 1) {
         const parsed = JSON.parse(sentFrames[i]) as {
@@ -58,6 +64,12 @@ export function createMockSocketPair(): { clientPort: SocketPort; server: MockDa
     },
     pushSession(message) {
       emit({ type: "message", data: JSON.stringify({ type: "session", message }) });
+    },
+    pushBinary(bytes) {
+      // copy：避免共享 buffer 的 byteOffset 陷阱
+      const copy = new Uint8Array(bytes.byteLength);
+      copy.set(bytes);
+      emit({ type: "message", data: copy.buffer });
     },
     emitOpen() {
       emit({ type: "open" });
