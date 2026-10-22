@@ -1,6 +1,9 @@
 import { useEffect, type PropsWithChildren } from "react";
 import Taro from "@tarojs/taro";
 import { installPooledRandomSource, randomSourceInstalled } from "./connection/random-source";
+// 全局设计 tokens 与共享样式（app.wxss）：Taro 的 app 入口不会自动收集
+// src/app.css，必须在入口显式 import，否则全局样式静默丢失（t10 踩坑）。
+import "./app.css";
 
 /**
  * E2EE 需要 tweetnacl 有可用 PRNG；小程序无 WebCrypto，这里在启动时安装

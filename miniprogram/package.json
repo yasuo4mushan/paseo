@@ -1,14 +1,17 @@
 {
   "name": "paseo-miniprogram",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Paseo 微信小程序客户端 MVP —— 通过自托管 relay 或直连 daemon 监控/操控本地 AI 编码代理",
+  "description": "aaswitch 微信小程序 —— 账号登录 + 设备管理（ToDesk 模式）+ relay E2EE 控制 AI 编码代理",
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
     "build:weapp": "taro build --type weapp",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gen:icons": "node scripts/gen-tab-icons.mjs",
+    "mock:hub": "node scripts/mock-hub.mjs",
+    "ui:auto": "node scripts/ui-automation.mjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.24.4",
@@ -34,6 +37,7 @@
     "@types/react": "^18.3.3",
     "@types/ws": "^8.5.10",
     "babel-preset-taro": "4.3.0",
+    "miniprogram-automator": "^0.13.0",
     "postcss": "^8.4.38",
     "typescript": "^5.4.5",
     "vitest": "^3.1.4",

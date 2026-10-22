@@ -88,6 +88,17 @@ export interface RelayClientUrlParams {
   offer: RelayOffer;
 }
 
+/**
+ * 由 offer 反推 relay:// URI（设备页点设备连接时构造；key 必须重新 URL 编码，
+ * 与 parseRelayOffer 的解码语义对齐，tests/offer-parse.test.ts 校验往返一致）。
+ */
+export function buildRelayUriFromOffer(offer: RelayOffer): string {
+  const query = [`key=${encodeURIComponent(offer.daemonPublicKeyB64)}`];
+  if (offer.useTls) query.push("ssl=true");
+  if (offer.password) query.push(`password=${encodeURIComponent(offer.password)}`);
+  return `relay://${offer.endpoint}/${offer.serverId}?${query.join("&")}`;
+}
+
 /** 构造 relay v2 客户端连接 URL。connectionId 由 relay 分配（客户端不传）。 */
 export function buildRelayClientWebSocketUrl({ offer }: RelayClientUrlParams): string {
   const protocol = offer.useTls ? "wss" : "ws";

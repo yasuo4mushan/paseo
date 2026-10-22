@@ -1,31 +1,38 @@
-.section-title {
+.pair-page {
+  padding-top: 24rpx;
+}
+
+.pair-title {
   font-size: 34rpx;
   font-weight: 600;
   margin-bottom: 16rpx;
 }
 
-.tip {
-  margin-bottom: 20rpx;
+.pair-tip {
+  margin-bottom: 24rpx;
   line-height: 1.6;
 }
 
 .pair-input {
   width: 100%;
   min-height: 140rpx;
-  background: #f5f6f7;
-  border-radius: 12rpx;
-  padding: 16rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
   box-sizing: border-box;
   font-size: 26rpx;
+  color: var(--text-1);
   margin-bottom: 24rpx;
 }
 
-.pair-error {
-  color: #d4380d;
-  font-size: 26rpx;
-  margin-bottom: 16rpx;
+.pair-placeholder {
+  color: var(--text-3);
 }
 
-.scan-btn {
-  margin-top: 16rpx;
+.pair-scan {
+  margin-top: 20rpx;
+}
+
+.pair-security {
+  line-height: 1.6;
 }

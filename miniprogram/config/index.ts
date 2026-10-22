@@ -16,6 +16,14 @@ export default defineConfig(async (merge) => {
     sourceRoot: "src",
     outputRoot: "dist",
     plugins: [],
+    copy: {
+      // theme.json（darkmode 双主题）与 tabBar 图标原样进包
+      patterns: [
+        { from: "src/theme.json", to: "dist/theme.json" },
+        { from: "src/assets/tabbar/", to: "dist/assets/tabbar/" },
+      ],
+      options: {},
+    },
     defines: {
       // Keep the Node-only test adapter out of the weapp bundle graph even if
       // an import sneaks in; Node socket code lives under tests/ anyway.

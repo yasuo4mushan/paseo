@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "dist/",
-  "projectname": "paseo-miniprogram",
-  "description": "Paseo 微信小程序客户端",
+  "projectname": "aaswitch",
+  "description": "aaswitch — 基于 Paseo 的 AI 编码代理远程控制小程序",
   "appid": "touristappid",
   "compileType": "miniprogram",
   "libVersion": "3.7.12",

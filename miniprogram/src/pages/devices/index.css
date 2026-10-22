@@ -1,0 +1,44 @@
+.devices-page {
+  padding-top: 24rpx;
+}
+
+.device-card {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.device-icon {
+  font-size: 48rpx;
+  line-height: 1;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.device-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.device-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-sub {
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-offline {
+  opacity: 0.72;
+}
+
+.device-card:active {
+  background: var(--fill);
+}

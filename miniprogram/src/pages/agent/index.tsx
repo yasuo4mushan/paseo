@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useLoad } from "@tarojs/taro";
+import Taro, { useLoad } from "@tarojs/taro";
 import { Button, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { AgentTimelineEntry, AgentTimelineItem } from "@/connection/protocol-types";
-import { STATUS_LABELS } from "@/constants/status";
+import { STATUS_LABELS, statusPillClass } from "@/constants/status";
+import { formatClock } from "@/utils/time";
 import "./index.css";
 
 interface DisplayEntry {
@@ -22,49 +23,80 @@ function toDisplay(entry: AgentTimelineEntry): DisplayEntry {
   };
 }
 
-function itemPreview(item: AgentTimelineItem): string {
+const TOOL_STATUS_ICON: Record<string, string> = {
+  running: "⏳",
+  completed: "✓",
+  failed: "✗",
+  canceled: "–",
+};
+
+function bubbleClass(item: AgentTimelineItem): string {
   switch (item.type) {
     case "user_message":
+      return "bubble bubble-user";
     case "assistant_message":
+      return "bubble bubble-assistant";
     case "reasoning":
-      return item.text;
+      return "bubble bubble-reasoning";
     case "tool_call":
-      return `[工具] ${item.tool}${item.summary ? `：${item.summary}` : ""}`;
+      return "bubble bubble-tool";
     case "todo":
-      return item.items.map((t) => `${t.completed ? "✓" : "○"} ${t.text}`).join("\n");
+      return "bubble bubble-todo";
     case "error":
-      return `错误：${item.message}`;
+      return "bubble bubble-error";
     case "notification":
-      return `通知：${item.message}`;
-    case "compaction":
-      return item.status === "completed" ? "上下文压缩完成" : "上下文压缩中…";
+      return "bubble bubble-notification";
     default:
-      return "（暂不支持展示的条目类型）";
+      return "bubble bubble-plain";
   }
 }
 
-function itemClass(item: AgentTimelineItem): string {
+function TodoLines({ items }: { items: Array<{ text: string; completed: boolean }> }) {
+  return (
+    <View>
+      {items.map((task, i) => (
+        <View key={i} className={`todo-line ${task.completed ? "todo-done" : ""}`}>
+          <View className="todo-check">{task.completed ? "✓" : "○"}</View>
+          <View className="todo-text">{task.text}</View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function BubbleContent({ item }: { item: AgentTimelineItem }) {
   switch (item.type) {
-    case "user_message":
-      return "entry-user";
-    case "assistant_message":
-      return "entry-assistant";
-    case "reasoning":
-      return "entry-reasoning";
-    case "error":
-      return "entry-error";
     case "tool_call":
+      return (
+        <View>
+          <View className="tool-head">
+            <View className="tool-icon">{TOOL_STATUS_ICON[item.status] ?? "⏳"}</View>
+            <View className="tool-name">{item.tool}</View>
+          </View>
+          {item.summary ? <View className="tool-summary">{item.summary}</View> : null}
+          {item.error ? <View className="tool-error">{item.error}</View> : null}
+        </View>
+      );
     case "todo":
+      return <TodoLines items={item.items} />;
+    case "error":
+      return <View>{item.message}</View>;
     case "notification":
+      return <View>{item.message}</View>;
     case "compaction":
-      return "entry-system";
+      return <View>{item.status === "completed" ? "上下文压缩完成" : "上下文压缩中…"}</View>;
+    case "user_message":
+    case "assistant_message":
+    case "reasoning":
+      return <View className="bubble-text">{item.text}</View>;
     default:
-      return "entry-system";
+      return <View className="bubble-text">（暂不支持展示的条目类型）</View>;
   }
 }
 
 export default function AgentPage() {
   const [agentId, setAgentId] = useState("");
+  const [title, setTitle] = useState("");
   const [entries, setEntries] = useState<DisplayEntry[]>([]);
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState("");
@@ -82,7 +114,7 @@ export default function AgentPage() {
     let disposed = false;
     const conn = connectionManager.getConnection();
     if (!conn) {
-      setError("未连接 daemon，请返回列表页重连");
+      setError("未连接设备，请返回重连");
       return;
     }
 
@@ -103,6 +135,14 @@ export default function AgentPage() {
 
     void (async () => {
       try {
+        const agents = await conn.fetchAgents();
+        const self = agents.find((a) => a.id === agentId);
+        if (self) {
+          setStatus(self.status);
+          const navTitle = self.title ?? self.id.slice(0, 8);
+          setTitle(navTitle);
+          Taro.setNavigationBarTitle({ title: navTitle });
+        }
         const timeline = await conn.fetchAgentTimeline(agentId, 50);
         appendEntries(timeline.map(toDisplay));
         await conn.subscribeAgentTimelines([agentId]);
@@ -192,24 +232,38 @@ export default function AgentPage() {
         enhanced
         showScrollbar={false}
       >
-        {error ? <View className="card error-inline">{error}</View> : null}
+        {error ? <View className="error-inline error-in-timeline">{error}</View> : null}
         {entries.length === 0 ? (
-          <View className="muted empty-timeline">暂无消息</View>
+          <View className="card empty">
+            <View className="empty-icon">💬</View>
+            <View className="empty-title">暂无消息</View>
+            <View className="empty-desc">在下方输入框给 agent 发第一条指令。</View>
+          </View>
         ) : (
           entries.map((entry) => (
-            <View key={entry.key} className={`entry ${itemClass(entry.item)}`}>
-              <View className="entry-text">{itemPreview(entry.item)}</View>
+            <View key={entry.key} className="timeline-item">
+              <View className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}>
+                <View className={bubbleClass(entry.item)}>
+                  <BubbleContent item={entry.item} />
+                </View>
+              </View>
+              {entry.timestamp ? (
+                <View className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}>
+                  {formatClock(entry.timestamp)}
+                </View>
+              ) : null}
             </View>
           ))
         )}
         <View id={bottomAnchor.current} className="timeline-bottom" />
       </ScrollView>
       <View className="composer">
-        {status ? (
-          <View className={`composer-status ${status === "running" ? "is-running" : ""}`}>
-            {STATUS_LABELS[status] ?? status}
-          </View>
-        ) : null}
+        <View className="composer-head">
+          {status ? (
+            <View className={statusPillClass(status)}>{STATUS_LABELS[status] ?? status}</View>
+          ) : null}
+          {title ? <View className="faint composer-title">{title}</View> : null}
+        </View>
         <View className="composer-row">
           <Input
             className="composer-input"
@@ -217,11 +271,12 @@ export default function AgentPage() {
             onInput={(e) => setDraft(e.detail.value)}
             onConfirm={() => void send()}
             placeholder="输入消息发送给 agent…"
+            placeholderClass="composer-placeholder"
             confirmType="send"
+            confirmHold
           />
           <Button
-            className="button send-btn"
-            size="mini"
+            className={`btn send-btn ${draft.trim() && !sending ? "send-ready" : ""}`}
             disabled={sending || !draft.trim()}
             onClick={() => void send()}
           >
