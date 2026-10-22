@@ -65,6 +65,48 @@ page {
   }
 }
 
+/*
+ * t18 主题三档覆盖：显式浅色/深色档由页面根节点追加 .theme-light / .theme-dark
+ * 实现（CSS 变量在元素上重定义，自身与后代都取新值）；跟随系统档不加 class，
+ * 由上面的 prefers-color-scheme 媒体查询接管。导航/tabBar 走 wx API（theme-store）。
+ */
+
+.theme-light {
+  --brand-fade: rgba(7, 193, 96, 0.1);
+  --warning-fade: rgba(250, 173, 20, 0.12);
+  --danger-fade: rgba(250, 81, 81, 0.1);
+  --info-fade: rgba(16, 174, 255, 0.1);
+
+  --text-1: #1f2329;
+  --text-2: #5f6672;
+  --text-3: #b9c0cc;
+
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --fill: #f2f3f5;
+  --divider: #f0f0f0;
+
+  --shadow-card: 0 2rpx 8rpx rgba(31, 35, 41, 0.04);
+}
+
+.theme-dark {
+  --brand-fade: rgba(7, 193, 96, 0.16);
+  --warning-fade: rgba(250, 173, 20, 0.18);
+  --danger-fade: rgba(250, 81, 81, 0.16);
+  --info-fade: rgba(16, 174, 255, 0.16);
+
+  --text-1: #e8eaed;
+  --text-2: #9da3ae;
+  --text-3: #5f6672;
+
+  --bg: #111111;
+  --card: #1e1e1e;
+  --fill: #2a2a2a;
+  --divider: #333333;
+
+  --shadow-card: none;
+}
+
 /* ---------- 布局基元 ---------- */
 
 .page {

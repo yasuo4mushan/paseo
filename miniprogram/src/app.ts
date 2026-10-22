@@ -2,6 +2,13 @@ import { useEffect, type PropsWithChildren } from "react";
 import Taro from "@tarojs/taro";
 import { installPooledRandomSource, randomSourceInstalled } from "./connection/random-source";
 import { permissionStore } from "./permission/permission-store";
+import { attentionStore } from "./stores/attention-store";
+import { workspaceStore } from "./stores/workspace-store";
+import {
+  normalizeThemePreference,
+  themeStore,
+  type ThemeChromeColors,
+} from "./stores/theme-store";
 // 全局设计 tokens 与共享样式（app.wxss）：Taro 的 app 入口不会自动收集
 // src/app.css，必须在入口显式 import，否则全局样式静默丢失（t10 踩坑）。
 import "./app.css";
@@ -26,22 +33,81 @@ function installRandom(): void {
   installPooledRandomSource(async () => new Uint8Array(0));
 }
 
+const THEME_KEY = "aaswitch_theme_pref";
+const VIBRATE_KEY = "aaswitch_attention_vibrate";
+
+/** t18：attention 副作用 —— tabBar 徽标（设备 tab 是连接入口）+ 振动。 */
+function installAttentionEffects(): void {
+  const stored = Taro.getStorageSync<boolean>(VIBRATE_KEY);
+  if (typeof stored === "boolean") attentionStore.setVibrationEnabled(stored);
+  attentionStore.bindSideEffects({
+    onCountChange: (count) => {
+      if (count > 0) {
+        Taro.setTabBarBadge({ index: 0, text: count > 99 ? "99+" : String(count) }).catch(() => {
+          // 非 tab 页面或渲染时机不匹配时静默（徽标是增强提示，不阻塞）
+        });
+      } else {
+        Taro.removeTabBarBadge({ index: 0 }).catch(() => {});
+      }
+    },
+    onNotify: (_entry, push) => {
+      if (push.shouldNotify) {
+        Taro.vibrateShort({ type: "light" }).catch(() => {});
+      }
+    },
+  });
+}
+
+/** t18：主题三档 —— storage 持久化 + 导航/tabBar 显式着色 + 系统主题变化监听。 */
+function installTheme(): void {
+  const applyChrome = (colors: ThemeChromeColors) => {
+    Taro.setNavigationBarColor({
+      frontColor: colors.navFrontColor,
+      backgroundColor: colors.navBackgroundColor,
+    }).catch(() => {});
+    Taro.setTabBarStyle(colors.tabBar).catch(() => {});
+  };
+  const systemTheme =
+    (Taro.getSystemInfoSync().theme as string | undefined) ?? "light";
+  themeStore.install(
+    {
+      get: () => {
+        const raw = Taro.getStorageSync<string>(THEME_KEY);
+        return raw ? normalizeThemePreference(raw) : null;
+      },
+      set: (value) => Taro.setStorageSync(THEME_KEY, value),
+    },
+    applyChrome,
+    systemTheme,
+  );
+  // wx.onThemeChange(callback)：Taro 类型把它标成了 option 对象，这里按实际 API 断言。
+  const onThemeChange = (Taro as unknown as { onThemeChange?: (cb: (res: { theme: string }) => void) => void })
+    .onThemeChange;
+  onThemeChange?.((res) => {
+    themeStore.setSystemTheme(res.theme);
+  });
+}
+
 function App({ children }: PropsWithChildren) {
   useEffect(() => {
     installRandom();
-    // 自动化验收桥（t16/t17）：devtools automator 经 mini.evaluate(getApp()) 注入
-    // mock 权限推送 / 读取下载与预览调用记录，驱动全局弹层截图与验收断言。
+    installTheme();
+    installAttentionEffects();
+    // 自动化验收桥（t16/t17/t18）：devtools automator 经 mini.evaluate(getApp()) 注入
+    // mock 权限/attention 推送、读取下载调用记录与工作区选择，驱动截图与验收断言。
     // 生产环境无 UI 暴露面，仅内部对象引用。
     const app = Taro.getApp?.() as unknown as
       | {
           __automation?: {
             permissionStore: typeof permissionStore;
+            attentionStore: typeof attentionStore;
+            workspaceStore: typeof workspaceStore;
             downloadLog?: Array<Record<string, unknown>>;
           };
         }
       | undefined;
     if (app && !app.__automation) {
-      app.__automation = { permissionStore, downloadLog: [] };
+      app.__automation = { permissionStore, attentionStore, workspaceStore, downloadLog: [] };
     } else if (app?.__automation && !app.__automation.downloadLog) {
       app.__automation.downloadLog = [];
     }
