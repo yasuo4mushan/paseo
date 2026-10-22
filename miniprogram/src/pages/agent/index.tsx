@@ -3,12 +3,15 @@ import Taro, { useLoad } from "@tarojs/taro";
 import { Button, Image, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
+  AgentSnapshot,
   AgentTimelineEntry,
   AgentTimelineItem,
   UploadedFileAttachment,
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { useThemeClass } from "@/hooks/use-theme";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
+import { displayLabels, setDisplayLabels } from "@/utils/agent-directory";
 import { formatFileSize, mimeForFile } from "@/utils/files";
 import { previewImage, readLocalFileBytes } from "@/utils/file-ops";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
@@ -156,6 +159,7 @@ function createClientMessageId(): string {
 }
 
 export default function AgentPage() {
+  const themeClass = useThemeClass();
   const [agentId, setAgentId] = useState("");
   const [title, setTitle] = useState("");
   const [entries, setEntries] = useState<DisplayEntry[]>([]);
@@ -167,6 +171,12 @@ export default function AgentPage() {
   const [deleting, setDeleting] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
   const bottomAnchor = useRef(`bottom-${Date.now()}`);
+  // t18：归档态 + 标签编辑
+  const [snapshot, setSnapshot] = useState<AgentSnapshot | null>(null);
+  const [labelEditing, setLabelEditing] = useState(false);
+  const [labelDraft, setLabelDraft] = useState("");
+  const [labelSaving, setLabelSaving] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   useLoad((options) => {
     const id = options?.id ? decodeURIComponent(options.id) : "";
@@ -217,10 +227,11 @@ export default function AgentPage() {
 
     void (async () => {
       try {
-        const agents = await conn.fetchAgents();
+        const agents = await conn.fetchAgents({ includeArchived: true });
         const self = agents.find((a) => a.id === agentId);
         if (self) {
           setStatus(self.status);
+          setSnapshot(self);
           const navTitle = self.title ?? self.id.slice(0, 8);
           setTitle(navTitle);
           Taro.setNavigationBarTitle({ title: navTitle });
@@ -265,6 +276,7 @@ export default function AgentPage() {
     const unsubscribeAgents = connectionManager.onAgentUpdate((update) => {
       if (update.kind === "upsert" && update.agent.id === agentId) {
         setStatus(update.agent.status);
+        setSnapshot(update.agent);
       }
     });
 
@@ -444,8 +456,82 @@ export default function AgentPage() {
 
   const sendable = (draft.trim() || pendingFiles.some((f) => f.status === "ready")) && !sending;
 
+  // ---- t18：归档 / 恢复 / 标签 ----
+
+  const toggleArchive = async () => {
+    if (!agentId || archiving) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    if (snapshot?.archivedAt) {
+      setArchiving(true);
+      try {
+        await conn.refreshAgent(agentId);
+        setSnapshot((prev) => (prev ? { ...prev, archivedAt: null } : prev));
+        Taro.showToast({ title: "已恢复", icon: "success" });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setArchiving(false);
+      }
+      return;
+    }
+    const { confirm } = await Taro.showModal({
+      title: "归档 Agent",
+      content: "归档后从进行中列表移除，可在\"归档\"筛选里找到并恢复。",
+      confirmText: "归档",
+      cancelText: "取消",
+    });
+    if (!confirm) return;
+    setArchiving(true);
+    try {
+      await conn.archiveAgent(agentId);
+      setSnapshot((prev) =>
+        prev ? { ...prev, archivedAt: new Date().toISOString() } : prev,
+      );
+      Taro.showToast({ title: "已归档", icon: "none" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const addLabel = () => {
+    const value = labelDraft.trim();
+    if (!value) return;
+    const current = displayLabels(snapshot?.labels);
+    if (current.includes(value)) {
+      setLabelDraft("");
+      return;
+    }
+    void saveLabels([...current, value]);
+    setLabelDraft("");
+  };
+
+  const removeLabel = (label: string) => {
+    void saveLabels(displayLabels(snapshot?.labels).filter((l) => l !== label));
+  };
+
+  const saveLabels = async (next: string[]) => {
+    if (!agentId || labelSaving) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    setLabelSaving(true);
+    try {
+      const labels = setDisplayLabels(snapshot?.labels, next);
+      await conn.updateAgent(agentId, { labels });
+      setSnapshot((prev) => (prev ? { ...prev, labels } : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLabelSaving(false);
+    }
+  };
+
+  const labels = displayLabels(snapshot?.labels);
+
   return (
-    <View className="agent-page">
+    <View className={`agent-page ${themeClass}`}>
       <ScrollView
         className="timeline"
         scrollY
@@ -454,6 +540,58 @@ export default function AgentPage() {
         showScrollbar={false}
       >
         {error ? <View className="error-inline error-in-timeline">{error}</View> : null}
+        {snapshot?.archivedAt ? (
+          <View className="archived-callout">
+            <View className="archived-callout-text">该会话已归档，发送消息前需先恢复。</View>
+            <Button
+              className="btn btn-mini"
+              disabled={archiving}
+              onClick={() => void toggleArchive()}
+            >
+              恢复
+            </Button>
+          </View>
+        ) : null}
+        {labelEditing ? (
+          <View className="label-editor">
+            <View className="label-editor-title">标签</View>
+            <View className="label-editor-chips">
+              {labels.map((label) => (
+                <View key={label} className="label-chip">
+                  <View className="label-chip-text">{label}</View>
+                  <View
+                    className="label-chip-remove"
+                    onClick={() => (labelSaving ? undefined : removeLabel(label))}
+                  >
+                    ✕
+                  </View>
+                </View>
+              ))}
+              {labels.length === 0 ? <View className="faint">还没有标签</View> : null}
+            </View>
+            <View className="label-editor-row">
+              <Input
+                className="label-input"
+                value={labelDraft}
+                onInput={(e) => setLabelDraft(e.detail.value)}
+                onConfirm={() => addLabel()}
+                placeholder="输入标签名"
+                placeholderClass="composer-placeholder"
+                confirmType="done"
+              />
+              <Button
+                className="btn btn-mini label-add-btn"
+                disabled={labelSaving || !labelDraft.trim()}
+                onClick={() => addLabel()}
+              >
+                添加
+              </Button>
+            </View>
+            <View className="label-editor-done" onClick={() => setLabelEditing(false)}>
+              收起
+            </View>
+          </View>
+        ) : null}
         {entries.length === 0 ? (
           <View className="card empty">
             <View className="empty-icon">💬</View>
@@ -486,11 +624,13 @@ export default function AgentPage() {
       <View className="composer">
         <View className="composer-head">
           {status ? (
-            <View className={statusPillClass(status)}>{STATUS_LABELS[status] ?? status}</View>
+            <View className={snapshot?.archivedAt ? "pill pill-idle" : statusPillClass(status)}>
+              {snapshot?.archivedAt ? "已归档" : (STATUS_LABELS[status] ?? status)}
+            </View>
           ) : null}
           {title ? <View className="faint composer-title">{title}</View> : null}
           <View className="composer-actions">
-            {status === "running" ? (
+            {status === "running" && !snapshot?.archivedAt ? (
               <Button
                 className="btn btn-mini btn-ghost action-btn"
                 disabled={cancelling}
@@ -499,6 +639,20 @@ export default function AgentPage() {
                 {cancelling ? "中断中…" : "中断"}
               </Button>
             ) : null}
+            <Button
+              className="btn btn-mini btn-ghost action-btn"
+              disabled={labelSaving}
+              onClick={() => setLabelEditing((v) => !v)}
+            >
+              标签{labels.length > 0 ? `(${labels.length})` : ""}
+            </Button>
+            <Button
+              className="btn btn-mini btn-ghost action-btn"
+              disabled={archiving}
+              onClick={() => void toggleArchive()}
+            >
+              {snapshot?.archivedAt ? "恢复" : "归档"}
+            </Button>
             <Button
               className="btn btn-mini btn-danger action-btn"
               disabled={deleting}

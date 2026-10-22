@@ -1,7 +1,9 @@
 /**
- * 创建 Agent 会话（t16）：
- * 选择项目/工作区 → provider（daemon 可用目录）→ model（目录 RPC，可无）→
- * mode（provider modes，可无）→ 任务输入 → create_agent_request → 进详情页。
+ * 创建 Agent 会话（t16；t18 增加"导入已有会话"tab）：
+ * - 新建：选择项目/工作区 → provider（daemon 可用目录）→ model（目录 RPC，可无）→
+ *   mode（provider modes，可无）→ 任务输入 → create_agent_request → 进详情页。
+ * - 导入：fetch_recent_provider_sessions（provider 侧历史会话目录）→
+ *   import_agent_request（provider+providerHandleId+cwd）→ 进详情页。
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -11,11 +13,14 @@ import { connectionManager } from "@/connection/connection-manager";
 import type {
   ProviderAvailability,
   ProviderMode,
+  RecentProviderSession,
   WorkspaceDescriptor,
 } from "@/connection/protocol-types";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { WorkspacePicker } from "@/components/workspace-picker";
+import { useThemeClass } from "@/hooks/use-theme";
+import { formatRelativeTime } from "@/utils/time";
 import {
   hasErrors,
   providerDisabledReason,
@@ -23,6 +28,8 @@ import {
   type CreateFormErrors,
 } from "./validate";
 import "./index.css";
+
+type PageTab = "create" | "import";
 
 /** 订阅工作区选择（不用 useSyncExternalStore：Taro reconciler 下订阅更新不可靠）。 */
 function useWorkspaceSelection(): WorkspaceSelection | null {
@@ -34,7 +41,9 @@ function useWorkspaceSelection(): WorkspaceSelection | null {
 }
 
 export default function CreateAgentPage() {
+  const themeClass = useThemeClass();
   const workspace = useWorkspaceSelection();
+  const [tab, setTab] = useState<PageTab>("create");
   const [providers, setProviders] = useState<ProviderAvailability[] | null>(null);
   const [provider, setProvider] = useState("");
   const [models, setModels] = useState<string[]>([]);
@@ -47,6 +56,10 @@ export default function CreateAgentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<CreateFormErrors>({});
   const [fatal, setFatal] = useState("");
+  // t18 导入 tab 状态
+  const [sessions, setSessions] = useState<RecentProviderSession[] | null>(null);
+  const [importingId, setImportingId] = useState("");
+  const [importError, setImportError] = useState("");
 
   // 进入页面即恢复已选工作区并拉取可用 provider
   useEffect(() => {
@@ -110,6 +123,58 @@ export default function CreateAgentPage() {
     workspaceStore.select(ws);
   }, []);
 
+  // t18：导入 tab —— 拉取 provider 侧历史会话（按当前工作区目录过滤）
+  useEffect(() => {
+    if (tab !== "import") return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    let disposed = false;
+    void (async () => {
+      try {
+        const result = await conn.fetchRecentProviderSessions({
+          ...(workspace?.directory ? { cwd: workspace.directory } : {}),
+          limit: 50,
+        });
+        if (!disposed) {
+          setSessions(result.entries);
+          setImportError(
+            result.providerErrors.length > 0
+              ? `部分 provider 读取失败：${result.providerErrors
+                  .map((e) => e.provider)
+                  .join("、")}`
+              : "",
+          );
+        }
+      } catch (err) {
+        if (!disposed) {
+          setSessions([]);
+          setImportError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    })();
+    return () => {
+      disposed = true;
+    };
+  }, [tab, workspace?.directory]);
+
+  const importSession = async (entry: RecentProviderSession) => {
+    if (importingId) return;
+    setImportingId(entry.providerHandleId);
+    setImportError("");
+    try {
+      const agent = await connectionManager.requireConnection().importAgent({
+        provider: entry.providerId,
+        providerHandleId: entry.providerHandleId,
+        ...(entry.cwd ? { cwd: entry.cwd } : {}),
+        ...(workspace ? { workspaceId: workspace.workspaceId } : {}),
+      });
+      Taro.redirectTo({ url: `/pages/agent/index?id=${encodeURIComponent(agent.id)}` });
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : String(err));
+      setImportingId("");
+    }
+  };
+
   const submit = async () => {
     if (submitting || !workspace) return;
     const nextErrors = validateCreateForm({ workspace, provider, prompt });
@@ -136,7 +201,7 @@ export default function CreateAgentPage() {
 
   if (fatal) {
     return (
-      <View className="page">
+      <View className={`page ${themeClass}`}>
         <View className="card empty">
           <View className="empty-icon">⚠️</View>
           <View className="empty-title">无法创建</View>
@@ -151,107 +216,165 @@ export default function CreateAgentPage() {
   }
 
   return (
-    <View className="page create-page">
-      <View className="card">
-        <View className="field-label">项目 / 工作区</View>
-        <View className="ws-select" onClick={() => setPickerVisible(true)}>
-          <View className={`ws-select-text ${workspace ? "" : "ws-select-placeholder"}`}>
-            {workspace?.label ?? "选择目标工作区"}
-          </View>
-          <View className="ws-bar-arrow">▾</View>
+    <View className={`page create-page ${themeClass}`}>
+      <View className="tab-bar">
+        <View
+          className={`tab-item ${tab === "create" ? "tab-item-active" : ""}`}
+          onClick={() => setTab("create")}
+        >
+          新建会话
         </View>
-        {errors.workspace ? <View className="field-error">{errors.workspace}</View> : null}
+        <View
+          className={`tab-item ${tab === "import" ? "tab-item-active" : ""}`}
+          onClick={() => setTab("import")}
+        >
+          导入已有会话
+        </View>
       </View>
 
-      <View className="card">
-        <View className="field-label">Agent 类型（provider）</View>
-        {providers === null ? (
-          <View className="loading-tip">读取可用 provider…</View>
-        ) : (
-          <View className="chip-row">
-            {providers.map((item) => {
-              const disabled = providerDisabledReason(item);
-              return (
-                <View
-                  key={item.provider}
-                  className={`chip ${provider === item.provider ? "chip-active" : ""} ${
-                    disabled ? "chip-disabled" : ""
-                  }`}
-                  onClick={() => {
-                    if (!disabled) setProvider(item.provider);
-                  }}
-                >
-                  {item.provider}
-                </View>
-              );
-            })}
-          </View>
-        )}
-        {errors.provider ? <View className="field-error">{errors.provider}</View> : null}
-      </View>
-
-      <View className="card">
-        <View className="field-label">模型</View>
-        {loadingCatalog ? (
-          <View className="loading-tip">读取模型目录…</View>
-        ) : models.length > 0 ? (
-          <Picker
-            mode="selector"
-            range={models}
-            value={modelIndex}
-            onChange={(e) => setModelIndex(Number(e.detail.value))}
-          >
-            <View className="picker-value">
-              <View className="picker-text">{models[modelIndex]}</View>
+      {tab === "create" ? (
+        <View>
+          <View className="card">
+            <View className="field-label">项目 / 工作区</View>
+            <View className="ws-select" onClick={() => setPickerVisible(true)}>
+              <View className={`ws-select-text ${workspace ? "" : "ws-select-placeholder"}`}>
+                {workspace?.label ?? "选择目标工作区"}
+              </View>
               <View className="ws-bar-arrow">▾</View>
             </View>
-          </Picker>
-        ) : (
-          <View className="muted">使用 provider 默认模型</View>
-        )}
-
-        {modes.length > 0 ? (
-          <View>
-            <View className="field-label mode-label">模式</View>
-            <View className="chip-row">
-              {modes.map((mode) => (
-                <View
-                  key={mode.id}
-                  className={`chip ${modeId === mode.id ? "chip-active" : ""}`}
-                  onClick={() => setModeId(mode.id)}
-                >
-                  {mode.label}
-                </View>
-              ))}
-            </View>
+            {errors.workspace ? <View className="field-error">{errors.workspace}</View> : null}
           </View>
-        ) : null}
-      </View>
 
-      <View className="card">
-        <View className="field-label">任务指令</View>
-        <Textarea
-          className="prompt-input"
-          value={prompt}
-          onInput={(e) => setPrompt(e.detail.value)}
-          placeholder="例如：帮我在这个仓库里定位登录超时的原因并给出修复方案"
-          placeholderClass="prompt-placeholder"
-          maxlength={4000}
-          autoHeight
-          disabled={submitting}
-        />
-        {errors.prompt ? <View className="field-error">{errors.prompt}</View> : null}
-      </View>
+          <View className="card">
+            <View className="field-label">Agent 类型（provider）</View>
+            {providers === null ? (
+              <View className="loading-tip">读取可用 provider…</View>
+            ) : (
+              <View className="chip-row">
+                {providers.map((item) => {
+                  const disabled = providerDisabledReason(item);
+                  return (
+                    <View
+                      key={item.provider}
+                      className={`chip ${provider === item.provider ? "chip-active" : ""} ${
+                        disabled ? "chip-disabled" : ""
+                      }`}
+                      onClick={() => {
+                        if (!disabled) setProvider(item.provider);
+                      }}
+                    >
+                      {item.provider}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+            {errors.provider ? <View className="field-error">{errors.provider}</View> : null}
+          </View>
 
-      <Button
-        className="btn btn-block"
-        disabled={submitting}
-        loading={submitting}
-        onClick={() => void submit()}
-      >
-        {submitting ? "创建中…" : "创建并进入会话"}
-      </Button>
-      <View className="footer-note">创建会真实启动一个 agent 并消耗模型配额</View>
+          <View className="card">
+            <View className="field-label">模型</View>
+            {loadingCatalog ? (
+              <View className="loading-tip">读取模型目录…</View>
+            ) : models.length > 0 ? (
+              <Picker
+                mode="selector"
+                range={models}
+                value={modelIndex}
+                onChange={(e) => setModelIndex(Number(e.detail.value))}
+              >
+                <View className="picker-value">
+                  <View className="picker-text">{models[modelIndex]}</View>
+                  <View className="ws-bar-arrow">▾</View>
+                </View>
+              </Picker>
+            ) : (
+              <View className="muted">使用 provider 默认模型</View>
+            )}
+
+            {modes.length > 0 ? (
+              <View>
+                <View className="field-label mode-label">模式</View>
+                <View className="chip-row">
+                  {modes.map((mode) => (
+                    <View
+                      key={mode.id}
+                      className={`chip ${modeId === mode.id ? "chip-active" : ""}`}
+                      onClick={() => setModeId(mode.id)}
+                    >
+                      {mode.label}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+          </View>
+
+          <View className="card">
+            <View className="field-label">任务指令</View>
+            <Textarea
+              className="prompt-input"
+              value={prompt}
+              onInput={(e) => setPrompt(e.detail.value)}
+              placeholder="例如：帮我在这个仓库里定位登录超时的原因并给出修复方案"
+              placeholderClass="prompt-placeholder"
+              maxlength={4000}
+              autoHeight
+              disabled={submitting}
+            />
+            {errors.prompt ? <View className="field-error">{errors.prompt}</View> : null}
+          </View>
+
+          <Button
+            className="btn btn-block"
+            disabled={submitting}
+            loading={submitting}
+            onClick={() => void submit()}
+          >
+            {submitting ? "创建中…" : "创建并进入会话"}
+          </Button>
+          <View className="footer-note">创建会真实启动一个 agent 并消耗模型配额</View>
+        </View>
+      ) : (
+        <View>
+          <View className="card import-hint-card">
+            <View className="field-label">
+              Provider 侧历史会话（{workspace ? "当前工作区目录" : "全部目录"}）
+            </View>
+            {importError ? <View className="field-error">{importError}</View> : null}
+            {sessions === null ? (
+              <View className="loading-tip">读取 provider 会话目录…</View>
+            ) : sessions.length === 0 ? (
+              <View className="muted">
+                没有可导入的会话。provider 在设备上产生历史会话后，这里会列出。
+              </View>
+            ) : (
+              sessions.map((entry) => (
+                <View key={`${entry.providerId}:${entry.providerHandleId}`} className="import-row">
+                  <View className="import-provider">{entry.providerLabel}</View>
+                  <View className="import-main">
+                    <View className="import-title">
+                      {entry.title ?? entry.lastPromptPreview ?? entry.providerHandleId.slice(0, 12)}
+                    </View>
+                    <View className="faint import-cwd num">{entry.cwd}</View>
+                    <View className="faint">{formatRelativeTime(entry.lastActivityAt)}</View>
+                  </View>
+                  <Button
+                    className="btn btn-mini import-btn"
+                    disabled={importingId !== ""}
+                    onClick={() => void importSession(entry)}
+                  >
+                    {importingId === entry.providerHandleId ? "导入中…" : "导入"}
+                  </Button>
+                </View>
+              ))
+            )}
+          </View>
+          <View className="footer-note">
+            导入即把 provider 本地历史会话接入 aaswitch 管理（import_agent_request）
+          </View>
+        </View>
+      )}
 
       <WorkspacePicker
         visible={pickerVisible}

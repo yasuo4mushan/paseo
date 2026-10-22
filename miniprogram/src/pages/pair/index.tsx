@@ -3,9 +3,11 @@ import Taro from "@tarojs/taro";
 import { Button, Textarea, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { useThemeClass } from "@/hooks/use-theme";
 import "./index.css";
 
 export default function PairPage() {
+  const themeClass = useThemeClass();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +48,7 @@ export default function PairPage() {
   };
 
   return (
-    <View className="page pair-page">
+    <View className={`page pair-page ${themeClass}`}>
       <View className="card">
         <View className="pair-title">手动配对</View>
         <View className="muted pair-tip">

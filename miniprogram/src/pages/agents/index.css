@@ -72,31 +72,99 @@
   font-weight: 600;
 }
 
-/* t17 文件入口：与新建同款胶囊，中性填充色区分 */
-.files-entry {
+/* t17 文件入口 → t18 通用工具入口（文件/定时/脚本）：与新建同款胶囊，中性填充色区分 */
+.tool-entry {
   display: flex;
   align-items: center;
   background: var(--fill);
   color: var(--text-1);
   border-radius: var(--radius-round);
-  padding: 12rpx 28rpx;
-  margin-left: 24rpx;
+  padding: 12rpx 20rpx;
+  margin-left: 16rpx;
   flex-shrink: 0;
 }
 
-.files-entry:active {
+.tool-entry:active {
   background: var(--divider);
 }
 
-.files-entry-icon {
-  font-size: 28rpx;
+.tool-entry-icon {
+  font-size: 26rpx;
   line-height: 1;
   margin-right: 6rpx;
 }
 
-.files-entry-text {
-  font-size: 26rpx;
+.tool-entry-text {
+  font-size: 24rpx;
   font-weight: 600;
+}
+
+/* t18 筛选条（进行中/全部/需注意/归档） */
+.filter-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.filter-chip {
+  padding: 10rpx 26rpx;
+  border-radius: var(--radius-round);
+  background: var(--card);
+  color: var(--text-2);
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.filter-chip-active {
+  background: var(--brand-fade);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.filter-badge {
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 8rpx;
+  border-radius: var(--radius-round);
+  background: var(--danger);
+  color: var(--text-inverse);
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* t18 attention 高亮卡片（推送/快照 requiresAttention） */
+.agent-card-attention {
+  background: var(--warning-fade);
+}
+
+.agent-card-attention:active {
+  opacity: 0.85;
+}
+
+/* t18 标签 chips */
+.agent-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.agent-label-chip {
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: var(--radius-round);
+  background: var(--info-fade);
+  color: var(--info);
+  max-width: 160rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .agent-card {

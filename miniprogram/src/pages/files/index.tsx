@@ -15,6 +15,7 @@ import { Button, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { FileExplorerEntry } from "@/connection/protocol-types";
 import { decodeUtf8 } from "@/connection/utf8";
+import { useThemeClass } from "@/hooks/use-theme";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { fileCategory, fileIcon, formatFileSize } from "@/utils/files";
 import {
@@ -74,6 +75,7 @@ function recordAutomationEvent(event: Record<string, unknown>): void {
 }
 
 export default function FilesPage() {
+  const themeClass = useThemeClass();
   const workspace = useWorkspaceSelection();
   const [entries, setEntries] = useState<FileExplorerEntry[]>([]);
   const [dirStack, setDirStack] = useState<string[]>([]); // 相对路径栈，["."]=根
@@ -272,7 +274,7 @@ export default function FilesPage() {
 
   if (!cwd) {
     return (
-      <View className="page">
+      <View className={`page ${themeClass}`}>
         <View className="card empty">
           <View className="empty-icon">📂</View>
           <View className="empty-title">未选择工作区</View>
@@ -295,7 +297,7 @@ export default function FilesPage() {
       : 0;
 
   return (
-    <View className="page files-page">
+    <View className={`page files-page ${themeClass}`}>
       <View className="files-header">
         <View className="files-crumbs">
           {dirStack.length > 0 ? (

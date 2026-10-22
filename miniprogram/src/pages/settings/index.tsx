@@ -1,9 +1,16 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { DaemonStatus } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { useThemeClass } from "@/hooks/use-theme";
+import { attentionStore } from "@/stores/attention-store";
+import {
+  THEME_LABELS,
+  themeStore,
+  type ThemePreference,
+} from "@/stores/theme-store";
 import {
   DEFAULT_HUB_BASE,
   getAccount,
@@ -22,6 +29,8 @@ const STATUS_TEXT: Record<string, string> = {
   error: "连接失败",
 };
 
+const VIBRATE_KEY = "aaswitch_attention_vibrate";
+
 function endpointLabel(): string {
   const stored = connectionManager.getStored() ?? connectionManager.loadStored();
   if (!stored) return "未配置";
@@ -31,17 +40,27 @@ function endpointLabel(): string {
   return stored.url;
 }
 
+/** manager 状态订阅（t18 起弃用 useSyncExternalStore，统一 useState+useEffect）。 */
+function useConnectionState() {
+  const [state, setState] = useState(() => connectionManager.getState());
+  useEffect(() => connectionManager.subscribe(() => setState(connectionManager.getState())), []);
+  return state;
+}
+
 export default function SettingsPage() {
-  const state = useSyncExternalStore(
-    (cb) => connectionManager.subscribe(cb),
-    () => connectionManager.getState(),
-  );
+  const themeClass = useThemeClass();
+  const state = useConnectionState();
   const [authed, setAuthed] = useState(() => hasSession());
   const [username, setUsername] = useState(() => getAccount()?.username ?? "");
   const [daemonStatus, setDaemonStatus] = useState<DaemonStatus | null>(null);
   const [hubBase, setHubBaseState] = useState(() => getHubBase());
   const [hubDraft, setHubDraft] = useState("");
   const [hubEditing, setHubEditing] = useState(false);
+  // t18：外观三档 + attention 振动
+  const [themePref, setThemePref] = useState<ThemePreference>(() => themeStore.getPreference());
+  const [vibrate, setVibrate] = useState(() => attentionStore.isVibrationEnabled());
+
+  useEffect(() => themeStore.subscribe(() => setThemePref(themeStore.getPreference())), []);
 
   useDidShow(() => {
     setAuthed(hasSession());
@@ -66,6 +85,19 @@ export default function SettingsPage() {
 
   const activeDevice = connectionManager.getActiveDevice();
   const info = state.status === "connected" ? state.info : null;
+
+  const setTheme = (pref: ThemePreference) => {
+    themeStore.setPreference(pref);
+    setThemePref(pref);
+    Taro.showToast({ title: THEME_LABELS[pref], icon: "none" });
+  };
+
+  const toggleVibrate = () => {
+    const next = !vibrate;
+    setVibrate(next);
+    attentionStore.setVibrationEnabled(next);
+    Taro.setStorageSync(VIBRATE_KEY, next);
+  };
 
   const logout = () => {
     Taro.showModal({
@@ -107,7 +139,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <View className="page settings-page">
+    <View className={`page settings-page ${themeClass}`}>
       <View className="section-title">账号</View>
       <View className="cell-group">
         <View className="cell">
@@ -166,6 +198,43 @@ export default function SettingsPage() {
           断开连接
         </Button>
       )}
+      <View
+        className="cell cell-tappable settings-switch-device"
+        onClick={() => Taro.switchTab({ url: "/pages/devices/index" })}
+      >
+        <View className="cell-grow">
+          <View className="cell-label">切换设备</View>
+          <View className="faint">查看 hub 设备列表，选一台在线设备连接</View>
+        </View>
+        <View className="cell-arrow">›</View>
+      </View>
+
+      <View className="section-title">外观与提醒</View>
+      <View className="cell-group">
+        <View className="cell">
+          <View className="cell-grow cell-label">主题</View>
+          <View className="theme-options">
+            {(["auto", "light", "dark"] as ThemePreference[]).map((pref) => (
+              <View
+                key={pref}
+                className={`theme-option ${themePref === pref ? "theme-option-active" : ""}`}
+                onClick={() => setTheme(pref)}
+              >
+                {THEME_LABELS[pref]}
+              </View>
+            ))}
+          </View>
+        </View>
+        <View className="cell cell-tappable" onClick={toggleVibrate}>
+          <View className="cell-grow">
+            <View className="cell-label">Agent 提醒振动</View>
+            <View className="faint">agent 完成或需要授权时振动一次</View>
+          </View>
+          <View className={`switch ${vibrate ? "switch-on" : ""}`}>
+            <View className="switch-knob" />
+          </View>
+        </View>
+      </View>
 
       <View className="section-title">Hub 服务器</View>
       <View className="cell-group">
