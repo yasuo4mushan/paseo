@@ -22,7 +22,7 @@ export default function PairPage() {
     setError("");
     try {
       await connectionManager.connect(trimmed);
-      Taro.redirectTo({ url: "/pages/agents/index" });
+      Taro.switchTab({ url: "/pages/chat/index" });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

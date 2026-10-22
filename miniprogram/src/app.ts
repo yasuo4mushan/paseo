@@ -4,6 +4,8 @@ import { installPooledRandomSource, randomSourceInstalled } from "./connection/r
 import { permissionStore } from "./permission/permission-store";
 import { attentionStore } from "./stores/attention-store";
 import { workspaceStore } from "./stores/workspace-store";
+import { sessionStore } from "./stores/session-store";
+import { safeNavigateTo } from "./utils/navigation";
 import {
   normalizeThemePreference,
   themeStore,
@@ -36,18 +38,18 @@ function installRandom(): void {
 const THEME_KEY = "aaswitch_theme_pref";
 const VIBRATE_KEY = "aaswitch_attention_vibrate";
 
-/** t18：attention 副作用 —— tabBar 徽标（设备 tab 是连接入口）+ 振动。 */
+/** t18：attention 副作用 —— tabBar 徽标（t20 起会话在对话 tab，index=1）+ 振动。 */
 function installAttentionEffects(): void {
   const stored = Taro.getStorageSync<boolean>(VIBRATE_KEY);
   if (typeof stored === "boolean") attentionStore.setVibrationEnabled(stored);
   attentionStore.bindSideEffects({
     onCountChange: (count) => {
       if (count > 0) {
-        Taro.setTabBarBadge({ index: 0, text: count > 99 ? "99+" : String(count) }).catch(() => {
+        Taro.setTabBarBadge({ index: 1, text: count > 99 ? "99+" : String(count) }).catch(() => {
           // 非 tab 页面或渲染时机不匹配时静默（徽标是增强提示，不阻塞）
         });
       } else {
-        Taro.removeTabBarBadge({ index: 0 }).catch(() => {});
+        Taro.removeTabBarBadge({ index: 1 }).catch(() => {});
       }
     },
     onNotify: (_entry, push) => {
@@ -102,14 +104,39 @@ function App({ children }: PropsWithChildren) {
             permissionStore: typeof permissionStore;
             attentionStore: typeof attentionStore;
             workspaceStore: typeof workspaceStore;
+            sessionStore: typeof sessionStore;
+            /** t20：验收清理用（绕过确认弹窗直删验证 agent）。 */
+            deleteAgent?: (agentId: string) => Promise<void>;
+            /** t20：navigateTo timeout 回归步（页面栈降级/连点去重在真 runtime 验证）。 */
+            safeNavigateTo?: (url: string) => Promise<unknown>;
+            /** t20：验收收尾断开连接（devtools 实例常驻，避免污染下一次运行）。 */
+            disconnect?: () => Promise<void>;
             downloadLog?: Array<Record<string, unknown>>;
           };
         }
       | undefined;
     if (app && !app.__automation) {
-      app.__automation = { permissionStore, attentionStore, workspaceStore, downloadLog: [] };
+      app.__automation = { permissionStore, attentionStore, workspaceStore, sessionStore, downloadLog: [] };
     } else if (app?.__automation && !app.__automation.downloadLog) {
       app.__automation.downloadLog = [];
+    }
+    if (app?.__automation && !app.__automation.sessionStore) {
+      app.__automation.sessionStore = sessionStore;
+    }
+    if (app?.__automation && !app.__automation.safeNavigateTo) {
+      app.__automation.safeNavigateTo = safeNavigateTo;
+    }
+    if (app?.__automation && !app.__automation.disconnect) {
+      app.__automation.disconnect = async () => {
+        const { connectionManager } = await import("./connection/connection-manager");
+        connectionManager.disconnect();
+      };
+    }
+    if (app?.__automation && !app.__automation.deleteAgent) {
+      app.__automation.deleteAgent = async (agentId: string) => {
+        const { connectionManager } = await import("./connection/connection-manager");
+        await connectionManager.requireConnection().deleteAgent(agentId);
+      };
     }
   }, []);
   return children;

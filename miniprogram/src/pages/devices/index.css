@@ -9,8 +9,6 @@
 }
 
 .device-icon {
-  font-size: 48rpx;
-  line-height: 1;
   margin-right: 24rpx;
   flex-shrink: 0;
 }
