@@ -1,17 +1,24 @@
 /**
- * 文件浏览器（t17）：当前工作区范围内的目录浏览、预览与下载保存。
+ * 文件浏览器（t17 建立，t19 增强）。
  *
- * 连接层：file_explorer_request（list / file+acceptBinary 二进制帧）。
+ * 连接层：
+ * - file_explorer_request（list / file+acceptBinary 二进制帧）—— t17
+ * - fs.file.write / fs.entry.create / fs.entry.rename / fs.entry.delete —— t19
+ * - fs.file.subscribe → fs.file.update 推送（编辑器打开期间检测远端变更）—— t19
+ *
  * 预览策略（按扩展名粗分，真实 mime 以 daemon 返回为准）：
- * - 文本/代码：内嵌渲染，超过 maxBytes 由 daemon 直接拒绝（"File is too large to display"）
+ * - 文本/代码：内嵌渲染（可进编辑器写回），超过 maxBytes 由 daemon 直接拒绝
  * - 图片：读字节 → 写本地临时文件 → wx.previewImage 全屏
  * - PDF/Office：读字节 → 写下载目录 → wx.openDocument
  * - 其他：提供下载保存（wx.shareFileMessage 转发/另存入口）
+ *
+ * 写回冲突（utils/file-edit.ts 状态机）：expectedModifiedAt/revision 是读时版本；
+ * daemon 报 conflict 时弹三选（重新加载 / 覆盖远端 / 继续编辑）。
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
-import { Button, ScrollView, View } from "@tarojs/components";
+import { Button, ScrollView, Textarea, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { FileExplorerEntry } from "@/connection/protocol-types";
 import { decodeUtf8 } from "@/connection/utf8";
@@ -25,6 +32,12 @@ import {
   saveBytesToDownload,
   shareFile,
 } from "@/utils/file-ops";
+import {
+  initialFileEditState,
+  nextFileEditState,
+  type FileEditState,
+  type FileEditVersion,
+} from "@/utils/file-edit";
 import "./index.css";
 
 /** 内联文本预览的读取上限与渲染上限。 */
@@ -42,6 +55,13 @@ interface DownloadState {
   fileName: string;
   received: number;
   total: number;
+}
+
+/** t19：编辑器会话（fs.file.write 写回）。 */
+interface EditorSession {
+  path: string;
+  name: string;
+  content: string;
 }
 
 /** 订阅工作区选择（同 agents 页模式：useState+useEffect，不用 useSyncExternalStore）。 */
@@ -74,6 +94,27 @@ function recordAutomationEvent(event: Record<string, unknown>): void {
   app?.__automation?.downloadLog?.push({ ...event, at: Date.now() });
 }
 
+/**
+ * 可输入弹窗（wx.showModal editable）：Taro 4.3 类型未跟上微信 baselib 的
+ * editable/placeholderText 参数与 content 返回值，这里做局部断言。
+ */
+function editableModal(input: {
+  title: string;
+  placeholderText?: string;
+  content?: string;
+  confirmText?: string;
+  cancelText?: string;
+}): Promise<{ confirm: boolean; content: string }> {
+  return Taro.showModal({
+    title: input.title,
+    editable: true,
+    placeholderText: input.placeholderText,
+    ...(input.content !== undefined ? { content: input.content } : {}),
+    ...(input.confirmText ? { confirmText: input.confirmText } : {}),
+    ...(input.cancelText ? { cancelText: input.cancelText } : {}),
+  } as Taro.showModal.Option) as unknown as Promise<{ confirm: boolean; content: string }>;
+}
+
 export default function FilesPage() {
   const themeClass = useThemeClass();
   const workspace = useWorkspaceSelection();
@@ -85,6 +126,14 @@ export default function FilesPage() {
   const [download, setDownload] = useState<DownloadState | null>(null);
 
   const cwd = workspace?.directory ?? "";
+
+  // t19：编辑器状态机 + 会话 + 文件订阅
+  const [editState, setEditState] = useState<FileEditState>(initialFileEditState);
+  const [editor, setEditor] = useState<EditorSession | null>(null);
+  const [remoteChanged, setRemoteChanged] = useState(false);
+  const fileSubscriptionRef = useRef<string | null>(null);
+
+  const currentDir = dirStack[dirStack.length - 1] ?? ".";
 
   const loadDirectory = useCallback(
     async (path: string) => {
@@ -124,6 +173,20 @@ export default function FilesPage() {
     Taro.stopPullDownRefresh();
   });
 
+  // t19：fs.file.update → 编辑器远端变更横幅（按 subscriptionId 过滤——编辑期间只订这一个文件）
+  useEffect(() => {
+    if (!editor) return;
+    const unsubscribe = connectionManager.onFileUpdate((push) => {
+      const subscriptionId = fileSubscriptionRef.current;
+      if (!subscriptionId || push.subscriptionId !== subscriptionId) return;
+      if (push.version.status !== "ready") return;
+      if (push.version.modifiedAt !== editState.base?.modifiedAt) {
+        setRemoteChanged(true);
+      }
+    });
+    return unsubscribe;
+  }, [editor, editState.base?.modifiedAt]);
+
   const openDirectory = (entry: FileExplorerEntry) => {
     setDirStack((prev) => [...prev, entry.path]);
     void loadDirectory(entry.path);
@@ -141,7 +204,13 @@ export default function FilesPage() {
   const fetchFileBytes = async (
     entry: FileExplorerEntry,
     maxBytes?: number,
-  ): Promise<{ bytes: Uint8Array; mime: string; size: number }> => {
+  ): Promise<{
+    bytes: Uint8Array;
+    mime: string;
+    size: number;
+    modifiedAt?: string;
+    revision?: string;
+  }> => {
     const conn = connectionManager.requireConnection();
     const result = await conn.readFile({
       cwd,
@@ -150,7 +219,13 @@ export default function FilesPage() {
       timeoutMs: 180_000,
       onProgress: (received, total) => setDownload({ fileName: entry.name, received, total }),
     });
-    return { bytes: result.bytes, mime: result.mime, size: result.size };
+    return {
+      bytes: result.bytes,
+      mime: result.mime,
+      size: result.size,
+      modifiedAt: result.modifiedAt,
+      revision: result.revision,
+    };
   };
 
   /** 下载保存到手机：读字节 → 下载目录 → toast；返回本地路径。 */
@@ -272,6 +347,300 @@ export default function FilesPage() {
     if (filePath) await offerShare(entry, filePath);
   };
 
+  // ---- t19：编辑器（fs.file.write 写回 + fs.file.subscribe 远端变更检测） ----
+
+  /** 打开编辑器：重读文件（拿权威 modifiedAt/revision）→ 订阅变更。 */
+  const openEditor = async (entry: FileExplorerEntry) => {
+    const preview = textPreview;
+    setTextPreview(null);
+    if (!preview || preview.truncated || preview.fileName !== entry.name) {
+      Taro.showToast({ title: "请先从预览进入编辑", icon: "none" });
+      return;
+    }
+    try {
+      setDownload({ fileName: entry.name, received: 0, total: entry.size });
+      const { bytes, modifiedAt, revision } = await fetchFileBytes(entry, TEXT_PREVIEW_MAX_BYTES);
+      setDownload(null);
+      const content = decodeUtf8(bytes);
+      setEditor({ path: entry.path, name: entry.name, content });
+      setRemoteChanged(false);
+      setEditState(
+        nextFileEditState(initialFileEditState, {
+          type: "loaded",
+          version: {
+            modifiedAt: modifiedAt ?? new Date().toISOString(),
+            ...(revision ? { revision } : {}),
+          },
+        }),
+      );
+      recordAutomationEvent({ kind: "editor_open", path: entry.path, modifiedAt });
+      // 订阅远端变更（编辑期间文件被 agent/他人修改 → 横幅提示）
+      const conn = connectionManager.getConnection();
+      if (conn) {
+        try {
+          const sub = await conn.subscribeFile({ cwd, path: entry.path });
+          fileSubscriptionRef.current = sub.subscriptionId;
+        } catch {
+          // 订阅失败不阻塞编辑（保存时的冲突检测仍兜底）
+        }
+      }
+    } catch (err) {
+      setDownload(null);
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const closeEditor = async () => {
+    if (editState.status === "dirty" || editState.status === "conflict") {
+      const { confirm } = await Taro.showModal({
+        title: "放弃修改",
+        content: "有未保存的修改，确定关闭编辑器？",
+        confirmText: "放弃",
+        cancelText: "继续编辑",
+        confirmColor: "#fa5151",
+      });
+      if (!confirm) return;
+    }
+    const subId = fileSubscriptionRef.current;
+    fileSubscriptionRef.current = null;
+    if (subId) {
+      await connectionManager
+        .getConnection()
+        ?.unsubscribeFile(subId)
+        .catch(() => {});
+    }
+    setEditor(null);
+    setEditState(initialFileEditState);
+    setRemoteChanged(false);
+  };
+
+  const performWrite = async (version: FileEditVersion | null) => {
+    if (!editor) return;
+    setEditState((prev) => nextFileEditState(prev, { type: "save_started" }));
+    try {
+      const conn = connectionManager.requireConnection();
+      const base = version ?? editState.base;
+      if (!base) throw new Error("缺少版本信息，请重新打开文件");
+      const result = await conn.writeFile({
+        cwd,
+        path: editor.path,
+        content: editor.content,
+        expectedModifiedAt: base.modifiedAt,
+        ...(base.revision ? { expectedRevision: base.revision } : {}),
+      });
+      if (result.status === "written") {
+        setEditState((prev) =>
+          nextFileEditState(prev, {
+            type: "save_written",
+            version: {
+              modifiedAt: result.modifiedAt,
+              ...(result.revision ? { revision: result.revision } : {}),
+            },
+          }),
+        );
+        setRemoteChanged(false);
+        recordAutomationEvent({ kind: "write_saved", path: editor.path, size: result.size });
+        Taro.showToast({ title: "已保存", icon: "success" });
+        setTimeout(
+          () => setEditState((prev) => nextFileEditState(prev, { type: "acknowledge" })),
+          800,
+        );
+      } else if (result.status === "conflict") {
+        const remote =
+          result.version.status === "ready"
+            ? {
+                modifiedAt: result.version.modifiedAt,
+                ...(result.version.revision ? { revision: result.version.revision } : {}),
+              }
+            : null;
+        recordAutomationEvent({ kind: "write_conflict", path: editor.path });
+        if (remote) {
+          setEditState((prev) => nextFileEditState(prev, { type: "save_conflict", remote }));
+        } else {
+          setEditState((prev) =>
+            nextFileEditState(prev, {
+              type: "save_failed",
+              error:
+                result.version.status === "missing"
+                  ? "文件在设备上已被删除"
+                  : result.version.status === "error"
+                    ? result.version.error
+                    : "冲突且无法读取远端版本",
+            }),
+          );
+        }
+      } else {
+        setEditState((prev) =>
+          nextFileEditState(prev, { type: "save_failed", error: result.error }),
+        );
+      }
+    } catch (err) {
+      setEditState((prev) =>
+        nextFileEditState(prev, {
+          type: "save_failed",
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    }
+  };
+
+  const saveEditor = async () => {
+    if (!editor || editState.status !== "dirty") return;
+    await performWrite(null);
+  };
+
+  /** 冲突三选：重新加载（重读内容）/ 覆盖远端（以远端版本号重写）/ 继续编辑。 */
+  const resolveConflict = async () => {
+    if (!editor || editState.status !== "conflict") return;
+    const { tapIndex } = await Taro.showActionSheet({
+      itemList: ["重新加载（丢弃本地修改）", "覆盖远端版本", "继续编辑"],
+    });
+    if (tapIndex === 0) {
+      setEditState((prev) => nextFileEditState(prev, { type: "conflict_reload" }));
+      const entry = entries.find((e) => e.path === editor.path);
+      if (entry) {
+        try {
+          const { bytes, modifiedAt, revision } = await fetchFileBytes(
+            entry,
+            TEXT_PREVIEW_MAX_BYTES,
+          );
+          setEditor({ ...editor, content: decodeUtf8(bytes) });
+          setEditState((prev) =>
+            nextFileEditState(prev, {
+              type: "loaded",
+              version: {
+                modifiedAt: modifiedAt ?? new Date().toISOString(),
+                ...(revision ? { revision } : {}),
+              },
+            }),
+          );
+          setRemoteChanged(false);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    } else if (tapIndex === 1) {
+      const base = editState.remote ?? editState.base;
+      setEditState((prev) => nextFileEditState(prev, { type: "conflict_overwrite_started" }));
+      await performWrite(base);
+    }
+    // tapIndex 2 / 取消：留在 conflict 态，用户改内容自然回 dirty
+  };
+
+  // ---- t19：条目操作（fs.entry.*） ----
+
+  const createEntry = async () => {
+    const { tapIndex } = await Taro.showActionSheet({ itemList: ["新建文件", "新建文件夹"] });
+    if (tapIndex !== 0 && tapIndex !== 1) return;
+    const kind = tapIndex === 0 ? "file" : "directory";
+    const { confirm, content } = await editableModal({
+      title: kind === "file" ? "新建文件" : "新建文件夹",
+      placeholderText: kind === "file" ? "例如 notes.md" : "例如 docs",
+      confirmText: "创建",
+      cancelText: "取消",
+    });
+    const name = (content ?? "").trim();
+    if (!confirm || !name || name.includes("/")) return;
+    try {
+      const result = await connectionManager.requireConnection().createFsEntry({
+        cwd,
+        parentPath: currentDir,
+        name,
+        kind,
+      });
+      if (!result.success) throw new Error(result.error ?? "创建失败");
+      recordAutomationEvent({ kind: "entry_created", path: result.path ?? name, kindType: kind });
+      Taro.showToast({ title: "已创建", icon: "success" });
+      await loadDirectory(currentDir);
+    } catch (err) {
+      Taro.showToast({
+        title: err instanceof Error ? err.message : "创建失败",
+        icon: "none",
+      });
+    }
+  };
+
+  const entryActions = async (entry: FileExplorerEntry) => {
+    const itemList = entry.kind === "file" ? ["重命名", "下载保存", "删除"] : ["重命名", "删除"];
+    const { tapIndex } = await Taro.showActionSheet({ itemList });
+    if (tapIndex === undefined || tapIndex < 0) return;
+    if (itemList[tapIndex] === "重命名") {
+      const { confirm, content } = await editableModal({
+        title: "重命名",
+        placeholderText: entry.name,
+        content: entry.name,
+        confirmText: "重命名",
+        cancelText: "取消",
+      });
+      const name = (content ?? "").trim();
+      if (!confirm || !name || name === entry.name || name.includes("/")) return;
+      try {
+        const result = await connectionManager.requireConnection().renameFsEntry({
+          cwd,
+          path: entry.path,
+          name,
+        });
+        if (!result.success) throw new Error(result.error ?? "重命名失败");
+        recordAutomationEvent({ kind: "entry_renamed", from: entry.path, to: result.renamedPath });
+        await loadDirectory(currentDir);
+      } catch (err) {
+        Taro.showToast({ title: err instanceof Error ? err.message : "重命名失败", icon: "none" });
+      }
+      return;
+    }
+    if (itemList[tapIndex] === "下载保存") {
+      await downloadCurrent(entry);
+      return;
+    }
+    if (itemList[tapIndex] === "删除") {
+      const { confirm } = await Taro.showModal({
+        title: "删除",
+        content: `确定删除 ${entry.kind === "directory" ? "文件夹" : "文件"} "${entry.name}"？${
+          entry.kind === "directory" ? "文件夹内容将一并删除。" : ""
+        }`,
+        confirmText: "删除",
+        confirmColor: "#fa5151",
+        cancelText: "取消",
+      });
+      if (!confirm) return;
+      try {
+        const result = await connectionManager.requireConnection().deleteFsEntry({
+          cwd,
+          path: entry.path,
+        });
+        if (!result.success) throw new Error(result.error ?? "删除失败");
+        recordAutomationEvent({ kind: "entry_deleted", path: entry.path });
+        Taro.showToast({ title: "已删除", icon: "none" });
+        await loadDirectory(currentDir);
+      } catch (err) {
+        Taro.showToast({ title: err instanceof Error ? err.message : "删除失败", icon: "none" });
+      }
+    }
+  };
+
+  // ---- t19：工作区终端（create_terminal → pages/terminal） ----
+
+  const openWorkspaceTerminal = async () => {
+    try {
+      Taro.showLoading({ title: "打开终端…" });
+      const conn = connectionManager.requireConnection();
+      const terminal = await conn.createTerminal({
+        cwd,
+        ...(workspace?.workspaceId ? { workspaceId: workspace.workspaceId } : {}),
+      });
+      Taro.hideLoading();
+      recordAutomationEvent({ kind: "terminal_created", terminalId: terminal.id });
+      Taro.navigateTo({
+        url: `/pages/terminal/index?terminalId=${encodeURIComponent(terminal.id)}&title=${encodeURIComponent(
+          workspace?.label ?? "工作区终端",
+        )}`,
+      });
+    } catch (err) {
+      Taro.hideLoading();
+      Taro.showToast({ title: err instanceof Error ? err.message : "终端打开失败", icon: "none" });
+    }
+  };
+
   if (!cwd) {
     return (
       <View className={`page ${themeClass}`}>
@@ -289,7 +658,6 @@ export default function FilesPage() {
     );
   }
 
-  const currentDir = dirStack[dirStack.length - 1] ?? ".";
   const breadcrumb = ["根", ...dirStack.map((p) => p.split("/").pop() ?? p)];
   const downloadPercent =
     download && download.total > 0
@@ -316,6 +684,14 @@ export default function FilesPage() {
                 </View>
               </View>
             ))}
+          </View>
+          {/* t19：新建文件/文件夹入口 */}
+          <View className="crumbs-add" onClick={() => void createEntry()}>
+            ＋
+          </View>
+          {/* t19：工作区终端（create_terminal → 简化终端视图） */}
+          <View className="crumbs-term" onClick={() => void openWorkspaceTerminal()}>
+            &gt;_
           </View>
         </View>
         <View className="faint files-ws">{workspace?.label ?? ""}</View>
@@ -357,7 +733,7 @@ export default function FilesPage() {
               onClick={() =>
                 entry.kind === "directory" ? openDirectory(entry) : void openFile(entry)
               }
-              onLongPress={() => (entry.kind === "file" ? void downloadCurrent(entry) : undefined)}
+              onLongPress={() => void entryActions(entry)}
             >
               <View className="file-icon">{fileIcon(entry.kind, entry.name)}</View>
               <View className="file-main">
@@ -371,7 +747,7 @@ export default function FilesPage() {
             </View>
           ))}
           <View className="faint files-hint">
-            点按文件预览 · 长按下载保存到手机（当前目录：{currentDir === "." ? "根" : currentDir}）
+            点按打开 · 长按重命名/删除/下载（当前目录：{currentDir === "." ? "根" : currentDir}）
           </View>
         </ScrollView>
       )}
@@ -394,6 +770,16 @@ export default function FilesPage() {
               </View>
             ) : null}
             <Button
+              className="btn btn-mini preview-edit"
+              disabled={textPreview.truncated}
+              onClick={() => {
+                const entry = entries.find((e) => e.name === textPreview.fileName);
+                if (entry) void openEditor(entry);
+              }}
+            >
+              编辑
+            </Button>
+            <Button
               className="btn btn-mini preview-download"
               onClick={() => {
                 const entry = entries.find((e) => e.name === textPreview.fileName);
@@ -402,6 +788,60 @@ export default function FilesPage() {
             >
               下载保存
             </Button>
+          </View>
+        </View>
+      ) : null}
+
+      {editor ? (
+        <View className="preview-overlay editor-overlay">
+          <View className="preview-head">
+            <View className="preview-title">编辑 · {editor.name}</View>
+            <View className="preview-close" onClick={() => void closeEditor()}>
+              ✕
+            </View>
+          </View>
+          {remoteChanged ? (
+            <View className="editor-banner">文件已在设备上被修改，保存前建议先处理冲突提示。</View>
+          ) : null}
+          {editState.error ? (
+            <View className="error-inline editor-error">{editState.error}</View>
+          ) : null}
+          <Textarea
+            className="editor-textarea num"
+            value={editor.content}
+            onInput={(e) => {
+              setEditor({ ...editor, content: e.detail.value });
+              setEditState((prev) => nextFileEditState(prev, { type: "change" }));
+            }}
+            maxlength={-1}
+            autoHeight={false}
+            disabled={editState.status === "saving"}
+            placeholder="文件内容"
+            placeholderClass="composer-placeholder"
+          />
+          <View className="editor-foot">
+            <View className="faint editor-state">
+              {editState.status === "dirty"
+                ? "未保存"
+                : editState.status === "saving"
+                  ? "保存中…"
+                  : editState.status === "conflict"
+                    ? "冲突：远端已修改"
+                    : "已同步"}
+            </View>
+            {editState.status === "conflict" ? (
+              <Button className="btn btn-mini editor-save" onClick={() => void resolveConflict()}>
+                处理冲突
+              </Button>
+            ) : (
+              <Button
+                className="btn btn-mini editor-save"
+                disabled={editState.status !== "dirty"}
+                onClick={() => void saveEditor()}
+              >
+                保存到设备
+              </Button>
+            )}
           </View>
         </View>
       ) : null}

@@ -1,0 +1,243 @@
+/**
+ * Git 改动页样式（t19）：commit 卡片 + 展开文件列表 + diff overlay（+/− 行着色）。
+ */
+
+.changes-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 24rpx 32rpx;
+  box-sizing: border-box;
+  gap: 16rpx;
+}
+
+.changes-list {
+  flex: 1;
+  min-height: 0;
+}
+
+.commit-card {
+  margin-bottom: 16rpx;
+  padding: 20rpx 24rpx;
+}
+
+.commit-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.commit-sha {
+  background: var(--fill);
+  color: var(--text-2);
+  border-radius: var(--radius);
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+}
+
+.commit-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.commit-subject {
+  font-size: 27rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-meta {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+}
+
+.commit-chevron {
+  font-size: 24rpx;
+}
+
+.commit-files {
+  margin-top: 16rpx;
+  border-top: 2rpx solid var(--fill);
+  padding-top: 12rpx;
+}
+
+.commit-nofiles {
+  padding: 8rpx 0;
+}
+
+.commit-file-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 8rpx;
+  border-radius: var(--radius);
+}
+
+.commit-file-row:active {
+  background: var(--fill);
+}
+
+.commit-file-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.commit-file-name {
+  font-size: 26rpx;
+  color: var(--text-1);
+}
+
+.commit-file-path {
+  font-size: 20rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-file-nums {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.commit-add {
+  color: #2da44e;
+  font-size: 22rpx;
+}
+
+.commit-del {
+  color: #cf222e;
+  font-size: 22rpx;
+}
+
+.commit-status {
+  color: var(--text-3);
+  font-size: 20rpx;
+  background: var(--fill);
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+}
+
+/* ---------- diff overlay ---------- */
+
+.diff-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+}
+
+.diff-title {
+  font-size: 26rpx;
+}
+
+.diff-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.diff-loading {
+  margin-top: 120rpx;
+}
+
+.diff-summary {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  padding: 8rpx 0 16rpx;
+}
+
+.diff-note {
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 24rpx;
+  border-radius: var(--radius);
+  padding: 12rpx 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.diff-hunk {
+  margin-bottom: 20rpx;
+  border: 2rpx solid var(--fill);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.diff-hunk-head {
+  background: var(--fill);
+  color: var(--text-2);
+  font-size: 22rpx;
+  padding: 8rpx 16rpx;
+}
+
+.diff-lines-scroll {
+  width: 100%;
+}
+
+.diff-lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+}
+
+.diff-line {
+  display: flex;
+  flex-direction: row;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.diff-marker {
+  width: 36rpx;
+  flex-shrink: 0;
+  text-align: center;
+  user-select: none;
+}
+
+.diff-content {
+  white-space: pre;
+  padding-right: 24rpx;
+}
+
+.diff-line-context {
+  color: var(--text-1);
+  background: var(--card);
+}
+
+.diff-line-add {
+  color: #116329;
+  background: rgba(46, 160, 67, 0.15);
+}
+
+.diff-line-remove {
+  color: #82071e;
+  background: rgba(248, 81, 73, 0.15);
+}
+
+.diff-line-header {
+  color: var(--text-3);
+  background: var(--fill);
+}
+
+.diff-foot {
+  padding: 20rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--divider);
+  background: var(--card);
+  display: flex;
+  justify-content: center;
+}
+
+.diff-close-btn {
+  min-width: 320rpx;
+}

@@ -20,15 +20,22 @@ import {
   parseAgentSnapshot,
   parseAgentStreamPayload,
   parseAttentionPush,
+  parseCommitsListResponse,
+  parseCommitFileDiffResponse,
   parseCreateAgentStatusPayload,
   parseDaemonStatusPayload,
   parseFetchAgentsResponse,
   parseFetchTimelineResponse,
   parseFetchWorkspacesResponse,
+  parseFileEntryMutationResponse,
   parseFileExplorerResponse,
+  parseFileSubscribeResponse,
+  parseFileUpdatePush,
   parseFileUploadResponse,
+  parseFileWriteResponse,
   parseGithubCloneResponse,
   parseListAvailableProvidersResponse,
+  parseListCommandsResponse,
   parseOpenProjectResponse,
   parsePermissionRequestPush,
   parsePermissionResolvedPush,
@@ -41,17 +48,27 @@ import {
   parseScheduleMutationResponse,
   parseSendAgentMessageResponse,
   parseServerInfoPayload,
+  parseSubagentsListResponse,
+  parseSubagentUpdate,
+  parseSubscribeTerminalResponse,
+  parseTerminalInfo,
   parseUpdateAgentResponse,
   parseWorkspaceScriptResponse,
   type AgentSnapshot,
   type AgentStreamPayload,
   type AgentTimelineEntry,
   type AttentionPush,
+  type CheckoutCommit,
   type CreateAgentOptions,
   type DaemonStatus,
   type FetchWorkspacesResponse,
+  type FileEntryMutationResult,
   type FileExplorerEntry,
   type FileReadResult,
+  type FileSubscribeResult,
+  type FileUpdatePush,
+  type FileWriteResult,
+  type ParsedDiffFile,
   type PermissionRequestPush,
   type PermissionResolvedPush,
   type PermissionResponseMessage,
@@ -59,6 +76,7 @@ import {
   type ProviderAvailability,
   type ProviderModelDefinition,
   type ProviderMode,
+  type ProviderSubagentSummary,
   type RecentProviderSession,
   type ScheduleCadence,
   type ScheduleCreateTarget,
@@ -66,6 +84,10 @@ import {
   type ScheduleSummary,
   type ServerInfo,
   type SessionRequestMessage,
+  type SlashCommand,
+  type SubagentUpdate,
+  type TerminalInfo,
+  type TerminalInputMessage,
   type UploadedFileAttachment,
   type WorkspaceScriptInfo,
   type WsClientType,
@@ -76,6 +98,11 @@ import {
   FileTransferOpcode,
   type FileBeginMetadata,
 } from "./file-transfer-frames";
+import {
+  decodeTerminalStreamFrame,
+  TerminalStreamOpcode,
+  type TerminalStreamFrame,
+} from "./terminal-frames";
 import { base64ToArrayBuffer } from "./nacl-box";
 import { encodeUtf8 } from "./utf8";
 import type { PlaintextPort, PlaintextPortFactory, SocketEventHandler } from "./websocket-port";
@@ -108,6 +135,12 @@ export interface DaemonConnectionEvents {
   onPermissionResolved?: (push: PermissionResolvedPush) => void;
   /** t18：daemon 推送 agent_attention_required（legacy 客户端免订阅）。 */
   onAttention?: (push: AttentionPush) => void;
+  /** t19：daemon 推送 fs.file.update（订阅中的文件被修改）。 */
+  onFileUpdate?: (push: FileUpdatePush) => void;
+  /** t19：daemon 推送 agent.provider_subagents.update（子 agent upsert/remove）。 */
+  onSubagentUpdate?: (update: SubagentUpdate) => void;
+  /** t19：终端观察流结束（daemon 侧 detach；error 为观察失败，非进程退出）。 */
+  onTerminalExit?: (payload: { terminalId: string; error?: string }) => void;
   onDisconnect?: (code: number, reason: string) => void;
 }
 
@@ -196,6 +229,14 @@ export class DaemonConnection {
   private lastError: string | null = null;
   /** agent 目录订阅 id（fetch_agents subscribe 建立；后续 fetch 复用以免叠加订阅）。 */
   private agentsSubscriptionId: string | null = null;
+  /**
+   * t19：终端流 slot → 订阅者（subscribe_terminal_response 分配 slot 后注册）。
+   * terminal_stream_exit 按 terminalId 释放对应 slot。
+   */
+  private terminalSlots = new Map<
+    number,
+    { terminalId: string; receive: (frame: TerminalStreamFrame) => void }
+  >();
 
   constructor(
     portFactory: PlaintextPortFactory,
@@ -340,7 +381,7 @@ export class DaemonConnection {
 
   private handleMessage(data: string | ArrayBuffer): void {
     if (typeof data !== "string") {
-      // t17：文件传输二进制帧（终端流不在小程序范围，解码失败即忽略）。
+      // 二进制帧：文件传输（0x10+）与终端流（0x01-0x05）两个通道。
       this.handleBinaryFrame(new Uint8Array(data));
       return;
     }
@@ -425,6 +466,36 @@ export class DaemonConnection {
       return;
     }
 
+    // t19：fs.file.update 推送（编辑器远端变更检测）。
+    if (message.type === "fs.file.update") {
+      const push = parseFileUpdatePush(message.payload);
+      if (push) this.events.onFileUpdate?.(push);
+      return;
+    }
+
+    // t19：子 agent 轨道推送（upsert/remove；timeline 子事件由 parseSubagentUpdate 归零）。
+    if (message.type === "agent.provider_subagents.update") {
+      const update = parseSubagentUpdate(message.payload);
+      if (update) this.events.onSubagentUpdate?.(update);
+      return;
+    }
+
+    // t19：终端观察流结束（按 terminalId 释放对应 slot；页面据此停止等待输出）。
+    if (message.type === "terminal_stream_exit") {
+      const payload = message.payload as { terminalId?: unknown; error?: unknown } | undefined;
+      const terminalId = typeof payload?.terminalId === "string" ? payload.terminalId : null;
+      if (terminalId) {
+        for (const [slot, registration] of this.terminalSlots) {
+          if (registration.terminalId === terminalId) this.terminalSlots.delete(slot);
+        }
+        this.events.onTerminalExit?.({
+          terminalId,
+          ...(typeof payload?.error === "string" ? { error: payload.error } : {}),
+        });
+      }
+      return;
+    }
+
     // t17：file_explorer_response 只服务二进制读取等待者——
     // acceptBinary 成功路径没有 JSON 响应（daemon 只发帧），这里只会收到
     // 错误响应或无二进制通道的 legacy 内容响应。
@@ -490,9 +561,10 @@ export class DaemonConnection {
     const subscribe = {
       ...(this.agentsSubscriptionId ? { subscriptionId: this.agentsSubscriptionId } : {}),
     };
-    const response = await this.request<
-      { type: string; payload: { requestId: string; subscriptionId?: string } }
-    >({
+    const response = await this.request<{
+      type: string;
+      payload: { requestId: string; subscriptionId?: string };
+    }>({
       type: "fetch_agents_request",
       subscribe,
       ...(options?.includeArchived ? { filter: { includeArchived: true } } : {}),
@@ -527,11 +599,16 @@ export class DaemonConnection {
     return { subscriptionId: response.payload?.subscriptionId };
   }
 
-  /** 向 agent 发送消息（t17：可携带 uploaded_file 附件与幂等 messageId）。 */
+  /** 向 agent 发送消息（t17 附件/幂等；t19 activeTurnBehavior 运行中行为）。 */
   async sendAgentMessage(
     agentId: string,
     text: string,
-    options?: { messageId?: string; attachments?: UploadedFileAttachment[] },
+    options?: {
+      messageId?: string;
+      attachments?: UploadedFileAttachment[];
+      /** t19：运行中再发消息 → "interrupt" 先中断再投递；缺省 steer。 */
+      activeTurnBehavior?: "interrupt" | "steer";
+    },
   ): Promise<{ accepted: boolean; error: string | null }> {
     const response = await this.request<{ type: string; payload: unknown }>({
       type: "send_agent_message_request",
@@ -539,6 +616,7 @@ export class DaemonConnection {
       text,
       ...(options?.messageId ? { messageId: options.messageId } : {}),
       attachments: options?.attachments ?? [],
+      ...(options?.activeTurnBehavior ? { activeTurnBehavior: options.activeTurnBehavior } : {}),
     });
     const parsed = parseSendAgentMessageResponse(response.payload);
     return parsed
@@ -597,7 +675,12 @@ export class DaemonConnection {
    * 应答不是独立 RPC response，而是 status 推送（agent_created/agent_create_failed），
    * requestId 在 payload 内，由通用 pending 关联回来后再解析。
    */
-  async createAgent(options: CreateAgentOptions): Promise<AgentSnapshot> {
+  async createAgent(
+    options: CreateAgentOptions & {
+      /** t19：worktree 隔离（branch-off 新分支）。 */
+      worktree?: { mode: "branch-off"; newBranch: string; base?: string };
+    },
+  ): Promise<AgentSnapshot> {
     const response = await this.request<{ type: string; payload: unknown }>({
       type: "create_agent_request",
       config: {
@@ -608,6 +691,7 @@ export class DaemonConnection {
       },
       ...(options.workspaceId ? { workspaceId: options.workspaceId } : {}),
       ...(options.initialPrompt ? { initialPrompt: options.initialPrompt } : {}),
+      ...(options.worktree ? { worktree: options.worktree } : {}),
     });
     const parsed = parseCreateAgentStatusPayload(response.payload);
     if (!parsed) throw new Error("创建响应解析失败");
@@ -699,10 +783,7 @@ export class DaemonConnection {
   }
 
   /** provider 会话列表（fetch_recent_provider_sessions_request）。 */
-  async fetchRecentProviderSessions(input?: {
-    cwd?: string;
-    limit?: number;
-  }): Promise<{
+  async fetchRecentProviderSessions(input?: { cwd?: string; limit?: number }): Promise<{
     entries: RecentProviderSession[];
     providerErrors: Array<{ provider: string; message: string }>;
   }> {
@@ -796,10 +877,7 @@ export class DaemonConnection {
     scriptName: string,
   ): Promise<WorkspaceScriptInfo | null> {
     const response = await this.request<{ type: string; payload: unknown }>({
-      type:
-        action === "start"
-          ? "workspace.script.start.request"
-          : "workspace.script.stop.request",
+      type: action === "start" ? "workspace.script.start.request" : "workspace.script.stop.request",
       workspaceId,
       scriptName,
     });
@@ -889,6 +967,227 @@ export class DaemonConnection {
     if (!parsed) throw new Error("执行记录解析失败");
     if (parsed.error) throw new Error(parsed.error);
     return parsed.runs;
+  }
+
+  // ---------------------------------------------------------------------------
+  // t19：文件写回 / 条目操作 / 文件订阅 / diff / 终端 / subagents / 斜杠命令
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 写回文本文件（fs.file.write.request）。
+   * 冲突协议：expectedModifiedAt/expectedRevision 是"读时版本"；daemon 侧版本
+   * 不一致时返回 status:"conflict" + 当前版本，由上层提示用户重载或覆盖。
+   */
+  async writeFile(input: {
+    cwd: string;
+    path: string;
+    content: string;
+    expectedModifiedAt: string;
+    expectedRevision?: string;
+  }): Promise<FileWriteResult> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "fs.file.write.request",
+        cwd: input.cwd,
+        path: input.path,
+        content: input.content,
+        expectedModifiedAt: input.expectedModifiedAt,
+        ...(input.expectedRevision ? { expectedRevision: input.expectedRevision } : {}),
+      },
+      30_000,
+    );
+    return (
+      parseFileWriteResponse(response.payload) ?? { status: "error", error: "写入响应解析失败" }
+    );
+  }
+
+  /** 新建文件/文件夹（fs.entry.create.request）。 */
+  async createFsEntry(input: {
+    cwd: string;
+    parentPath: string;
+    name: string;
+    kind: "file" | "directory";
+  }): Promise<FileEntryMutationResult> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fs.entry.create.request",
+      cwd: input.cwd,
+      parentPath: input.parentPath,
+      name: input.name,
+      kind: input.kind,
+    });
+    return (
+      parseFileEntryMutationResponse(response.payload) ?? { success: false, error: "响应解析失败" }
+    );
+  }
+
+  /** 重命名条目（fs.entry.rename.request；name 为新 basename）。 */
+  async renameFsEntry(input: {
+    cwd: string;
+    path: string;
+    name: string;
+  }): Promise<FileEntryMutationResult> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fs.entry.rename.request",
+      cwd: input.cwd,
+      path: input.path,
+      name: input.name,
+    });
+    return (
+      parseFileEntryMutationResponse(response.payload) ?? { success: false, error: "响应解析失败" }
+    );
+  }
+
+  /** 删除条目（fs.entry.delete.request；文件与目录同签名）。 */
+  async deleteFsEntry(input: { cwd: string; path: string }): Promise<FileEntryMutationResult> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fs.entry.delete.request",
+      cwd: input.cwd,
+      path: input.path,
+    });
+    return (
+      parseFileEntryMutationResponse(response.payload) ?? { success: false, error: "响应解析失败" }
+    );
+  }
+
+  /**
+   * 订阅文件版本变更（fs.file.subscribe.request）。
+   * 变更推送经 onFileUpdate；返回 subscriptionId 供退订。
+   */
+  async subscribeFile(input: { cwd: string; path: string }): Promise<FileSubscribeResult> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "fs.file.subscribe.request",
+      cwd: input.cwd,
+      path: input.path,
+    });
+    const parsed = parseFileSubscribeResponse(response.payload);
+    if (!parsed) throw new Error("文件订阅失败");
+    return parsed;
+  }
+
+  /** 退订文件变更。 */
+  async unsubscribeFile(subscriptionId: string): Promise<void> {
+    await this.request<{ type: string; payload: unknown }>({
+      type: "fs.file.unsubscribe.request",
+      subscriptionId,
+    });
+  }
+
+  /** commit 列表（checkout.commits.list.request；agent 会话改动溯源入口）。 */
+  async listCommits(cwd: string): Promise<{ commits: CheckoutCommit[]; baseRef: string | null }> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      { type: "checkout.commits.list.request", cwd },
+      30_000,
+    );
+    const parsed = parseCommitsListResponse(response.payload);
+    if (!parsed) throw new Error("commit 列表解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return { commits: parsed.commits, baseRef: parsed.baseRef };
+  }
+
+  /** 单 commit 单文件 diff（checkout.commits.file_diff.request）。 */
+  async getCommitFileDiff(input: {
+    cwd: string;
+    sha: string;
+    path: string;
+  }): Promise<ParsedDiffFile | null> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "checkout.commits.file_diff.request",
+        cwd: input.cwd,
+        sha: input.sha,
+        path: input.path,
+      },
+      30_000,
+    );
+    const parsed = parseCommitFileDiffResponse(response.payload);
+    if (!parsed) throw new Error("diff 响应解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.file;
+  }
+
+  /**
+   * 订阅终端流（subscribe_terminal_request → slot；Restore/Output 帧经 onFrame）。
+   * detach() 释放 slot 并退订。restore.visible-snapshot：daemon 先回放存量输出
+   * （Restore 帧 = snapshot 渲染的 ANSI 文本）再持续推 Output。
+   */
+  async subscribeTerminal(
+    terminalId: string,
+    onFrame: (frame: TerminalStreamFrame) => void,
+    options?: { scrollbackLines?: number },
+  ): Promise<{ slot: number; subscriptionId?: string; detach: () => void }> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "subscribe_terminal_request",
+      terminalId,
+      restore: {
+        mode: "visible-snapshot",
+        ...(options?.scrollbackLines ? { scrollbackLines: options.scrollbackLines } : {}),
+      },
+    });
+    const parsed = parseSubscribeTerminalResponse(response.payload);
+    if (!parsed) throw new Error("终端订阅响应解析失败");
+    if (parsed.error !== null) throw new Error(parsed.error);
+    const registration = { terminalId, receive: onFrame };
+    this.terminalSlots.set(parsed.slot, registration);
+    return {
+      slot: parsed.slot,
+      ...(parsed.subscriptionId ? { subscriptionId: parsed.subscriptionId } : {}),
+      detach: () => {
+        const current = this.terminalSlots.get(parsed.slot);
+        if (current === registration) this.terminalSlots.delete(parsed.slot);
+        void this.request({ type: "unsubscribe_terminal_request", terminalId }).catch(() => {});
+      },
+    };
+  }
+
+  /** 终端输入/尺寸（terminal_input；fire-and-forget）。 */
+  sendTerminalInput(terminalId: string, message: TerminalInputMessage["message"]): void {
+    const input: TerminalInputMessage = { type: "terminal_input", terminalId, message };
+    this.sendEnvelope({ type: "session", message: input });
+  }
+
+  /** 打开新终端（工作区终端入口；返回 terminalId 供 subscribeTerminal）。 */
+  async createTerminal(input: {
+    cwd: string;
+    workspaceId?: string;
+    name?: string;
+  }): Promise<TerminalInfo> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "create_terminal_request",
+        cwd: input.cwd,
+        ...(input.workspaceId ? { workspaceId: input.workspaceId } : {}),
+        ...(input.name ? { name: input.name } : {}),
+      },
+      30_000,
+    );
+    const payload = response.payload as { terminal?: unknown; error?: unknown };
+    if (typeof payload?.error === "string" && payload.error) throw new Error(payload.error);
+    const terminal = parseTerminalInfo(payload?.terminal);
+    if (!terminal) throw new Error("终端创建响应解析失败");
+    return terminal;
+  }
+
+  /** 子 agent 列表（agent.provider_subagents.list.request）。 */
+  async listSubagents(parentAgentId: string): Promise<ProviderSubagentSummary[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "agent.provider_subagents.list.request",
+      parentAgentId,
+    });
+    const parsed = parseSubagentsListResponse(response.payload);
+    if (!parsed) throw new Error("子 agent 列表解析失败");
+    if (parsed.error) throw new Error(parsed.error);
+    return parsed.subagents;
+  }
+
+  /** composer 斜杠命令目录（list_commands_request）。 */
+  async listCommands(agentId: string): Promise<SlashCommand[]> {
+    const response = await this.request<{ type: string; payload: unknown }>({
+      type: "list_commands_request",
+      agentId,
+    });
+    const parsed = parseListCommandsResponse(response.payload);
+    if (!parsed) throw new Error("命令列表解析失败");
+    return parsed;
   }
 
   // ---------------------------------------------------------------------------
@@ -1030,10 +1329,18 @@ export class DaemonConnection {
     return parsed.file;
   }
 
-  /** 二进制帧入口（daemon → 客户端方向的 FileBegin/Chunk/End）。 */
+  /** 二进制帧入口（daemon → 客户端方向的 FileBegin/Chunk/End 与终端流帧）。 */
   private handleBinaryFrame(bytes: Uint8Array): void {
     const frame = decodeFileTransferFrame(bytes);
-    if (!frame) return;
+    if (!frame) {
+      // t19：非文件帧 → 终端流帧（opcode 0x01-0x05；按 slot 分发）。
+      const terminalFrame = decodeTerminalStreamFrame(bytes);
+      if (terminalFrame && terminalFrame.opcode !== TerminalStreamOpcode.Input) {
+        const registration = this.terminalSlots.get(terminalFrame.slot);
+        registration?.receive(terminalFrame);
+      }
+      return;
+    }
 
     const waiter = this.binaryReads.get(frame.requestId);
     if (!waiter) return;

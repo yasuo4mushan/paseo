@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
-import { Button, Picker, Textarea, View } from "@tarojs/components";
+import { Button, Input, Picker, Textarea, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
   ProviderAvailability,
@@ -60,6 +60,9 @@ export default function CreateAgentPage() {
   const [sessions, setSessions] = useState<RecentProviderSession[] | null>(null);
   const [importingId, setImportingId] = useState("");
   const [importError, setImportError] = useState("");
+  // t19：worktree 隔离（branch-off 新分支；缺省关）
+  const [worktreeEnabled, setWorktreeEnabled] = useState(false);
+  const [worktreeBranch, setWorktreeBranch] = useState("");
 
   // 进入页面即恢复已选工作区并拉取可用 provider
   useEffect(() => {
@@ -139,9 +142,7 @@ export default function CreateAgentPage() {
           setSessions(result.entries);
           setImportError(
             result.providerErrors.length > 0
-              ? `部分 provider 读取失败：${result.providerErrors
-                  .map((e) => e.provider)
-                  .join("、")}`
+              ? `部分 provider 读取失败：${result.providerErrors.map((e) => e.provider).join("、")}`
               : "",
           );
         }
@@ -180,6 +181,10 @@ export default function CreateAgentPage() {
     const nextErrors = validateCreateForm({ workspace, provider, prompt });
     setErrors(nextErrors);
     if (hasErrors(nextErrors)) return;
+    if (worktreeEnabled && !worktreeBranch.trim()) {
+      setFatal("开启 worktree 隔离需要填写新分支名");
+      return;
+    }
     setSubmitting(true);
     try {
       const conn = connectionManager.requireConnection();
@@ -190,6 +195,10 @@ export default function CreateAgentPage() {
         ...(modeId ? { modeId } : {}),
         workspaceId: workspace.workspaceId,
         initialPrompt: prompt.trim(),
+        // t19：worktree 隔离（create_agent_request.worktree；branch-off）
+        ...(worktreeEnabled
+          ? { worktree: { mode: "branch-off" as const, newBranch: worktreeBranch.trim() } }
+          : {}),
       });
       Taro.redirectTo({ url: `/pages/agent/index?id=${encodeURIComponent(agent.id)}` });
     } catch (err) {
@@ -325,6 +334,33 @@ export default function CreateAgentPage() {
             {errors.prompt ? <View className="field-error">{errors.prompt}</View> : null}
           </View>
 
+          {/* t19：worktree 隔离（branch-off；对齐 app 创建流的 git 隔离选项） */}
+          <View className="card">
+            <View className="wt-row" onClick={() => setWorktreeEnabled((v) => !v)}>
+              <View className="wt-main">
+                <View className="field-label">worktree 隔离</View>
+                <View className="muted">
+                  在独立 worktree 的新分支上运行，不影响当前工作区（需要 git 仓库）。
+                </View>
+              </View>
+              <View className={`wt-switch ${worktreeEnabled ? "wt-switch-on" : ""}`}>
+                <View className={`wt-knob ${worktreeEnabled ? "wt-knob-on" : ""}`} />
+              </View>
+            </View>
+            {worktreeEnabled ? (
+              <View className="wt-branch-row">
+                <Input
+                  className="wt-branch-input"
+                  value={worktreeBranch}
+                  onInput={(e) => setWorktreeBranch(e.detail.value)}
+                  placeholder="新分支名（如 fix-login-timeout）"
+                  placeholderClass="prompt-placeholder"
+                  disabled={submitting}
+                />
+              </View>
+            ) : null}
+          </View>
+
           <Button
             className="btn btn-block"
             disabled={submitting}
@@ -354,7 +390,9 @@ export default function CreateAgentPage() {
                   <View className="import-provider">{entry.providerLabel}</View>
                   <View className="import-main">
                     <View className="import-title">
-                      {entry.title ?? entry.lastPromptPreview ?? entry.providerHandleId.slice(0, 12)}
+                      {entry.title ??
+                        entry.lastPromptPreview ??
+                        entry.providerHandleId.slice(0, 12)}
                     </View>
                     <View className="faint import-cwd num">{entry.cwd}</View>
                     <View className="faint">{formatRelativeTime(entry.lastActivityAt)}</View>
