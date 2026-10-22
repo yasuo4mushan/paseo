@@ -10,7 +10,7 @@ describe("open-project-routing", () => {
 
     expect(
       parseOpenProjectPathFromArgv({
-        argv: ["/Applications/Paseo.app/Contents/MacOS/Paseo", projectPath],
+        argv: ["/Applications/aaswitch.app/Contents/MacOS/aaswitch", projectPath],
         isDefaultApp: false,
       }),
     ).toBe(projectPath);
@@ -22,7 +22,7 @@ describe("open-project-routing", () => {
     expect(
       parseOpenProjectPathFromArgv({
         argv: [
-          "/Applications/Paseo.app/Contents/MacOS/Paseo",
+          "/Applications/aaswitch.app/Contents/MacOS/aaswitch",
           "--allow-file-access-from-files",
           "--no-sandbox",
           projectPath,
@@ -39,14 +39,18 @@ describe("open-project-routing", () => {
 
     expect(
       parseOpenProjectPathFromArgv({
-        argv: ["/Applications/Paseo.app/Contents/MacOS/Paseo", "--version", flagLikeDirectory],
+        argv: [
+          "/Applications/aaswitch.app/Contents/MacOS/aaswitch",
+          "--version",
+          flagLikeDirectory,
+        ],
         isDefaultApp: false,
       }),
     ).toBe(flagLikeDirectory);
 
     expect(
       parseOpenProjectPathFromArgv({
-        argv: ["/Applications/Paseo.app/Contents/MacOS/Paseo", "--version"],
+        argv: ["/Applications/aaswitch.app/Contents/MacOS/aaswitch", "--version"],
         isDefaultApp: false,
       }),
     ).toBeNull();
@@ -57,7 +61,7 @@ describe("open-project-routing", () => {
 
     expect(
       parseOpenProjectPathFromArgv({
-        argv: ["/Applications/Paseo.app/Contents/MacOS/Paseo", "--open-project", projectPath],
+        argv: ["/Applications/aaswitch.app/Contents/MacOS/aaswitch", "--open-project", projectPath],
         isDefaultApp: false,
       }),
     ).toBe(projectPath);

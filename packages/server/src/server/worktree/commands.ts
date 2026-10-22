@@ -70,7 +70,7 @@ export async function createPaseoWorktreeCommand<Result extends CreatePaseoWorkt
 ): Promise<CreatePaseoWorktreeCommandResult<Result>> {
   try {
     if (!dependencies.createPaseoWorktreeWorkflow) {
-      throw new Error("Paseo worktree service is not configured");
+      throw new Error("aaswitch worktree service is not configured");
     }
 
     const createdWorktree = await dependencies.createPaseoWorktreeWorkflow({
@@ -198,7 +198,7 @@ async function resolveArchiveTarget(
     const worktrees = await dependencies.workspaceGitService.listWorktrees(repoRoot);
     const match = worktrees.find((entry) => entry.branchName === input.branchName);
     if (!match) {
-      throw new Error(`Paseo worktree not found for branch ${input.branchName}`);
+      throw new Error(`aaswitch worktree not found for branch ${input.branchName}`);
     }
     return match.path;
   }

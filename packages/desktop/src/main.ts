@@ -115,7 +115,7 @@ const DEV_SERVER_URL = process.env.EXPO_DEV_URL ?? "http://localhost:8081";
 const APP_SCHEME = "paseo";
 const PASEO_DEBUG = process.env.PASEO_DEBUG === "1";
 const DISABLE_SINGLE_INSTANCE_LOCK = process.env.PASEO_DISABLE_SINGLE_INSTANCE_LOCK === "1";
-const APP_NAME = process.env.PASEO_TEST_APP_NAME?.trim() || "Paseo";
+const APP_NAME = process.env.PASEO_TEST_APP_NAME?.trim() || "aaswitch";
 const DESKTOP_WINDOW_CHROME_MODE = resolveDesktopWindowChromeMode({
   platform: process.platform,
   override: process.env.PASEO_DESKTOP_WINDOW_CONTROLS,
@@ -324,7 +324,7 @@ if (forcedUserDataDir) {
     );
     const isWorktree = path.resolve(topLevel, ".git") !== commonDir;
     if (isWorktree) {
-      app.setPath("userData", path.join(app.getPath("appData"), `Paseo-${devWorktreeName}`));
+      app.setPath("userData", path.join(app.getPath("appData"), `aaswitch-${devWorktreeName}`));
       log.info("[worktree] isolated userData for worktree:", devWorktreeName);
     } else {
       devWorktreeName = null;
@@ -348,8 +348,8 @@ if (electronFlags) {
 
 if (process.platform === "linux") {
   // Keep the desktop/dock identity independent of the wrapped Electron filename.
-  app.setDesktopName("Paseo.desktop");
-  if (!app.commandLine.hasSwitch("class")) app.commandLine.appendSwitch("class", "Paseo");
+  app.setDesktopName("aaswitch.desktop");
+  if (!app.commandLine.hasSwitch("class")) app.commandLine.appendSwitch("class", "aaswitch");
   log.info("[linux-sandbox]", {
     enabled: !app.commandLine.hasSwitch("no-sandbox"),
     reason: process.env.PASEO_DESKTOP_SANDBOX_REASON ?? "Chromium default",

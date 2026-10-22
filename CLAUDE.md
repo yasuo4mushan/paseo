@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Paseo is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine.
+Paseo is a mobile app for monitoring and controlling your local AI coding agents from anywhere. Your dev environment, in your pocket. Connects directly to your actual development environment — your code stays on your machine. This distribution ships to users as **aaswitch** (aaswitch is based on the open-source Paseo project); internal names — npm scopes, directories, the `paseo` binary, config paths — stay Paseo-based.
 
 **Supported agents:** Claude Code, Codex, GitHub Copilot, OpenCode, Pi, Antigravity, and Muse Code.
 

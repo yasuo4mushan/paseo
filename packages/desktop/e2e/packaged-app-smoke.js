@@ -9,7 +9,7 @@ const { extractFile } = require("@electron/asar");
 const { WebSocket } = require("ws");
 const assert = require("node:assert/strict");
 
-const EXECUTABLE_NAME = "Paseo";
+const EXECUTABLE_NAME = "aaswitch";
 const SMOKE_TIMEOUT_MS = 60_000;
 const EXIT_TIMEOUT_MS = 10_000;
 const TERMINAL_CAPTURE_ATTEMPTS = 20;
@@ -851,7 +851,7 @@ function assertLinuxDesktopIdentity(appPath) {
     assert.deepEqual(
       fs.readFileSync(path.join(appPath, "resources", "icon.png")),
       fs.readFileSync(path.join(__dirname, "..", "assets", "icon.png")),
-      "Packaged Linux windows must have the Paseo icon at their runtime lookup path",
+      "Packaged Linux windows must have the aaswitch icon at their runtime lookup path",
     );
     const metadata = JSON.parse(
       extractFile(path.join(appPath, "resources", "app.asar"), "package.json").toString(),
@@ -993,7 +993,7 @@ if (require.main === module) {
   const appIndex = process.argv.indexOf("--app");
   const appPath = appIndex >= 0 ? process.argv[appIndex + 1] : null;
   if (!appPath) {
-    process.stderr.write("Usage: node smoke-packaged-desktop-app.js --app <Paseo.app>\n");
+    process.stderr.write("Usage: node smoke-packaged-desktop-app.js --app <aaswitch.app>\n");
     process.exit(2);
   }
 
