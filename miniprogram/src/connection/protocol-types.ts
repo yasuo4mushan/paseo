@@ -11,6 +11,15 @@
 // --- agent-lifecycle.ts: AGENT_LIFECYCLE_STATUSES ---
 export type AgentLifecycleStatus = "initializing" | "idle" | "running" | "error" | "closed";
 
+/** messages.ts: AgentUsageSchema（子集；上下文计量条用）。 */
+export interface AgentUsageInfo {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalCostUsd?: number;
+  contextWindowMaxTokens?: number;
+  contextWindowUsedTokens?: number;
+}
+
 /** messages.ts: AgentSnapshotPayloadSchema（子集：UI 需要的字段） */
 export interface AgentSnapshot {
   id: string;
@@ -28,6 +37,12 @@ export interface AgentSnapshot {
   labels?: Record<string, string>;
   /** messages.ts AgentListItemPayload.attentionReason：finished | error | permission。 */
   attentionReason?: "finished" | "error" | "permission" | null;
+  /**
+   * messages.ts AgentSnapshotPayload.lastUsage：上下文窗口计量（t19）。
+   * agent_update upsert 推送带全量 snapshot（含 lastUsage）；fetch_agents
+   * 列表项不含，故列表态无计量、进入详情后由推送补上。
+   */
+  usage?: AgentUsageInfo | null;
 }
 
 /** messages.ts: FetchAgentsResponseMessageSchema.payload.entries[i].agent 即 AgentSnapshot */
@@ -391,6 +406,130 @@ export interface WorkspaceScriptInfo {
   terminalId: string | null;
 }
 
+// --- t19：文件写回 / 条目操作 / diff / 终端 / subagents / 斜杠命令 ---
+
+/** messages.ts: FileVersionSchema。 */
+export type FileVersionInfo =
+  | {
+      status: "ready";
+      cwd: string;
+      path: string;
+      size: number;
+      modifiedAt: string;
+      revision?: string;
+    }
+  | { status: "missing"; cwd: string; path: string }
+  | { status: "error"; cwd: string; path: string; error: string };
+
+/** messages.ts: FileWriteResultSchema（written / conflict(带当前版本) / error）。 */
+export type FileWriteResult =
+  | { status: "written"; modifiedAt: string; size: number; revision?: string }
+  | { status: "conflict"; version: FileVersionInfo }
+  | { status: "error"; error: string };
+
+/** messages.ts: fs.entry.*.response 公共形状（create 多 path）。 */
+export interface FileEntryMutationResult {
+  success: boolean;
+  error: string | null;
+  path?: string | null;
+  renamedPath?: string | null;
+}
+
+/** messages.ts: fs.file.subscribe.response。 */
+export interface FileSubscribeResult {
+  subscriptionId: string;
+  initial: FileVersionInfo;
+}
+
+/** messages.ts: fs.file.update 推送。 */
+export interface FileUpdatePush {
+  subscriptionId: string;
+  version: FileVersionInfo;
+}
+
+/** messages.ts: CheckoutCommitFileSchema。 */
+export interface CheckoutCommitFile {
+  path: string;
+  additions: number;
+  deletions: number;
+  status?: "added" | "modified" | "deleted" | "renamed";
+}
+
+/** messages.ts: CheckoutCommitSchema（子集）。 */
+export interface CheckoutCommit {
+  sha: string;
+  shortSha: string;
+  subject: string;
+  authorName: string;
+  authorDate: string;
+  isOnRemote: boolean;
+  files: CheckoutCommitFile[];
+}
+
+/** messages.ts: DiffLineSchema / DiffHunkSchema / ParsedDiffFileSchema（去高亮 tokens）。 */
+export interface DiffLine {
+  type: "add" | "remove" | "context" | "header";
+  content: string;
+}
+
+export interface DiffHunk {
+  oldStart: number;
+  oldCount: number;
+  newStart: number;
+  newCount: number;
+  lines: DiffLine[];
+}
+
+export interface ParsedDiffFile {
+  path: string;
+  oldPath?: string;
+  isNew: boolean;
+  isDeleted: boolean;
+  additions: number;
+  deletions: number;
+  hunks: DiffHunk[];
+  status?: "ok" | "too_large" | "binary";
+}
+
+/** messages.ts: ProviderSubagentDescriptorPayloadSchema（子集：轨道展示用）。 */
+export interface ProviderSubagentSummary {
+  id: string;
+  parentAgentId: string;
+  provider: string;
+  title: string | null;
+  description: string | null;
+  status: "running" | "completed" | "failed" | "canceled";
+  createdAt: string;
+  updatedAt: string;
+  subtitle?: string | null;
+}
+
+/** messages.ts: agent.provider_subagents.update 推送（upsert/remove；timeline 忽略）。 */
+export type SubagentUpdate =
+  | { kind: "upsert"; subagent: ProviderSubagentSummary }
+  | { kind: "remove"; parentAgentId: string; subagentId: string };
+
+/** messages.ts: AgentSlashCommandSchema。 */
+export interface SlashCommand {
+  name: string;
+  description: string;
+  argumentHint: string;
+  kind?: "command" | "skill";
+}
+
+/** messages.ts: TerminalInfoSchema（子集）。 */
+export interface TerminalInfo {
+  id: string;
+  name: string;
+  cwd: string;
+  workspaceId?: string;
+  title?: string;
+}
+
+/** messages.ts: subscribe_terminal_response payload（成功带 slot；失败仅 error）。 */
+export type SubscribeTerminalResult =
+  | { terminalId: string; slot: number; subscriptionId?: string; error: null }
+  | { terminalId: string; error: string };
 
 /** hello 被拒原因：messages.ts WSHelloRejectedMessageSchema.reason */
 export type HelloRejectedReason =
@@ -446,6 +585,11 @@ export type SessionRequestMessage =
       messageId?: string;
       /** t17：uploaded_file 附件（messages.ts AgentAttachmentsSchema 的子集）。 */
       attachments: UploadedFileAttachment[];
+      /**
+       * t19：agent 运行中再发消息的行为。缺省不声明（daemon 默认 steer）；
+       * "interrupt" 先中断当前 turn 再投递。
+       */
+      activeTurnBehavior?: "interrupt" | "steer";
     }
   | { type: "daemon.get_status.request"; requestId: string }
   | { type: "fetch_workspaces_request"; requestId: string }
@@ -473,6 +617,15 @@ export type SessionRequestMessage =
       };
       workspaceId?: string;
       initialPrompt?: string;
+      /**
+       * t19：worktree 隔离（messages.ts CreateAgentWorktreeTargetSchema 子集）。
+       * branch-off：基于 base（缺省当前分支）新建 newBranch 的独立 worktree。
+       */
+      worktree?: {
+        mode: "branch-off";
+        newBranch: string;
+        base?: string;
+      };
     }
   | { type: "cancel_agent_request"; agentId: string; requestId: string }
   | { type: "delete_agent_request"; agentId: string; requestId: string }
@@ -595,6 +748,97 @@ export type SessionRequestMessage =
       mimeType: string;
       size: number;
       modifiedAt: string;
+    }
+  // --- t19：文件写回 / 条目操作 / 文件订阅 ---
+  | {
+      /** t19：写回文件（fs.file.write.request；expectedModifiedAt 冲突检测）。 */
+      type: "fs.file.write.request";
+      requestId: string;
+      cwd: string;
+      path: string;
+      content: string;
+      expectedModifiedAt: string;
+      expectedRevision?: string;
+    }
+  | {
+      /** t19：新建文件/文件夹（fs.entry.create.request）。 */
+      type: "fs.entry.create.request";
+      requestId: string;
+      cwd: string;
+      parentPath: string;
+      name: string;
+      kind: "file" | "directory";
+    }
+  | {
+      /** t19：重命名（fs.entry.rename.request；name 为新 basename）。 */
+      type: "fs.entry.rename.request";
+      requestId: string;
+      cwd: string;
+      path: string;
+      name: string;
+    }
+  | {
+      /** t19：删除（fs.entry.delete.request；文件与目录同签名）。 */
+      type: "fs.entry.delete.request";
+      requestId: string;
+      cwd: string;
+      path: string;
+    }
+  | {
+      /** t19：订阅单个文件版本变更（fs.file.subscribe.request → fs.file.update 推送）。 */
+      type: "fs.file.subscribe.request";
+      requestId: string;
+      cwd: string;
+      path: string;
+      subscriptionId?: string;
+    }
+  | {
+      /** t19：取消文件订阅。 */
+      type: "fs.file.unsubscribe.request";
+      requestId: string;
+      subscriptionId: string;
+    }
+  // --- t19：diff（checkout.commits.*） ---
+  | { type: "checkout.commits.list.request"; requestId: string; cwd: string }
+  | {
+      /** t19：单个 commit 内单个文件的解析后 diff。 */
+      type: "checkout.commits.file_diff.request";
+      requestId: string;
+      cwd: string;
+      sha: string;
+      path: string;
+    }
+  // --- t19：终端流 ---
+  | {
+      /** t19：订阅终端输出（→ slot + Restore/Snapshot/Output 二进制帧）。 */
+      type: "subscribe_terminal_request";
+      requestId: string;
+      terminalId: string;
+      restore?: {
+        mode: "live" | "visible-snapshot" | "full-snapshot";
+        scrollbackLines?: number;
+      };
+    }
+  | { type: "unsubscribe_terminal_request"; requestId: string; terminalId: string }
+  | {
+      /** t19：打开新终端（工作区终端入口用；agent/脚本终端由 daemon 侧自建）。 */
+      type: "create_terminal_request";
+      requestId: string;
+      cwd: string;
+      workspaceId?: string;
+      name?: string;
+    }
+  | {
+      /** t19：子 agent 列表（agent.provider_subagents.list.request）。 */
+      type: "agent.provider_subagents.list.request";
+      requestId: string;
+      parentAgentId: string;
+    }
+  | {
+      /** t19：composer 斜杠命令目录（list_commands_request）。 */
+      type: "list_commands_request";
+      requestId: string;
+      agentId: string;
     };
 
 /**
@@ -607,6 +851,18 @@ export interface PermissionResponseMessage {
   agentId: string;
   requestId: string;
   response: PermissionResponsePayload;
+}
+
+/**
+ * 终端输入/尺寸（messages.ts TerminalInputSchema；fire-and-forget，
+ * 不走 requestId 关联，观察失败经 terminal_stream_exit 推送告知）。
+ */
+export interface TerminalInputMessage {
+  type: "terminal_input";
+  terminalId: string;
+  message:
+    | { type: "input"; data: string }
+    | { type: "resize"; rows: number; cols: number; intent?: "claim" | "update" };
 }
 
 /** MVP 关心的 daemon 主动推送 / 响应消息 */
@@ -710,7 +966,29 @@ export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
         : value.attentionReason === "permission"
           ? "permission"
           : null,
+    usage: parseAgentUsage(value.lastUsage),
   };
+}
+
+/** AgentUsageSchema 容错解析：仅取数值字段，坏值丢弃。 */
+function parseAgentUsage(value: unknown): AgentUsageInfo | null {
+  if (!isRecord(value)) return null;
+  const usage: AgentUsageInfo = {};
+  let count = 0;
+  for (const key of [
+    "inputTokens",
+    "outputTokens",
+    "totalCostUsd",
+    "contextWindowMaxTokens",
+    "contextWindowUsedTokens",
+  ] as const) {
+    const raw = value[key];
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      usage[key] = raw;
+      count += 1;
+    }
+  }
+  return count > 0 ? usage : null;
 }
 
 /** labels 容错解析：仅保留 string→string；坏值丢弃（协议 Record<string,string>）。 */
@@ -1272,7 +1550,8 @@ export function parseScheduleSummary(value: unknown): ScheduleSummary | null {
     prompt,
     cadence,
     target,
-    status: statusRaw && SCHEDULE_STATUSES.has(statusRaw) ? (statusRaw as ScheduleStatus) : "active",
+    status:
+      statusRaw && SCHEDULE_STATUSES.has(statusRaw) ? (statusRaw as ScheduleStatus) : "active",
     createdAt: str(value.createdAt) ?? "",
     updatedAt: str(value.updatedAt) ?? "",
     nextRunAt: nullableStr(value.nextRunAt),
@@ -1282,9 +1561,7 @@ export function parseScheduleSummary(value: unknown): ScheduleSummary | null {
     maxRuns: typeof value.maxRuns === "number" ? value.maxRuns : null,
     ...(runsRaw
       ? {
-          runs: runsRaw
-            .map(parseScheduleRun)
-            .filter((r): r is ScheduleRun => r !== null),
+          runs: runsRaw.map(parseScheduleRun).filter((r): r is ScheduleRun => r !== null),
         }
       : {}),
   };
@@ -1314,9 +1591,7 @@ export function parseScheduleListResponse(
   if (!isRecord(payload)) return null;
   const raw = Array.isArray(payload.schedules) ? payload.schedules : [];
   return {
-    schedules: raw
-      .map(parseScheduleSummary)
-      .filter((s): s is ScheduleSummary => s !== null),
+    schedules: raw.map(parseScheduleSummary).filter((s): s is ScheduleSummary => s !== null),
     error: nullableStr(payload.error),
   };
 }
@@ -1375,7 +1650,10 @@ export function parseAttentionPush(payload: unknown): AttentionPush | null {
 /** fetch_recent_provider_sessions_response payload。 */
 export function parseRecentProviderSessionsResponse(
   payload: unknown,
-): { entries: RecentProviderSession[]; providerErrors: Array<{ provider: string; message: string }> } | null {
+): {
+  entries: RecentProviderSession[];
+  providerErrors: Array<{ provider: string; message: string }>;
+} | null {
   if (!isRecord(payload)) return null;
   const raw = Array.isArray(payload.entries) ? payload.entries : [];
   const entries = raw
@@ -1472,4 +1750,282 @@ export function parseUpdateAgentResponse(
     accepted: bool(payload.accepted),
     error: nullableStr(payload.error),
   };
+}
+
+// ---------------------------------------------------------------------------
+// t19：文件写回 / 条目操作 / 文件订阅 / diff / 终端 / subagents / 斜杠命令
+// ---------------------------------------------------------------------------
+
+/** FileVersionSchema 容错解析。 */
+export function parseFileVersion(value: unknown): FileVersionInfo | null {
+  if (!isRecord(value)) return null;
+  const cwd = str(value.cwd) ?? "";
+  const path = str(value.path) ?? "";
+  if (value.status === "ready") {
+    return {
+      status: "ready",
+      cwd,
+      path,
+      size: typeof value.size === "number" ? value.size : 0,
+      modifiedAt: str(value.modifiedAt) ?? "",
+      ...(str(value.revision) ? { revision: str(value.revision) ?? "" } : {}),
+    };
+  }
+  if (value.status === "missing") return { status: "missing", cwd, path };
+  if (value.status === "error") {
+    return { status: "error", cwd, path, error: str(value.error) ?? "未知错误" };
+  }
+  return null;
+}
+
+/** fs.file.write.response payload → FileWriteResult。 */
+export function parseFileWriteResponse(payload: unknown): FileWriteResult | null {
+  if (!isRecord(payload)) return null;
+  const result = isRecord(payload.result) ? payload.result : null;
+  if (!result) return null;
+  if (result.status === "written") {
+    return {
+      status: "written",
+      modifiedAt: str(result.modifiedAt) ?? "",
+      size: typeof result.size === "number" ? result.size : 0,
+      ...(str(result.revision) ? { revision: str(result.revision) ?? "" } : {}),
+    };
+  }
+  if (result.status === "conflict") {
+    const version = parseFileVersion(result.version);
+    if (version) return { status: "conflict", version };
+  }
+  if (result.status === "error") return { status: "error", error: str(result.error) ?? "写入失败" };
+  return null;
+}
+
+/** fs.entry.create/rename/delete.response payload 公共解析。 */
+export function parseFileEntryMutationResponse(payload: unknown): FileEntryMutationResult | null {
+  if (!isRecord(payload)) return null;
+  return {
+    success: bool(payload.success),
+    error: nullableStr(payload.error),
+    path: nullableStr(payload.path),
+    renamedPath: nullableStr(payload.renamedPath),
+  };
+}
+
+/** fs.file.subscribe.response payload。 */
+export function parseFileSubscribeResponse(payload: unknown): FileSubscribeResult | null {
+  if (!isRecord(payload)) return null;
+  const subscriptionId = str(payload.subscriptionId);
+  const initial = parseFileVersion(payload.initial);
+  if (!subscriptionId || !initial) return null;
+  return { subscriptionId, initial };
+}
+
+/** fs.file.update 推送 payload。 */
+export function parseFileUpdatePush(payload: unknown): FileUpdatePush | null {
+  if (!isRecord(payload)) return null;
+  const subscriptionId = str(payload.subscriptionId);
+  const version = parseFileVersion(payload.version);
+  if (!subscriptionId || !version) return null;
+  return { subscriptionId, version };
+}
+
+/** checkout.commits.list.response payload。 */
+export function parseCommitsListResponse(
+  payload: unknown,
+): { commits: CheckoutCommit[]; baseRef: string | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.commits) ? payload.commits : [];
+  const commits = raw
+    .map((value): CheckoutCommit | null => {
+      if (!isRecord(value)) return null;
+      const sha = str(value.sha);
+      if (!sha) return null;
+      const files = (Array.isArray(value.files) ? value.files : [])
+        .map((file): CheckoutCommitFile | null => {
+          if (!isRecord(file)) return null;
+          const filePath = str(file.path);
+          if (!filePath) return null;
+          const statusRaw = str(file.status);
+          return {
+            path: filePath,
+            additions: typeof file.additions === "number" ? file.additions : 0,
+            deletions: typeof file.deletions === "number" ? file.deletions : 0,
+            ...(statusRaw === "added" ||
+            statusRaw === "modified" ||
+            statusRaw === "deleted" ||
+            statusRaw === "renamed"
+              ? { status: statusRaw }
+              : {}),
+          };
+        })
+        .filter((f): f is CheckoutCommitFile => f !== null);
+      return {
+        sha,
+        shortSha: str(value.shortSha) ?? sha.slice(0, 7),
+        subject: str(value.subject) ?? "",
+        authorName: str(value.authorName) ?? "",
+        authorDate: str(value.authorDate) ?? "",
+        isOnRemote: bool(value.isOnRemote),
+        files,
+      };
+    })
+    .filter((c): c is CheckoutCommit => c !== null);
+  return {
+    commits,
+    baseRef: nullableStr(payload.baseRef),
+    error: nullableStr(payload.error),
+  };
+}
+
+/** checkout.commits.file_diff.response payload。 */
+export function parseCommitFileDiffResponse(
+  payload: unknown,
+): { file: ParsedDiffFile | null; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const file = isRecord(payload.file) ? parseParsedDiffFile(payload.file) : null;
+  return { file, error: nullableStr(payload.error) };
+}
+
+function parseParsedDiffFile(value: Record<string, unknown>): ParsedDiffFile | null {
+  const path = str(value.path);
+  if (!path) return null;
+  const statusRaw = str(value.status);
+  return {
+    path,
+    ...(str(value.oldPath) ? { oldPath: str(value.oldPath) ?? "" } : {}),
+    isNew: bool(value.isNew),
+    isDeleted: bool(value.isDeleted),
+    additions: typeof value.additions === "number" ? value.additions : 0,
+    deletions: typeof value.deletions === "number" ? value.deletions : 0,
+    hunks: (Array.isArray(value.hunks) ? value.hunks : [])
+      .map((hunk): DiffHunk | null => {
+        if (!isRecord(hunk)) return null;
+        const lines = (Array.isArray(hunk.lines) ? hunk.lines : [])
+          .map((line): DiffLine | null => {
+            if (!isRecord(line)) return null;
+            const typeRaw = str(line.type);
+            if (
+              typeRaw !== "add" &&
+              typeRaw !== "remove" &&
+              typeRaw !== "context" &&
+              typeRaw !== "header"
+            ) {
+              return null;
+            }
+            return { type: typeRaw, content: str(line.content) ?? "" };
+          })
+          .filter((l): l is DiffLine => l !== null);
+        return {
+          oldStart: typeof hunk.oldStart === "number" ? hunk.oldStart : 0,
+          oldCount: typeof hunk.oldCount === "number" ? hunk.oldCount : 0,
+          newStart: typeof hunk.newStart === "number" ? hunk.newStart : 0,
+          newCount: typeof hunk.newCount === "number" ? hunk.newCount : 0,
+          lines,
+        };
+      })
+      .filter((h): h is DiffHunk => h !== null),
+    ...(statusRaw === "ok" || statusRaw === "too_large" || statusRaw === "binary"
+      ? { status: statusRaw }
+      : {}),
+  };
+}
+
+/** ProviderSubagentDescriptorPayloadSchema 容错解析。 */
+export function parseSubagentSummary(value: unknown): ProviderSubagentSummary | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  const parentAgentId = str(value.parentAgentId);
+  if (!id || !parentAgentId) return null;
+  const statusRaw = str(value.status);
+  return {
+    id,
+    parentAgentId,
+    provider: str(value.provider) ?? "",
+    title: nullableStr(value.title),
+    description: nullableStr(value.description),
+    status:
+      statusRaw === "completed" || statusRaw === "failed" || statusRaw === "canceled"
+        ? statusRaw
+        : "running",
+    createdAt: str(value.createdAt) ?? "",
+    updatedAt: str(value.updatedAt) ?? "",
+    subtitle: nullableStr(value.subtitle),
+  };
+}
+
+/** agent.provider_subagents.list.response payload。 */
+export function parseSubagentsListResponse(
+  payload: unknown,
+): { subagents: ProviderSubagentSummary[]; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.subagents) ? payload.subagents : [];
+  const subagents = raw
+    .map(parseSubagentSummary)
+    .filter((s): s is ProviderSubagentSummary => s !== null);
+  return { subagents, error: nullableStr(payload.error) };
+}
+
+/** agent.provider_subagents.update 推送 payload（timeline 子事件返回 null，上层忽略）。 */
+export function parseSubagentUpdate(payload: unknown): SubagentUpdate | null {
+  if (!isRecord(payload)) return null;
+  if (payload.kind === "upsert") {
+    const subagent = parseSubagentSummary(payload.subagent);
+    return subagent ? { kind: "upsert", subagent } : null;
+  }
+  if (payload.kind === "remove") {
+    const parentAgentId = str(payload.parentAgentId);
+    const subagentId = str(payload.subagentId);
+    if (parentAgentId && subagentId) return { kind: "remove", parentAgentId, subagentId };
+  }
+  return null;
+}
+
+/** list_commands_response payload。 */
+export function parseListCommandsResponse(payload: unknown): SlashCommand[] | null {
+  if (!isRecord(payload)) return null;
+  const raw = Array.isArray(payload.commands) ? payload.commands : [];
+  return raw
+    .map((value): SlashCommand | null => {
+      if (!isRecord(value)) return null;
+      const name = str(value.name);
+      if (!name) return null;
+      return {
+        name,
+        description: str(value.description) ?? "",
+        argumentHint: str(value.argumentHint) ?? "",
+        ...(str(value.kind) === "skill" ? { kind: "skill" } : {}),
+      };
+    })
+    .filter((c): c is SlashCommand => c !== null);
+}
+
+/** TerminalInfoSchema 容错解析。 */
+export function parseTerminalInfo(value: unknown): TerminalInfo | null {
+  if (!isRecord(value)) return null;
+  const id = str(value.id);
+  if (!id) return null;
+  return {
+    id,
+    name: str(value.name) ?? "",
+    cwd: str(value.cwd) ?? "",
+    ...(str(value.workspaceId) ? { workspaceId: str(value.workspaceId) ?? "" } : {}),
+    ...(str(value.title) ? { title: str(value.title) ?? "" } : {}),
+  };
+}
+
+/** subscribe_terminal_response payload。 */
+export function parseSubscribeTerminalResponse(payload: unknown): SubscribeTerminalResult | null {
+  if (!isRecord(payload)) return null;
+  const terminalId = str(payload.terminalId);
+  if (!terminalId) return null;
+  const error = str(payload.error);
+  if (error) return { terminalId, error };
+  if (typeof payload.slot === "number") {
+    return {
+      terminalId,
+      slot: payload.slot,
+      error: null,
+      ...(str(payload.subscriptionId) ? { subscriptionId: str(payload.subscriptionId) ?? "" } : {}),
+    };
+  }
+  return null;
 }

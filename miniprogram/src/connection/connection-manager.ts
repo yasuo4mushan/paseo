@@ -17,7 +17,14 @@ import {
 } from "./relay-offer";
 import { createRelayPlaintextSocket } from "./relay-transport";
 import { createWxSocket } from "./wx-socket";
-import type { AgentSnapshot, AgentStreamPayload, DaemonStatus, ServerInfo } from "./protocol-types";
+import type {
+  AgentSnapshot,
+  AgentStreamPayload,
+  DaemonStatus,
+  FileUpdatePush,
+  ServerInfo,
+  SubagentUpdate,
+} from "./protocol-types";
 import { permissionStore } from "@/permission/permission-store";
 import { attentionStore } from "@/stores/attention-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
@@ -62,6 +69,14 @@ class ConnectionManager {
   private streamListeners = new Set<(payload: AgentStreamPayload) => void>();
   private agentUpdateListeners = new Set<
     (update: { kind: "upsert"; agent: AgentSnapshot } | { kind: "remove"; agentId: string }) => void
+  >();
+  /** t19：fs.file.update（编辑器远端变更检测）。 */
+  private fileUpdateListeners = new Set<(push: FileUpdatePush) => void>();
+  /** t19：子 agent 轨道 upsert/remove。 */
+  private subagentUpdateListeners = new Set<(update: SubagentUpdate) => void>();
+  /** t19：终端观察流结束。 */
+  private terminalExitListeners = new Set<
+    (payload: { terminalId: string; error?: string }) => void
   >();
   private disconnectListeners = new Set<() => void>();
 
@@ -118,6 +133,24 @@ class ConnectionManager {
   onDisconnect(listener: () => void): () => void {
     this.disconnectListeners.add(listener);
     return () => this.disconnectListeners.delete(listener);
+  }
+
+  /** t19：fs.file.update 推送（订阅见 conn.subscribeFile）。 */
+  onFileUpdate(listener: (push: FileUpdatePush) => void): () => void {
+    this.fileUpdateListeners.add(listener);
+    return () => this.fileUpdateListeners.delete(listener);
+  }
+
+  /** t19：子 agent 轨道推送。 */
+  onSubagentUpdate(listener: (update: SubagentUpdate) => void): () => void {
+    this.subagentUpdateListeners.add(listener);
+    return () => this.subagentUpdateListeners.delete(listener);
+  }
+
+  /** t19：终端观察流结束（输出停止的信号之一）。 */
+  onTerminalExit(listener: (payload: { terminalId: string; error?: string }) => void): () => void {
+    this.terminalExitListeners.add(listener);
+    return () => this.terminalExitListeners.delete(listener);
   }
 
   private notify(): void {
@@ -223,6 +256,15 @@ class ConnectionManager {
         },
         onAttention: (push) => {
           attentionStore.handlePush(push);
+        },
+        onFileUpdate: (push) => {
+          for (const listener of this.fileUpdateListeners) listener(push);
+        },
+        onSubagentUpdate: (update) => {
+          for (const listener of this.subagentUpdateListeners) listener(update);
+        },
+        onTerminalExit: (payload) => {
+          for (const listener of this.terminalExitListeners) listener(payload);
         },
         onDisconnect: () => {
           this.setState({ status: "disconnected" });
