@@ -2,6 +2,7 @@ import { useState } from "react";
 import Taro from "@tarojs/taro";
 import { Button, Textarea, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { PermissionOverlay } from "@/components/permission-overlay";
 import "./index.css";
 
 export default function PairPage() {
@@ -79,6 +80,7 @@ export default function PairPage() {
           安全说明：中继模式端到端加密（X25519 + XSalsa20-Poly1305），中继服务器只能看到密文。
         </View>
       </View>
+      <PermissionOverlay />
     </View>
   );
 }

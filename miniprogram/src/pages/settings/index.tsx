@@ -3,6 +3,7 @@ import Taro, { useDidShow } from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { DaemonStatus } from "@/connection/protocol-types";
+import { PermissionOverlay } from "@/components/permission-overlay";
 import {
   DEFAULT_HUB_BASE,
   getAccount,
@@ -259,6 +260,7 @@ export default function SettingsPage() {
       </View>
 
       <View className="footer-note">aaswitch · based on Paseo</View>
+      <PermissionOverlay />
     </View>
   );
 }

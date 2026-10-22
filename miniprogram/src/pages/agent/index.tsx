@@ -3,6 +3,7 @@ import Taro, { useLoad } from "@tarojs/taro";
 import { Button, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type { AgentTimelineEntry, AgentTimelineItem } from "@/connection/protocol-types";
+import { PermissionOverlay } from "@/components/permission-overlay";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
 import { formatClock } from "@/utils/time";
 import "./index.css";
@@ -102,6 +103,8 @@ export default function AgentPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const bottomAnchor = useRef(`bottom-${Date.now()}`);
 
   useLoad((options) => {
@@ -223,6 +226,39 @@ export default function AgentPage() {
     }
   };
 
+  const interrupt = async () => {
+    if (!agentId || cancelling) return;
+    setCancelling(true);
+    try {
+      await connectionManager.requireConnection().cancelAgent(agentId);
+      setStatus("idle");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!agentId || deleting) return;
+    const { confirm } = await Taro.showModal({
+      title: "删除 Agent",
+      content: "删除后该会话将从设备上永久移除，确定删除？",
+      confirmText: "删除",
+      confirmColor: "#fa5151",
+      cancelText: "取消",
+    });
+    if (!confirm) return;
+    setDeleting(true);
+    try {
+      await connectionManager.requireConnection().deleteAgent(agentId);
+      Taro.navigateBack();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setDeleting(false);
+    }
+  };
+
   return (
     <View className="agent-page">
       <ScrollView
@@ -263,6 +299,24 @@ export default function AgentPage() {
             <View className={statusPillClass(status)}>{STATUS_LABELS[status] ?? status}</View>
           ) : null}
           {title ? <View className="faint composer-title">{title}</View> : null}
+          <View className="composer-actions">
+            {status === "running" ? (
+              <Button
+                className="btn btn-mini btn-ghost action-btn"
+                disabled={cancelling}
+                onClick={() => void interrupt()}
+              >
+                {cancelling ? "中断中…" : "中断"}
+              </Button>
+            ) : null}
+            <Button
+              className="btn btn-mini btn-danger action-btn"
+              disabled={deleting}
+              onClick={() => void remove()}
+            >
+              删除
+            </Button>
+          </View>
         </View>
         <View className="composer-row">
           <Input
@@ -284,6 +338,7 @@ export default function AgentPage() {
           </Button>
         </View>
       </View>
+      <PermissionOverlay />
     </View>
   );
 }

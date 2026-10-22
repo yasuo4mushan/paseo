@@ -1,0 +1,155 @@
+/* 权限请求全局弹层（t16）：微信半屏弹窗规范——蒙层 + 底部圆角面板。 */
+
+.perm-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.perm-sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 40rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.perm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.perm-kind {
+  display: inline-block;
+  font-size: 22rpx;
+  line-height: 1;
+  padding: 8rpx 16rpx;
+  border-radius: var(--radius-round);
+  background: var(--warning-fade);
+  color: #d48806;
+}
+
+.perm-remaining {
+  font-size: 22rpx;
+}
+
+.perm-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 8rpx;
+  word-break: break-all;
+}
+
+.perm-desc {
+  margin-bottom: 12rpx;
+}
+
+.perm-tool-row {
+  display: flex;
+  align-items: center;
+  margin: 8rpx 0 12rpx;
+}
+
+.perm-tool-tag {
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 6rpx 12rpx;
+  border-radius: var(--radius-round);
+  background: var(--info-fade);
+  color: var(--info);
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.perm-tool-name {
+  font-size: 26rpx;
+  color: var(--text-1);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perm-input {
+  max-height: 240rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 16rpx 20rpx;
+  box-sizing: border-box;
+  margin: 8rpx 0 12rpx;
+}
+
+.perm-input-text {
+  font-size: 24rpx;
+  color: var(--text-2);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.perm-agent {
+  font-size: 22rpx;
+  margin-bottom: 20rpx;
+}
+
+.perm-actions {
+  display: flex;
+  gap: 24rpx;
+}
+
+.perm-btn {
+  flex: 1;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 30rpx;
+  font-weight: 600;
+  padding: 20rpx 0;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.perm-btn::after {
+  border: none;
+}
+
+.perm-btn-allow {
+  background: var(--brand);
+  color: var(--text-inverse);
+}
+
+.perm-btn-allow:active {
+  background: var(--brand-pressed);
+}
+
+.perm-btn-deny {
+  background: var(--fill);
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.perm-btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 2rpx solid var(--danger);
+}
+
+.perm-btn-primary {
+  background: var(--brand);
+  color: var(--text-inverse);
+}
+
+.perm-hint {
+  text-align: center;
+  font-size: 22rpx;
+  margin-top: 20rpx;
+}

@@ -182,6 +182,23 @@
   white-space: nowrap;
 }
 
+/* 中断 / 删除（t16） */
+.composer-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  padding: 8rpx 24rpx;
+}
+
+.action-btn.btn-danger {
+  border-width: 2rpx;
+}
+
 .composer-row {
   display: flex;
   align-items: center;
