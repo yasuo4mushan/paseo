@@ -17,10 +17,12 @@ export default defineConfig(async (merge) => {
     outputRoot: "dist",
     plugins: [],
     copy: {
-      // theme.json（darkmode 双主题）与 tabBar 图标原样进包
+      // theme.json（darkmode 双主题）、tabBar 图标与 t20 线条图标集原样进包
+      // （icons 走运行期 /assets/icons/<name>.png 字符串引用，不经 webpack 资产管线）
       patterns: [
         { from: "src/theme.json", to: "dist/theme.json" },
         { from: "src/assets/tabbar/", to: "dist/assets/tabbar/" },
+        { from: "src/assets/icons/", to: "dist/assets/icons/" },
       ],
       options: {},
     },
