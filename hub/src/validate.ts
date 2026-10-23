@@ -58,13 +58,32 @@ export function optionalString(
   return value;
 }
 
-export const USERNAME_RE = /^[a-z0-9_-]{3,32}$/;
+/** Mainland-China mobile after normalization: 11 digits, `1[3-9]` head. */
+export const PHONE_RE = /^1[3-9]\d{9}$/;
 
-export function validateUsername(username: string): string {
-  if (!USERNAME_RE.test(username)) {
-    throw badRequest("username must be 3-32 chars of [a-z0-9_-]");
+const invalidPhone = () =>
+  new ApiError(
+    400,
+    "auth.invalid_phone",
+    "phone must be a mainland-China mobile (1[3-9]xxxxxxxxx)",
+  );
+
+/**
+ * Normalize a user-supplied phone to the canonical 11-digit national form.
+ * Accepted shapes: `13812345678`, `+8613812345678`, `8613812345678`, with
+ * spaces/dashes/parentheses allowed anywhere (`+86 138 1234 5678`). Anything
+ * else — including non-CN numbers — throws `auth.invalid_phone`.
+ */
+export function normalizePhone(input: string): string {
+  // Strips formatting noise, not digits: "138-1234(5678)" -> "13812345678".
+  let digits = input.replace(/[\s().-]/g, "");
+  if (digits.startsWith("+86")) {
+    digits = digits.slice(3);
+  } else if (digits.startsWith("86") && PHONE_RE.test(digits.slice(2))) {
+    digits = digits.slice(2);
   }
-  return username;
+  if (!PHONE_RE.test(digits)) throw invalidPhone();
+  return digits;
 }
 
 export function validatePassword(password: string): string {

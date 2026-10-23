@@ -12,6 +12,7 @@ import { setLogLevel } from "../../src/log.js";
 import { RateLimiter } from "../../src/rate-limit.js";
 import { createHubServer } from "../../src/server.js";
 import { HubStore } from "../../src/store.js";
+import { wxServiceFromConfig } from "../../src/wx.js";
 
 setLogLevel("error"); // keep test output clean
 
@@ -32,10 +33,28 @@ export interface HubOptions extends Partial<HubConfig> {
   /** Credentialed-endpoint rate limit max (default: effectively unlimited). */
   limitMax?: number;
   limitWindowMs?: number;
+  /** Write a pre-existing hub.json (e.g. legacy username-era state) before the store loads. */
+  seedDb?: (dbPath: string) => void;
+  /** Point the WeChat client at a local mock server instead of api.weixin.qq.com. */
+  wxaApiBase?: string;
+}
+
+let phoneCounter = 0;
+
+/** Unique, spec-valid mainland-China mobile (1[3-9]\d{9}). */
+export function randomPhone(): string {
+  phoneCounter = (phoneCounter + 1) % 900_000_000;
+  return `1${3 + (phoneCounter % 7)}${String(phoneCounter).padStart(9, "0")}`;
 }
 
 export async function startHub(options: HubOptions = {}): Promise<TestHub> {
-  const { limitMax = 100_000, limitWindowMs = 60_000, ...configOverrides } = options;
+  const {
+    limitMax = 100_000,
+    limitWindowMs = 60_000,
+    seedDb,
+    wxaApiBase,
+    ...configOverrides
+  } = options;
   const dir = mkdtempSync(path.join(tmpdir(), "aaswitch-hub-test-"));
   const config: HubConfig = {
     host: "127.0.0.1",
@@ -47,11 +66,13 @@ export async function startHub(options: HubOptions = {}): Promise<TestHub> {
     trustProxy: false,
     ...configOverrides,
   };
+  if (seedDb) seedDb(config.dbPath);
   const store = new HubStore(config.dbPath);
   const server = createHubServer({
     store,
     config,
     limiter: new RateLimiter(limitMax, limitWindowMs),
+    wx: wxServiceFromConfig(config, wxaApiBase),
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
@@ -95,9 +116,9 @@ export function validOffer(overrides: Record<string, unknown> = {}): Record<stri
   };
 }
 
-export async function registerAndLogin(url: string, username = "alice"): Promise<string> {
-  await call(url, "auth.register", { username, password: "password123" });
-  const res = await call(url, "auth.login", { username, password: "password123" });
+export async function registerAndLogin(url: string, phone = randomPhone()): Promise<string> {
+  await call(url, "auth.register", { phone, password: "password123" });
+  const res = await call(url, "auth.login", { phone, password: "password123" });
   if (!res.json.data || typeof res.json.data !== "object" || !("token" in res.json.data)) {
     throw new Error(`registerAndLogin failed: ${JSON.stringify(res.json)}`);
   }

@@ -40,7 +40,7 @@ describe("HubStore persistence", () => {
     const secret = randomBytes(32);
     await store.addAccount({
       id: "acc_1",
-      username: "alice",
+      phone: "13812345678",
       passwordHash: hashPassword("password123"),
       createdAt: new Date().toISOString(),
     });
@@ -50,7 +50,7 @@ describe("HubStore persistence", () => {
     await persist;
 
     const reopened = new HubStore(dbPath);
-    expect(reopened.findAccountByUsername("alice")?.id).toBe("acc_1");
+    expect(reopened.findAccountByPhone("13812345678")?.id).toBe("acc_1");
     expect(reopened.findSession(record.id)?.accountId).toBe("acc_1");
     const devices = reopened.listDevicesByAccount("acc_1");
     expect(devices).toHaveLength(1);
@@ -63,7 +63,7 @@ describe("HubStore persistence", () => {
     for (let i = 0; i < 5; i++) {
       await store.addAccount({
         id: `acc_${i}`,
-        username: `user${i}`,
+        phone: `138${String(i).padStart(1, "0")}${String(10_000_000 + i).slice(1)}`,
         passwordHash: hashPassword("password123"),
         createdAt: new Date().toISOString(),
       });

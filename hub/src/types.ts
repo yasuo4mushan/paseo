@@ -21,12 +21,23 @@ export interface Offer {
 export interface AccountRecord {
   /** `acc_<base64url>`. Public API exposes this as `account.id`. */
   id: string;
-  username: string;
+  /**
+   * Mainland-China mobile in normalized 11-digit national form (`1[3-9]\d{9}`,
+   * e.g. `13812345678`). Inputs in `+86`/`86` E.164 form are normalized to it
+   * before storage/lookup. Legacy username-era rows may lack this field.
+   */
+  phone: string;
   /**
    * `scrypt$N$r$p$keylen$saltB64$hashB64` — the salt is embedded in the
    * encoding, so no separate salt column exists. Never the plaintext password.
+   * For wx-phone-created accounts this is an unknowable random placeholder
+   * until the user sets a real password (passwordSet flips to true then).
    */
   passwordHash: string;
+  /** False only for wx-phone-created accounts that never set a password. */
+  passwordSet?: boolean;
+  /** Legacy username-era field; kept on old rows, never written for new accounts. */
+  username?: string;
   createdAt: string;
 }
 
@@ -66,7 +77,8 @@ export interface HubState {
 
 export interface AccountPublic {
   id: string;
-  username: string;
+  /** Normalized 11-digit CN mobile. Absent only on legacy username-era accounts. */
+  phone: string;
   createdAt: string;
 }
 

@@ -13,20 +13,23 @@ import type { HubConfig } from "./config.js";
 import { logInfo } from "./log.js";
 import { RateLimiter } from "./rate-limit.js";
 import type { HubStore } from "./store.js";
-import type { AccountPublic, DevicePublic } from "./types.js";
+import type { AccountPublic, AccountRecord, DevicePublic } from "./types.js";
+import { WxPhoneService } from "./wx.js";
 import {
   ApiError,
+  normalizePhone,
   parseOffer,
   requireObject,
   requireString,
   validatePassword,
-  validateUsername,
 } from "./validate.js";
 
 export interface ApiContext {
   store: HubStore;
   config: HubConfig;
   limiter: RateLimiter;
+  /** Present only when HUB_WXA_APPID + HUB_WXA_SECRET are configured. */
+  wx: WxPhoneService | undefined;
 }
 
 interface AuthContext {
@@ -43,12 +46,8 @@ export interface MethodDef {
   handler: (ctx: ApiContext, body: unknown, auth: AuthContext | null) => Promise<unknown> | unknown;
 }
 
-function accountPublic(account: {
-  id: string;
-  username: string;
-  createdAt: string;
-}): AccountPublic {
-  return { id: account.id, username: account.username, createdAt: account.createdAt };
+function accountPublic(account: Pick<AccountRecord, "id" | "phone" | "createdAt">): AccountPublic {
+  return { id: account.id, phone: account.phone, createdAt: account.createdAt };
 }
 
 function devicePublic(
@@ -100,15 +99,16 @@ export const methods: Record<string, MethodDef> = {
     credentialed: true,
     handler: async (ctx, raw) => {
       const body = requireObject(raw, "body");
-      const username = validateUsername(requireString(body, "username", { max: 32 }));
+      const phone = normalizePhone(requireString(body, "phone", { max: 32 }));
       const password = validatePassword(requireString(body, "password", { max: 1024 }));
-      if (ctx.store.findAccountByUsername(username)) {
-        throw new ApiError(409, "auth.username_taken", "username is already taken");
+      if (ctx.store.findAccountByPhone(phone)) {
+        throw new ApiError(409, "auth.phone_taken", "phone number is already registered");
       }
       const account = {
         id: `acc_${randomBytes(12).toString("base64url")}`,
-        username,
+        phone,
         passwordHash: hashPassword(password),
+        passwordSet: true,
         createdAt: new Date().toISOString(),
       };
       await ctx.store.addAccount(account);
@@ -122,12 +122,12 @@ export const methods: Record<string, MethodDef> = {
     credentialed: true,
     handler: async (ctx, raw) => {
       const body = requireObject(raw, "body");
-      const username = requireString(body, "username", { max: 32 });
+      const phone = normalizePhone(requireString(body, "phone", { max: 32 }));
       const password = requireString(body, "password", { max: 1024 });
-      const account = ctx.store.findAccountByUsername(username);
-      // Same error for unknown user and wrong password: no username probing.
+      const account = ctx.store.findAccountByPhone(phone);
+      // Same error for unknown phone and wrong password: no phone probing.
       if (!account || !verifyPassword(password, account.passwordHash)) {
-        throw new ApiError(401, "auth.invalid_credentials", "invalid username or password");
+        throw new ApiError(401, "auth.invalid_credentials", "invalid phone or password");
       }
       const { token, record } = mintSession(
         ctx.config.tokenSecret,
@@ -137,6 +137,79 @@ export const methods: Record<string, MethodDef> = {
       await ctx.store.addSession(record);
       logInfo("account_login", { accountId: account.id });
       return { token, account: accountPublic(account) };
+    },
+  },
+
+  /**
+   * Set a new password. The current session survives; every other session of
+   * the account is revoked. For wx-phone-created accounts (no password set
+   * yet) `oldPassword` is not required — token possession proves phone
+   * ownership there.
+   */
+  "auth.password.change": {
+    auth: true,
+    handler: async (ctx, raw, auth) => {
+      const body = requireObject(raw, "body");
+      const account = ctx.store.findAccountById(auth!.accountId);
+      if (!account) throw new ApiError(401, "auth.token_invalid", "account no longer exists");
+      const newPassword = validatePassword(requireString(body, "newPassword", { max: 1024 }));
+      if (account.passwordSet !== false) {
+        const oldPassword = requireString(body, "oldPassword", { max: 1024 });
+        if (!verifyPassword(oldPassword, account.passwordHash)) {
+          throw new ApiError(401, "auth.invalid_credentials", "old password is incorrect");
+        }
+      }
+      await ctx.store.setAccountPassword(account, hashPassword(newPassword));
+      await ctx.store.revokeSessionsExcept(auth!.accountId, auth!.sessionId);
+      logInfo("account_password_change", { accountId: auth!.accountId });
+      return { ok: true };
+    },
+  },
+
+  /**
+   * WeChat mini-program one-click phone login. `code` is the dynamic token
+   * from the `open-type="getPhoneNumber"` button (NOT a wx.login code): valid
+   * 5 minutes, single use. The hub exchanges it with WeChat for the phone
+   * number, then finds or creates the account (random password placeholder
+   * until the user sets one via auth.password.change).
+   */
+  "auth.wx-phone": {
+    auth: false,
+    credentialed: true,
+    handler: async (ctx, raw) => {
+      if (!ctx.wx) {
+        throw new ApiError(
+          501,
+          "auth.wx_disabled",
+          "WeChat login is not configured (set HUB_WXA_APPID and HUB_WXA_SECRET)",
+        );
+      }
+      const body = requireObject(raw, "body");
+      const code = requireString(body, "code", { max: 512 });
+      const phone = await ctx.wx.getPhoneNumber(code);
+      let account = ctx.store.findAccountByPhone(phone);
+      let created = false;
+      if (!account) {
+        account = {
+          id: `acc_${randomBytes(12).toString("base64url")}`,
+          phone,
+          // Unknowable placeholder: password login stays impossible until the
+          // user sets a real password through auth.password.change.
+          passwordHash: hashPassword(randomBytes(24).toString("base64url")),
+          passwordSet: false,
+          createdAt: new Date().toISOString(),
+        };
+        await ctx.store.addAccount(account);
+        created = true;
+      }
+      const { token, record } = mintSession(
+        ctx.config.tokenSecret,
+        account.id,
+        ctx.config.tokenTtlMs,
+      );
+      await ctx.store.addSession(record);
+      logInfo("wx_phone_login", { accountId: account.id, created });
+      return { token, account: accountPublic(account), phone };
     },
   },
 

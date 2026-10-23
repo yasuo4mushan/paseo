@@ -20,6 +20,7 @@ import { logError, logInfo, logWarn, setLogLevel } from "./log.js";
 import { RateLimiter } from "./rate-limit.js";
 import { HubStore } from "./store.js";
 import { ApiError } from "./validate.js";
+import { wxServiceFromConfig } from "./wx.js";
 
 const MAX_BODY_BYTES = 128 * 1024;
 
@@ -126,7 +127,8 @@ async function handleRequest(
     }
 
     const methodPath = pathname.startsWith("/api/") ? pathname.slice("/api/".length) : "";
-    const isMethodRoute = /^[a-z0-9]+(\.[a-z0-9_]+)+$/.test(methodPath);
+    // Segments allow hyphens (e.g. auth.wx-phone) alongside dots/underscores.
+    const isMethodRoute = /^[a-z0-9]+(\.[a-z0-9_-]+)+$/.test(methodPath);
 
     if (!isMethodRoute) {
       status = 404;
@@ -169,14 +171,19 @@ async function handleRequest(
   }
 }
 
-/** Build the full runtime (config + store + limiter + server). Test entry. */
+/** Build the full runtime (config + store + limiter + wx client + server). Test entry. */
 export function buildHub(config: HubConfig): {
   server: http.Server;
   ctx: ApiContext;
   store: HubStore;
 } {
   const store = new HubStore(config.dbPath);
-  const ctx: ApiContext = { store, config, limiter: new RateLimiter(10, 60_000) };
+  const ctx: ApiContext = {
+    store,
+    config,
+    limiter: new RateLimiter(10, 60_000),
+    wx: wxServiceFromConfig(config),
+  };
   const server = createHubServer(ctx);
   return { server, ctx, store };
 }

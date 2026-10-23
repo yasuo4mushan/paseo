@@ -87,8 +87,8 @@ export class HubStore {
 
   // ---- reads -------------------------------------------------------------
 
-  findAccountByUsername(username: string): AccountRecord | undefined {
-    return this.state.accounts.find((a) => a.username === username);
+  findAccountByPhone(phone: string): AccountRecord | undefined {
+    return this.state.accounts.find((a) => a.phone === phone);
   }
 
   findAccountById(id: string): AccountRecord | undefined {
@@ -122,6 +122,27 @@ export class HubStore {
 
   addSession(record: SessionRecord): Promise<void> {
     this.state.sessions.push(record);
+    return this.persist();
+  }
+
+  /**
+   * Set a new password hash on an account (auth.password.change). `record` is
+   * the live state object this store already owns, so mutation is visible to
+   * all readers.
+   */
+  setAccountPassword(record: AccountRecord, passwordHash: string): Promise<void> {
+    record.passwordHash = passwordHash;
+    record.passwordSet = true;
+    return this.persist();
+  }
+
+  /** Revoke every session of an account except the one that made the call. */
+  revokeSessionsExcept(accountId: string, keepSessionId: string): Promise<void> {
+    const before = this.state.sessions.length;
+    this.state.sessions = this.state.sessions.filter(
+      (s) => s.accountId !== accountId || s.id === keepSessionId,
+    );
+    if (this.state.sessions.length === before) return Promise.resolve();
     return this.persist();
   }
 

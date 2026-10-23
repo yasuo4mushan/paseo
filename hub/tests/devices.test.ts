@@ -30,7 +30,7 @@ async function registerDevice(url: string, token: string, name: string): Promise
 
 describe("devices.register", () => {
   it("returns a dev_ id and shows up in devices.list", async () => {
-    const token = await registerAndLogin(hub.url, "dev-owner");
+    const token = await registerAndLogin(hub.url);
     const deviceId = await registerDevice(hub.url, token, "mac-studio");
     expect(deviceId).toMatch(/^dev_/);
 
@@ -47,7 +47,7 @@ describe("devices.register", () => {
   });
 
   it("is idempotent per (account, name): same deviceId, offer replaced", async () => {
-    const token = await registerAndLogin(hub.url, "idem-owner");
+    const token = await registerAndLogin(hub.url);
     const first = await call(
       hub.url,
       "devices.register",
@@ -116,10 +116,7 @@ describe("devices.register", () => {
 
   for (const [label, offer] of badOffers) {
     it(`rejects offer (${label}) with devices.offer_invalid`, async () => {
-      const token = await registerAndLogin(
-        hub.url,
-        `offer-${label.replace(/\W+/g, "_")}`.slice(0, 32).toLowerCase(),
-      );
+      const token = await registerAndLogin(hub.url);
       const body: Record<string, unknown> = { name: "bad-offer", os: "darwin" };
       if (offer !== undefined) body.offer = offer;
       const res = await call(hub.url, "devices.register", body, token);
@@ -129,7 +126,7 @@ describe("devices.register", () => {
   }
 
   it("accepts a 32-byte base64url public key and bracketed IPv6 endpoint", async () => {
-    const token = await registerAndLogin(hub.url, "edge-offer-user");
+    const token = await registerAndLogin(hub.url);
     const key = Buffer.alloc(32, 9).toString("base64url");
     const res = await call(
       hub.url,
@@ -147,7 +144,7 @@ describe("devices.register", () => {
 
 describe("devices.heartbeat", () => {
   it("refreshes lastSeenAt and flips online back on", async () => {
-    const token = await registerAndLogin(hub.url, "hb-owner");
+    const token = await registerAndLogin(hub.url);
     const deviceId = await registerDevice(hub.url, token, "hb-box");
 
     await new Promise((resolve) => setTimeout(resolve, 300)); // exceed the 200ms TTL
@@ -163,7 +160,7 @@ describe("devices.heartbeat", () => {
   });
 
   it("replaces the offer when provided", async () => {
-    const token = await registerAndLogin(hub.url, "hb-offer-owner");
+    const token = await registerAndLogin(hub.url);
     const deviceId = await registerDevice(hub.url, token, "hb-offer-box");
     const newKey = Buffer.alloc(32, 3).toString("base64");
     const res = await call(
@@ -186,8 +183,8 @@ describe("devices.heartbeat", () => {
   });
 
   it("404s for an unknown or foreign deviceId", async () => {
-    const tokenA = await registerAndLogin(hub.url, "hb-a");
-    const tokenB = await registerAndLogin(hub.url, "hb-b");
+    const tokenA = await registerAndLogin(hub.url);
+    const tokenB = await registerAndLogin(hub.url);
     const deviceIdA = await registerDevice(hub.url, tokenA, "hb-box-a");
     await registerDevice(hub.url, tokenB, "hb-box-b");
 
@@ -202,7 +199,7 @@ describe("devices.heartbeat", () => {
 
 describe("devices.unregister", () => {
   it("removes the device, then 404s on repeat and on heartbeat", async () => {
-    const token = await registerAndLogin(hub.url, "unreg-owner");
+    const token = await registerAndLogin(hub.url);
     const deviceId = await registerDevice(hub.url, token, "bye-box");
 
     const first = await call(hub.url, "devices.unregister", { deviceId }, token);
@@ -216,8 +213,8 @@ describe("devices.unregister", () => {
   });
 
   it("cannot unregister another account's device", async () => {
-    const tokenA = await registerAndLogin(hub.url, "unreg-a");
-    const tokenB = await registerAndLogin(hub.url, "unreg-b");
+    const tokenA = await registerAndLogin(hub.url);
+    const tokenB = await registerAndLogin(hub.url);
     const deviceIdA = await registerDevice(hub.url, tokenA, "target-box");
     const res = await call(hub.url, "devices.unregister", { deviceId: deviceIdA }, tokenB);
     expect(res.status).toBe(404);
@@ -226,8 +223,8 @@ describe("devices.unregister", () => {
 
 describe("devices.list isolation", () => {
   it("only shows the caller's devices", async () => {
-    const tokenA = await registerAndLogin(hub.url, "iso-a");
-    const tokenB = await registerAndLogin(hub.url, "iso-b");
+    const tokenA = await registerAndLogin(hub.url);
+    const tokenB = await registerAndLogin(hub.url);
     await registerDevice(hub.url, tokenA, "iso-box-a1");
     await registerDevice(hub.url, tokenA, "iso-box-a2");
     await registerDevice(hub.url, tokenB, "iso-box-b1");
