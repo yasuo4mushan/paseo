@@ -19,6 +19,7 @@ import {
   resetHubBase,
   setHubBase,
 } from "@/hub/hub-client";
+import { safeNavigateTo } from "@/utils/navigation";
 import "./index.css";
 
 const STATUS_TEXT: Record<string, string> = {
@@ -306,6 +307,28 @@ export default function SettingsPage() {
 
       <View className="section-title">高级</View>
       <View className="cell-group">
+        <View
+          className="cell cell-tappable"
+          onClick={() => void safeNavigateTo("/pages/create/index")}
+        >
+          <View className="cell-grow">
+            <View className="cell-label">新建项目会话</View>
+            <View className="faint">
+              级联向导：设备 → 项目文件夹（设备侧浏览/新建）→ 框架 → 模型 → thinking
+            </View>
+          </View>
+          <View className="cell-arrow">›</View>
+        </View>
+        <View
+          className="cell cell-tappable"
+          onClick={() => void safeNavigateTo("/pages/files/index")}
+        >
+          <View className="cell-grow">
+            <View className="cell-label">文件浏览器</View>
+            <View className="faint">当前工作区的文件浏览、预览与下载保存</View>
+          </View>
+          <View className="cell-arrow">›</View>
+        </View>
         <View
           className="cell cell-tappable"
           onClick={() => Taro.navigateTo({ url: "/pages/pair/index" })}

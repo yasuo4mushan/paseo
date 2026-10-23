@@ -185,6 +185,33 @@ export default function DevicesPage() {
                   <View className="pill-dot" />
                   {pill.text}
                 </View>
+
+{/* t24：已连接设备的快捷入口（文件浏览/新建项目向导）。
+                    事件必须 catchtap 阻断卡片 onClick（连接）。 */}
+                {entry.status === "connected" ? (
+                  <View className="device-quick">
+                    <Button
+                      className="btn btn-mini btn-ghost device-quick-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void safeNavigateTo("/pages/files/index");
+                      }}
+                    >
+                      <Image className="icon icon-sm" src={iconUrl("file")} />
+                      文件
+                    </Button>
+                    <Button
+                      className="btn btn-mini btn-ghost device-quick-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void safeNavigateTo("/pages/create/index");
+                      }}
+                    >
+                      <Image className="icon icon-sm" src={iconUrl("plus")} />
+                      新建项目
+                    </Button>
+                  </View>
+                ) : null}
               </View>
             );
           })}

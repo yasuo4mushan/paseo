@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Taro, { usePullDownRefresh } from "@tarojs/taro";
+import Taro, { useLoad, usePullDownRefresh } from "@tarojs/taro";
 import { Button, ScrollView, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { MODAL_DANGER_COLOR } from "@/constants/colors";
@@ -27,6 +27,7 @@ import { useThemeClass } from "@/hooks/use-theme";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { fileCategory, fileIcon, formatFileSize } from "@/utils/files";
 import { iconUrl } from "@/utils/icons";
+import { safeNavigateTo } from "@/utils/navigation";
 import {
   documentFileType,
   openDocument,
@@ -126,8 +127,43 @@ export default function FilesPage() {
   const [error, setError] = useState("");
   const [textPreview, setTextPreview] = useState<TextPreview | null>(null);
   const [download, setDownload] = useState<DownloadState | null>(null);
+  // t24：cwd 直达参数（会话详情"文件"按钮/向导第④步入口带会话目录进来）
+  const [cwdOverride, setCwdOverride] = useState("");
+  // t24：无工作区时的冷启动兜底（设备卡"文件"直达可能还没选过工作区）
+  const [autoSelectState, setAutoSelectState] = useState<"idle" | "trying" | "none">("idle");
 
-  const cwd = workspace?.directory ?? "";
+  useLoad((options) => {
+    const raw = options?.cwd ? decodeURIComponent(options.cwd) : "";
+    setCwdOverride(raw.startsWith("/") || raw.startsWith("~") ? raw : "");
+  });
+
+  const cwd = cwdOverride || workspace?.directory || "";
+
+  // 冷启动兜底：无直达参数且未选工作区 → 拉工作区列表选第一个（P1 入口找回）
+  useEffect(() => {
+    if (cwdOverride || workspace) return;
+    const conn = connectionManager.getConnection();
+    if (!conn) return;
+    let disposed = false;
+    setAutoSelectState("trying");
+    void (async () => {
+      try {
+        const result = await conn.fetchWorkspaces();
+        if (disposed) return;
+        if (result.workspaces.length > 0) {
+          workspaceStore.select(result.workspaces[0]);
+          setAutoSelectState("idle");
+        } else {
+          setAutoSelectState("none");
+        }
+      } catch {
+        if (!disposed) setAutoSelectState("none");
+      }
+    })();
+    return () => {
+      disposed = true;
+    };
+  }, [cwdOverride, workspace]);
 
   // t19：编辑器状态机 + 会话 + 文件订阅
   const [editState, setEditState] = useState<FileEditState>(initialFileEditState);
@@ -650,11 +686,18 @@ export default function FilesPage() {
           <Image className="icon icon-xl" src={iconUrl("project")} />
           <View className="empty-title">未选择工作区</View>
           <View className="empty-desc">
-            文件浏览基于当前工作区，先在 Agent 列表顶部选择一个工作区。
+            {autoSelectState === "none"
+              ? "设备上还没有项目工作区。用创建向导选一个设备文件夹即可注册。"
+              : "文件浏览基于当前工作区，正在检查设备上的工作区…"}
           </View>
-          <Button className="btn btn-mini" onClick={() => Taro.navigateBack()}>
-            返回选择
-          </Button>
+          {autoSelectState === "none" ? (
+            <Button
+              className="btn btn-mini"
+              onClick={() => void safeNavigateTo("/pages/create/index")}
+            >
+              去创建项目
+            </Button>
+          ) : null}
         </View>
       </View>
     );
@@ -696,7 +739,7 @@ export default function FilesPage() {
             &gt;_
           </View>
         </View>
-        <View className="faint files-ws">{workspace?.label ?? ""}</View>
+        <View className="faint files-ws num">{cwdOverride || workspace?.label || ""}</View>
       </View>
 
       {error ? <View className="error-inline">{error}</View> : null}

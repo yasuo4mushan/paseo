@@ -1248,8 +1248,28 @@ export class DaemonConnection {
   // t17：文件浏览 / 二进制读取 / 附件上传
   // ---------------------------------------------------------------------------
 
-  /** 列目录（file_explorer_request mode:"list"；排序：目录优先、名称不区分大小写）。 */
+  /**
+   * 列目录（file_explorer_request mode:"list"；排序：目录优先、名称不区分大小写）。
+   *
+   * t24 考古结论：cwd 并不限定在已注册工作区——daemon 侧 expandUserPath 接受任意
+   * 绝对路径或 "~"，path 只受"不得逃出 cwd"约束（assertWithinWorkspace）。
+   * folder-picker 固定 cwd="/"、path 传相对 trail，即可浏览整盘。
+   */
   async listDirectory(cwd: string, path: string, timeoutMs?: number): Promise<FileExplorerEntry[]> {
+    const result = await this.browseDirectory(cwd, path, timeoutMs);
+    return result.entries;
+  }
+
+  /**
+   * 列目录并返回归一化路径（t24 folder-picker 用）。
+   * 返回的 path 是相对所传 cwd 的归一化路径（cwd="/" 时即去头斜杠的绝对 trail，
+   * 如 "Users/xxx/projects"；path 传 "~" 时 daemon 展开 home 后同样归一化）。
+   */
+  async browseDirectory(
+    cwd: string,
+    path: string,
+    timeoutMs?: number,
+  ): Promise<{ path: string; entries: FileExplorerEntry[] }> {
     const response = await this.request<{ type: string; payload: unknown }>(
       { type: "file_explorer_request", cwd, path, mode: "list" },
       timeoutMs,
@@ -1258,7 +1278,10 @@ export class DaemonConnection {
     if (!parsed) throw new Error("目录列表解析失败");
     if (parsed.error) throw new Error(parsed.error);
     if (!parsed.directory) throw new Error("目录不可用");
-    return sortDirectoryEntries(parsed.directory.entries);
+    return {
+      path: parsed.directory.path,
+      entries: sortDirectoryEntries(parsed.directory.entries),
+    };
   }
 
   /**
