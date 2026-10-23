@@ -183,6 +183,13 @@ export interface HubAccountManager {
    * itself survives (the hub only revokes the account's other sessions).
    */
   changePassword(input: { oldPassword?: string; newPassword: string }): Promise<void>;
+  /**
+   * Rename the device this daemon registers as (t29 onboarding confirm step).
+   * Persists the name; when a device is already registered, unregisters it so
+   * the next tick re-registers under the new name instead of leaving a stale
+   * row under the old one. No-op when the trimmed name is unchanged.
+   */
+  setDeviceName(input: { name: string }): Promise<HubAccountStatus>;
   logout(): Promise<void>;
   start(): void;
   stop(): Promise<void>;
@@ -443,6 +450,32 @@ export function createHubAccountManager(
         newPassword: input.newPassword,
       });
       log?.info("Changed hub account password");
+    },
+
+    async setDeviceName(input) {
+      const nextName = input.name.trim();
+      if (!nextName) {
+        throw new HubApiError("Device name must not be empty", "hub.invalid_request");
+      }
+      if (nextName === (deviceName ?? os.hostname())) {
+        return this.status();
+      }
+      const previousName = deviceName ?? os.hostname();
+      deviceName = nextName;
+      await persistHub((hub) => ({ ...hub, deviceName: nextName }));
+      if (isConfigured()) {
+        // Re-register under the new name: drop the old hub row (best-effort)
+        // and force the next tick to call devices.register again.
+        generation += 1;
+        await unregisterDevice();
+        registered = false;
+        registeredOffer = null;
+        deviceId = null;
+        await persistHub((hub) => ({ ...hub, deviceId: undefined }));
+        scheduleTick(0);
+      }
+      log?.info({ from: previousName, to: nextName }, "Renamed registered device");
+      return this.status();
     },
 
     async logout() {

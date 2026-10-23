@@ -11,6 +11,8 @@ import {
   HubAccountRegisterResponseSchema,
   HubAccountStatusRequestSchema,
   HubAccountStatusResponseSchema,
+  HubDeviceNameSetRequestSchema,
+  HubDeviceNameSetResponseSchema,
   ServerInfoStatusPayloadSchema,
 } from "./messages.js";
 
@@ -178,6 +180,51 @@ describe("hub account RPC schemas", () => {
         payload: { requestId: "req-9" },
       }).payload.requestId,
     ).toBe("req-9");
+  });
+
+  test("parses device name set requests and responses (t29)", () => {
+    expect(
+      HubDeviceNameSetRequestSchema.parse({
+        type: "hub.device.name.set.request",
+        requestId: "req-10",
+        name: "mac-studio",
+      }),
+    ).toMatchObject({ type: "hub.device.name.set.request", name: "mac-studio" });
+
+    // name is required and cannot be empty.
+    expect(
+      HubDeviceNameSetRequestSchema.safeParse({
+        type: "hub.device.name.set.request",
+        requestId: "req-10b",
+        name: "",
+      }).success,
+    ).toBe(false);
+    expect(
+      HubDeviceNameSetRequestSchema.safeParse({
+        type: "hub.device.name.set.request",
+        requestId: "req-10c",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      HubDeviceNameSetResponseSchema.parse({
+        type: "hub.device.name.set.response",
+        payload: {
+          requestId: "req-11",
+          status: {
+            configured: true,
+            loggedIn: true,
+            baseUrl: "http://hub.example.cn",
+            phone: "13800138000",
+            deviceName: "renamed-mac",
+            deviceId: "dev-1",
+            registered: true,
+            relayEnabled: true,
+            lastError: null,
+          },
+        },
+      }).payload.status.deviceName,
+    ).toBe("renamed-mac");
   });
 
   test("server_info features accept the hubAccountRpc gate", () => {

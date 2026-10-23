@@ -1460,6 +1460,13 @@ export const HubAccountPasswordChangeRequestSchema = z.object({
   oldPassword: z.string().min(1).optional(),
   newPassword: z.string().min(1),
 });
+// t29 onboarding device-name confirm step: rename the device this daemon
+// registers as. Re-registers under the new name when already registered.
+export const HubDeviceNameSetRequestSchema = z.object({
+  type: z.literal("hub.device.name.set.request"),
+  requestId: z.string(),
+  name: z.string().min(1),
+});
 
 export const DiagnosticsRequestSchema = z.object({
   type: z.literal("diagnostics.request"),
@@ -3284,6 +3291,7 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   HubAccountRegisterRequestSchema,
   HubAccountLogoutRequestSchema,
   HubAccountPasswordChangeRequestSchema,
+  HubDeviceNameSetRequestSchema,
   DiagnosticsRequestSchema,
   PluginCatalogGetRequestSchema,
   PluginListRequestSchema,
@@ -5149,6 +5157,10 @@ export const HubAccountLogoutResponseSchema = z.object({
 export const HubAccountPasswordChangeResponseSchema = z.object({
   type: z.literal("hub.password.change.response"),
   payload: z.object({ requestId: z.string() }),
+});
+export const HubDeviceNameSetResponseSchema = z.object({
+  type: z.literal("hub.device.name.set.response"),
+  payload: z.object({ requestId: z.string(), status: HubAccountStatusSchema }),
 });
 
 export const DaemonGetPairingOfferResponseSchema = z.object({
@@ -7054,6 +7066,7 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   HubAccountRegisterResponseSchema,
   HubAccountLogoutResponseSchema,
   HubAccountPasswordChangeResponseSchema,
+  HubDeviceNameSetResponseSchema,
   DiagnosticsResponseSchema,
   GetDaemonConfigResponseMessageSchema,
   SetDaemonConfigResponseMessageSchema,

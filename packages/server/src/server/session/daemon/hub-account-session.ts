@@ -25,7 +25,8 @@ export type HubAccountRequestMessage = Extract<
       | "hub.login.request"
       | "hub.register.request"
       | "hub.logout.request"
-      | "hub.password.change.request";
+      | "hub.password.change.request"
+      | "hub.device.name.set.request";
   }
 >;
 
@@ -125,6 +126,14 @@ export class HubAccountSession {
           this.host.emit({
             type: "hub.password.change.response",
             payload: { requestId: msg.requestId },
+          });
+          return;
+        }
+        case "hub.device.name.set.request": {
+          const status = await this.hubAccount.setDeviceName({ name: msg.name });
+          this.host.emit({
+            type: "hub.device.name.set.response",
+            payload: { requestId: msg.requestId, status },
           });
           return;
         }

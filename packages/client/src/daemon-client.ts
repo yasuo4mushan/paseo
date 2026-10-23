@@ -5313,6 +5313,19 @@ export class DaemonClient {
     });
   }
 
+  /**
+   * Rename the device this daemon registers as (t29 onboarding confirm step).
+   * Re-registers under the new name when a registration already exists.
+   */
+  async setHubDeviceName(input: { name: string }, requestId?: string) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: { type: "hub.device.name.set.request", name: input.name },
+      responseType: "hub.device.name.set.response",
+    });
+  }
+
   async getDaemonPairingOffer(
     options?: DaemonPairingOfferOptions,
   ): Promise<DaemonPairingOfferPayload> {
