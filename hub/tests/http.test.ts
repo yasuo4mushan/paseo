@@ -70,7 +70,7 @@ describe("routing", () => {
   });
 });
 
-describe("rate limiting (auth.login / auth.register, 10 per IP per minute)", () => {
+describe("rate limiting (auth.login / auth.register / auth.wx-phone, 10 per IP per minute)", () => {
   let limited: TestHub;
 
   beforeAll(async () => {
@@ -84,7 +84,10 @@ describe("rate limiting (auth.login / auth.register, 10 per IP per minute)", () 
   it("blocks the 11th credentialed request with 429 rate_limited", async () => {
     let last: Awaited<ReturnType<typeof call>>;
     for (let i = 0; i < 11; i++) {
-      last = await call(limited.url, "auth.login", { username: "nobody", password: "wrongpass1" });
+      last = await call(limited.url, "auth.login", {
+        phone: "13800009999",
+        password: "wrongpass1",
+      });
     }
     expect(last!.status).toBe(429);
     expect(last!.json.error?.code).toBe("rate_limited");
@@ -97,7 +100,7 @@ describe("rate limiting (auth.login / auth.register, 10 per IP per minute)", () 
 
   it("sets a Retry-After header on 429", async () => {
     const res = await call(limited.url, "auth.login", {
-      username: "nobody",
+      phone: "13800009999",
       password: "wrongpass1",
     });
     expect(res.status).toBe(429);

@@ -12,6 +12,11 @@
  * - HUB_TRUST_PROXY     trust X-Forwarded-For from one reverse-proxy layer
  *                       (default false; enable behind nginx)
  * - HUB_LOG_LEVEL       debug|info|warn|error (default info)
+ * - HUB_WXA_APPID       WeChat mini-program AppID; auth.wx-phone is enabled
+ *                       only when BOTH this and HUB_WXA_SECRET are set
+ * - HUB_WXA_SECRET      WeChat mini-program AppSecret (server-side only)
+ * - HUB_HTTPS_PROXY     outbound HTTP proxy for WeChat API calls, e.g.
+ *                       http://127.0.0.1:7897 (CONNECT tunnel; optional)
  */
 
 import { randomBytes } from "node:crypto";
@@ -26,6 +31,16 @@ export interface HubConfig {
   tokenTtlMs: number;
   onlineTtlMs: number;
   trustProxy: boolean;
+  /** WeChat mini-program credentials; wx-phone login is on only when both are set. */
+  wxaAppid?: string;
+  wxaSecret?: string;
+  /** Outbound proxy for WeChat API calls (HUB_HTTPS_PROXY). */
+  httpsProxy?: string;
+}
+
+function optEnv(env: NodeJS.ProcessEnv, key: string): string | undefined {
+  const raw = env[key];
+  return raw !== undefined && raw !== "" ? raw : undefined;
 }
 
 function intEnv(env: NodeJS.ProcessEnv, key: string, fallback: number, min: number): number {
@@ -75,5 +90,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): HubConfig {
     tokenTtlMs: intEnv(env, "HUB_TOKEN_TTL_DAYS", 30, 1) * 24 * 60 * 60 * 1000,
     onlineTtlMs: intEnv(env, "HUB_ONLINE_TTL_MS", 60_000, 1000),
     trustProxy: boolEnv(env, "HUB_TRUST_PROXY", false),
+    wxaAppid: optEnv(env, "HUB_WXA_APPID"),
+    wxaSecret: optEnv(env, "HUB_WXA_SECRET"),
+    httpsProxy: optEnv(env, "HUB_HTTPS_PROXY"),
   };
 }
