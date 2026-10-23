@@ -2611,9 +2611,9 @@ export const fr: TranslationResources = {
         rowHint: "Scannez un QR code ou copiez un lien pour connecter votre téléphone à cet hôte",
       },
       account: {
-        signInTitle: "aaswitch account",
-        signInHint:
-          "Sign in to register this device with the aaswitch hub so the miniprogram can reach it",
+        signedOutTitle: "Not signed in",
+        signedOutHint: "Sign in or register from the first-run onboarding flow",
+        rerunOnboarding: "Restart onboarding",
         deviceName: "Device name",
         registration: "Device registration",
         registrationActive: "Registered — the hub lists this device",
@@ -2625,7 +2625,6 @@ export const fr: TranslationResources = {
         loading: "Loading account status...",
         fields: {
           phone: "Phone number",
-          phonePlaceholder: "Phone number",
           oldPassword: "Current password",
           oldPasswordHint:
             "Leave blank only for accounts created via WeChat login without a password",
@@ -2633,15 +2632,9 @@ export const fr: TranslationResources = {
           newPasswordPlaceholder: "At least 8 characters",
           newPasswordConfirm: "Confirm new password",
           passwordMismatch: "The new passwords do not match",
-          password: "Password",
-          passwordPlaceholder: "Password (at least 8 characters)",
           baseUrl: "Hub address",
-          deviceName: "Device name (optional)",
-          deviceNameHint: "Defaults to this machine's hostname",
         },
         actions: {
-          login: "Sign in",
-          register: "Create account",
           logout: "Sign out",
           changePassword: "Change password",
         },
