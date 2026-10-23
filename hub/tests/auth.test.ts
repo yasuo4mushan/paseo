@@ -22,8 +22,11 @@ describe("auth.register (phone)", () => {
     });
     expect(res.status).toBe(200);
     expect(res.json.ok).toBe(true);
-    const account = (res.json.data as { account: { id: string; phone: string; createdAt: string } })
-      .account;
+    const account = (
+      res.json.data as {
+        account: { id: string; phone: string; createdAt: string; passwordSet: boolean };
+      }
+    ).account;
     expect(account.id).toMatch(/^acc_/);
     expect(account.phone).toBe("13812345678");
     expect(account.createdAt).toBeTruthy();
