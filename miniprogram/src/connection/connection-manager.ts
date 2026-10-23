@@ -30,10 +30,12 @@ import { permissionStore } from "@/permission/permission-store";
 import { attentionStore } from "@/stores/attention-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { sessionStore } from "@/stores/session-store";
+import { devicePreferenceStore } from "@/stores/device-preference-store";
 
 const STORAGE_KEY = "paseo_mp_connection";
 const WORKSPACE_STORAGE_KEY = "paseo_mp_workspace";
 const LAST_AGENT_STORAGE_KEY = "paseo_mp_last_agent";
+const DEVICE_PREFS_STORAGE_KEY = "paseo_mp_device_prefs";
 
 export type StoredConnection =
   | { kind: "relay"; input: string; offer: RelayOffer }
@@ -106,6 +108,16 @@ class ConnectionManager {
       (value) => {
         if (value) Taro.setStorageSync(LAST_AGENT_STORAGE_KEY, value);
         else Taro.removeStorageSync(LAST_AGENT_STORAGE_KEY);
+      },
+    );
+    // t21：设备偏好（上次使用的设备按账号记忆 + composer 草稿按设备×会话暂存）
+    devicePreferenceStore.installStorage(
+      () => {
+        const raw = Taro.getStorageSync<string>(DEVICE_PREFS_STORAGE_KEY);
+        return raw || null;
+      },
+      (raw) => {
+        Taro.setStorageSync(DEVICE_PREFS_STORAGE_KEY, raw);
       },
     );
   }

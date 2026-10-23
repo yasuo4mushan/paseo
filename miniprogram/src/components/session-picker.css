@@ -1,0 +1,138 @@
+/* 会话选择顶部弹窗（t21，t20 抽屉迁移）：筛选/列表/新建（tokens 深浅双轨）。 */
+
+.sp-filters {
+  display: flex;
+  gap: 12rpx;
+  padding: 4rpx 24rpx 12rpx;
+}
+
+.sp-chip {
+  font-size: 22rpx;
+  color: var(--text-2);
+  background: var(--fill);
+  border-radius: var(--radius-round);
+  padding: 8rpx 18rpx;
+}
+
+.sp-chip-active {
+  background: var(--brand-fade);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.sp-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 48vh;
+  padding: 8rpx 16rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.sp-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 16rpx;
+  border-radius: var(--radius);
+}
+
+.sp-row-active {
+  background: var(--brand-fade);
+}
+
+.sp-row > .icon {
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.sp-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.sp-name {
+  font-size: 28rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-row-active .sp-name {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.sp-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+}
+
+.sp-sub {
+  font-size: 22rpx;
+  color: var(--text-2);
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-labels {
+  font-size: 20rpx;
+  color: var(--text-3);
+  margin-top: 2rpx;
+}
+
+.sp-row .pill {
+  flex-shrink: 0;
+  margin-left: 8rpx;
+}
+
+.sp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 72rpx 0;
+}
+
+.sp-empty-text {
+  font-size: 24rpx;
+  color: var(--text-3);
+  margin-top: 16rpx;
+}
+
+/* 底部新建会话快捷入口 */
+
+.sp-new {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  background: var(--brand-fade);
+  border-radius: var(--radius);
+  padding: 16rpx 24rpx;
+}
+
+.sp-new-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.sp-new-sub {
+  flex: 1;
+  font-size: 20rpx;
+  color: var(--text-3);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

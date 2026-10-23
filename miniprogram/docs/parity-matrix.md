@@ -8,6 +8,10 @@ t20 结构性重构：三 tab 导航（设备 | **对话** | 设置），对话�
 pill（Agent 框架/模型/thinking effort/审批模式），右侧会话抽屉承载全部会话管理；
 全端线条图标体系（30 图标，emoji 归零）。
 
+t21 对话页设备选择重构：设备选择前移到对话页——进入自动连默认设备（上次使用
+设备 > 首个在线，按账号记忆），顶栏设备按钮 + 顶部弹窗完成切换/添加/管理/刷新，
+会话抽屉改为顶部下拉弹窗；设备页降级为管理页。
+
 图例：
 
 - ✅tNN —— 已在批次 NN 交付并通过真实环境自动化验收
@@ -16,59 +20,63 @@ pill（Agent 框架/模型/thinking effort/审批模式），右侧会话抽屉�
 - ⏸ —— 适配项：依赖小程序平台能力，单独评估（非照搬实现）
 - ➖ —— 不适用：官方端也仅限桌面/Electron 或浏览器形态
 
-状态基线：develop-xdb @ t19 终审 + t20 对话主页重构（worktree `t20-miniprogram-home`）。
+状态基线：develop-xdb @ t20 终审 + t21 对话页设备选择重构（worktree `t21-chat-device-ux`）。
 
-## 0. 对话为中心的导航与 composer（t20 重构）
+## 0. 对话为中心的导航与 composer（t20 重构，t21 设备选择前移）
 
-| 功能要素 | app 参照 | 小程序状态 | 说明 |
-| --- | --- | --- | --- |
-| 三 tab 导航（对话为中心） | 底部 tab + session rail | ✅t20 | 设备 \| 对话（中间，默认启动页）\| 设置；设备页连上设备 switchTab 直达对话主页（替代旧 navigateTo，兼修 navigateTo:fail timeout） |
-| 豆包式直达（进入即上次活跃会话） | startup restore | ✅t20 | sessionStore 持久化活跃会话（storage 按连接），失效（归档/删除）回退最新未归档会话；无会话时空态 + 快捷输入框 |
-| 会话展开栏（session rail 移动版） | `session-rail` | ✅t20 | 右滑/顶部按钮呼出右侧抽屉：全部会话（进行中/全部/需注意/归档筛选）、当前高亮、新建入口（点按快捷新对话；长按高级表单）；长按行归档/恢复/删除/详情管理 |
-| composer 四选择 pill | `composer/agent-controls` | ✅t20（移动简化版） | Agent 框架（list_available_providers）/ 模型（list_provider_models，含 thinkingOptions）/ thinking effort（所选模型档位；无档位隐藏）/ 审批模式（list_provider_modes）；状态机 `utils/composer-config` 单测覆盖 |
-| 会话中配置切换 | set_agent_mode/model/thinking | ✅t20 | 会话态下 model/mode/thinking 改动即发 set_agent_model / set_agent_mode / set_agent_thinking（AgentActionResponsePayload accepted）；provider 会话中锁定（协议无 per-agent 切换） |
-| 发送即创建 | composer draft | ✅t20 | 无活跃会话时发送 = create_agent（config 带 model/modeId/thinkingOptionId + workspace cwd）；需要已选工作区，未选时拉起选择器 |
-| 线条图标体系 | design tokens | ✅t20 | 30 图标 1.5px 线条风（scripts/gen-icons.mjs 纯 Node 生成，81x81@3x 抗锯齿）+ tabBar 三图标重制；中性灰单档适配深浅主题；emoji 图标归零（icon-assets 测试含回归门） |
-| 导航健壮性 | - | ✅t20 | utils/navigation：串行队列 + 连点去重 + 深栈（>=9）自动 redirectTo 降级；自动化回归步覆盖双击连接与 8 层深栈 |
+| 功能要素                         | app 参照                      | 小程序状态            | 说明                                                                                                                                                                                                                                                     |
+| -------------------------------- | ----------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 三 tab 导航（对话为中心）        | 底部 tab + session rail       | ✅t20                 | 设备 \| 对话（中间，默认启动页）\| 设置；设备页连上设备 switchTab 直达对话主页（替代旧 navigateTo，兼修 navigateTo:fail timeout）                                                                                                                        |
+| 自动默认设备（进入即连）         | startup restore + hosts       | ✅t21                 | 进入对话页未连接时静默后台连接：上次使用设备（device-preference-store，按账号隔离）→ 首个在线设备（hub devices.list）；无在线设备显示引导（去设备页/手动配对/刷新）；选择策略纯函数单测覆盖                                                              |
+| 顶栏设备按钮 + 顶部设备弹窗      | `hosts/` 列表                 | ✅t21                 | 顶栏常显设备名 + 在线状态点，点击弹顶部半屏弹窗（TopSheet）：设备列表（在线点/心跳时间/当前高亮"已连接"/离线置灰）、点按切换连接（断旧连新 + 会话目录刷新）、底部快捷（添加设备/管理设备/刷新）；对话页期间 20s 轮询 devices.list 刷新状态（切后台暂停） |
+| 掉线横幅（一键恢复）             | connection banner             | ✅t21                 | 当前设备 hub 心跳掉线或连接断开 → 顶部横幅（区分"已离线"/"已断开"）+ 一键重连（设备在线直连）/切换设备（弹设备弹窗）；状态机 `utils/chat-device-state` 单测覆盖                                                                                          |
+| 豆包式直达（进入即上次活跃会话） | startup restore               | ✅t20                 | sessionStore 持久化活跃会话（storage 按连接），失效（归档/删除）回退最新未归档会话；无会话时空态 + 快捷输入框                                                                                                                                            |
+| 会话选择（顶部下拉弹窗）         | session rail                  | ✅t21（t20 抽屉迁移） | t20 右侧抽屉改为顶部弹窗（SessionPickerSheet，数据/筛选沿用 sessionStore）：进行中/需注意/归档筛选、当前高亮、长按归档/恢复/删除/详情管理、新建（点按快捷新对话；长按高级表单）；右滑手势保留                                                            |
+| composer 四选择 pill             | `composer/agent-controls`     | ✅t20（移动简化版）   | Agent 框架（list_available_providers）/ 模型（list_provider_models，含 thinkingOptions）/ thinking effort（所选模型档位；无档位隐藏）/ 审批模式（list_provider_modes）；状态机 `utils/composer-config` 单测覆盖                                          |
+| 会话中配置切换                   | set_agent_mode/model/thinking | ✅t20                 | 会话态下 model/mode/thinking 改动即发 set_agent_model / set_agent_mode / set_agent_thinking（AgentActionResponsePayload accepted）；provider 会话中锁定（协议无 per-agent 切换）                                                                         |
+| 发送即创建                       | composer draft                | ✅t20                 | 无活跃会话时发送 = create_agent（config 带 model/modeId/thinkingOptionId + workspace cwd）；需要已选工作区，未选时拉起选择器                                                                                                                             |
+| composer 草稿暂存                | composer draft                | ✅t21                 | 未发送文本按「设备×会话」键暂存（LRU 上限 24），切换设备/会话回来还原，发送成功即清；单测覆盖                                                                                                                                                            |
+| 线条图标体系                     | design tokens                 | ✅t20                 | 30 图标 1.5px 线条风（scripts/gen-icons.mjs 纯 Node 生成，81x81@3x 抗锯齿）+ tabBar 三图标重制；中性灰单档适配深浅主题；emoji 图标归零（icon-assets 测试含回归门）；t21 增 refresh                                                                       |
+| 导航健壮性                       | -                             | ✅t20                 | utils/navigation：串行队列 + 连点去重 + 深栈（>=9）自动 redirectTo 降级；自动化回归步覆盖双击连接与 8 层深栈                                                                                                                                             |
 
 ## 1. 账号与设备（Hub）
 
-| 功能要素                           | app 参照                             | 小程序状态 | 说明                                        |
-| ---------------------------------- | ------------------------------------ | ---------- | ------------------------------------------- |
-| 账号登录/登出                      | `screens/settings/host-account-page` | ✅t15      | 用户名密码 → hub auth.login，token 本机保存 |
-| 设备列表（在线/离线）              | `hosts/`                             | ✅t15      | 60s 心跳窗口判离线，绿/灰点胶囊             |
-| 设备连接（relay E2EE）             | `packages/client` relay transport    | ✅t15      | 二进制密文协商 + base64 兜底                |
-| 手动配对（relay:// 粘贴/扫码）     | `screens/settings` 高级              | ✅t15      | 扫码 + 粘贴双入口                           |
-| 设备注册/心跳保活（daemon 侧上报） | 桌面 daemon 自动                     | ➖         | 由桌面 daemon 承担，小程序仅消费            |
-| 多设备切换/断开                    | hosts 列表                           | ✅t18      | 设置页新增"切换设备"入口直达设备 tab        |
+| 功能要素                           | app 参照                             | 小程序状态 | 说明                                                                                                                                            |
+| ---------------------------------- | ------------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 账号登录/登出                      | `screens/settings/host-account-page` | ✅t15      | 用户名密码 → hub auth.login，token 本机保存                                                                                                     |
+| 设备列表（在线/离线）              | `hosts/`                             | ✅t15      | 60s 心跳窗口判离线，绿/灰点胶囊                                                                                                                 |
+| 设备连接（relay E2EE）             | `packages/client` relay transport    | ✅t15      | 二进制密文协商 + base64 兜底                                                                                                                    |
+| 手动配对（relay:// 粘贴/扫码）     | `screens/settings` 高级              | ✅t15      | 扫码 + 粘贴双入口                                                                                                                               |
+| 设备注册/心跳保活（daemon 侧上报） | 桌面 daemon 自动                     | ➖         | 由桌面 daemon 承担，小程序仅消费                                                                                                                |
+| 多设备切换/断开                    | hosts 列表                           | ✅t18/t21  | t21：日常切换在对话页顶栏弹窗（断旧连新 + 目录刷新）；设备 tab 降级为管理页（文案强调管理，保留连接/配对/下拉刷新）；设置页入口同步改"管理设备" |
 
 ## 2. 工作区与项目
 
-| 功能要素                              | app 参照                         | 小程序状态      | 说明                                                        |
-| ------------------------------------- | -------------------------------- | --------------- | ----------------------------------------------------------- |
-| 工作区选择器（项目分组/状态）         | `screens/new-workspace-picker-*` | ✅t16           | fetch_workspaces，按项目分组 + 状态点                       |
-| 选中持久化（按设备隔离）              | workspace store                  | ✅t16           | Taro storage，断开清理                                      |
+| 功能要素                              | app 参照                         | 小程序状态      | 说明                                                                                                                                                                                                |
+| ------------------------------------- | -------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 工作区选择器（项目分组/状态）         | `screens/new-workspace-picker-*` | ✅t16           | fetch_workspaces，按项目分组 + 状态点                                                                                                                                                               |
+| 选中持久化（按设备隔离）              | workspace store                  | ✅t16           | Taro storage，断开清理                                                                                                                                                                              |
 | 新建工作区（git clone/worktree/fork） | `screens/new-workspace-screen`   | ✅t18（最小）   | 本地目录注册（open_project）+ GitHub clone（github.clone）；worktree/fork 隔离建仓未做——`create_paseo_worktree_request`/fork 链路需独立建页，且 agent 侧 worktree 隔离（见 §3）已覆盖主场景 → 🔄t20 |
-| 工作区状态轮询/attention              | workspace header                 | ✅t16（列表态） | 状态桶展示                                                  |
-| 项目设置/工作区归档                   | `project-settings-screen`        | 🔄t20（未做）   | 本批未做：低频管理面，需 worktree 列表/归档 RPC（paseo_worktree_archive）+ 项目设置页；留后续批次 |
+| 工作区状态轮询/attention              | workspace header                 | ✅t16（列表态） | 状态桶展示                                                                                                                                                                                          |
+| 项目设置/工作区归档                   | `project-settings-screen`        | 🔄t20（未做）   | 本批未做：低频管理面，需 worktree 列表/归档 RPC（paseo_worktree_archive）+ 项目设置页；留后续批次                                                                                                   |
 
 ## 3. Agent 会话
 
-| 功能要素                                           | app 参照                                 | 小程序状态    | 说明                                        |
-| -------------------------------------------------- | ---------------------------------------- | ------------- | ------------------------------------------- |
-| Agent 列表（状态/provider/attention）              | `components/agent-list`                  | ✅t15/t18     | t18：agent_update 订阅修复（fetch_agents subscribe）+ 归档/需注意/全部筛选 |
-| 创建 Agent（provider/model/mode/prompt）           | `composer` + create flow                 | ✅t16/t19/t20 | 真实 provider 目录；t19：worktree 隔离选项（create_agent worktree branch-off，开关+新分支名）；t20：thinking effort（模型目录 thinkingOptions，默认档联动）+ 对话主页发送即创建（见 §0） |
-| 时间线（user/assistant/reasoning/tool/todo/error） | `agent-stream/`                          | ✅t15         | 气泡体系 + seq 去重 + 乐观追加              |
+| 功能要素                                           | app 参照                                 | 小程序状态    | 说明                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Agent 列表（状态/provider/attention）              | `components/agent-list`                  | ✅t15/t18     | t18：agent_update 订阅修复（fetch_agents subscribe）+ 归档/需注意/全部筛选                                                                                                                                                                                                           |
+| 创建 Agent（provider/model/mode/prompt）           | `composer` + create flow                 | ✅t16/t19/t20 | 真实 provider 目录；t19：worktree 隔离选项（create_agent worktree branch-off，开关+新分支名）；t20：thinking effort（模型目录 thinkingOptions，默认档联动）+ 对话主页发送即创建（见 §0）                                                                                             |
+| 时间线（user/assistant/reasoning/tool/todo/error） | `agent-stream/`                          | ✅t15         | 气泡体系 + seq 去重 + 乐观追加                                                                                                                                                                                                                                                       |
 | Markdown 渲染（代码块/表格/链接）                  | `markdown-renderer`                      | ✅t19         | 自写轻量渲染器（block/inline 两级 AST→View，无 eval）：标题/有序无序列表（两层）/引用/GFM 表格/分隔线/代码围栏（等宽+横向滚动+复制）/行内码/粗斜删/链接（复制+浏览器打开提示）。对照 app 原生引擎的简化：行内标记不嵌套、无 mermaid/数学/HTML/tasklist、无流式分块渲染——矩阵终审接受 |
-| 发消息（steer/queue 行为）                         | composer submit                          | ✅t15/t19/t20 | t19：运行中发送行为 toggle（steer 插入 / interrupt 先中断），activeTurnBehavior 随消息声明；t20：composer 常驻对话主页（附件/斜杠命令随迁） |
-| 中断 / 删除 Agent                                  | `agent-controls`                         | ✅t16         | cancel_agent / delete_agent                 |
-| 归档 / 恢复                                        | agent archive                            | ✅t18         | archive_agent / refresh_agent（unarchive）  |
-| Subagents 轨道                                     | `subagents/`                             | ✅t19         | provider_subagents.list + update 推送（upsert/remove 实时维护）；标题/描述/副题/状态四态点。子代理时间线详情（timeline.get + 独立视图）未做 → 低频，🔄t20 备注 |
-| Agent 标签/重命名/资料卡                           | `agent-profiles` `agent-labels`          | ✅t18/t19     | 标签（t18）；重命名（t19：update_agent name，导航栏同步）。资料卡（profile 详情页）未做 → 列表态信息已覆盖，价值低 |
-| 命令面板 / 斜杠命令                                | `client-slash-commands` `command-center` | ✅t19         | composer 输入 "/" 触发 list_commands 目录（前缀过滤 + 点按填充）；真实 daemon 现网该 agent 目录为空（RPC 闭环已验证，空目录面板不弹属预期）。全局命令面板（command-center 搜索/最近）未做 → 🔄t20 |
-| 会话导入                                           | chat settings                            | ✅t18         | fetch_recent_provider_sessions + import_agent（创建页"导入"tab） |
-| 会话导出                                           | chat settings                            | ✅t19         | 时间线 → markdown → 剪贴板（与官方 app 的剪贴板导出同路径；小程序无文件系统落盘诉求） |
-| 上下文窗口/压缩指示                                | `context-window-*`                       | ✅t19         | lastUsage（contextWindowUsed/MaxTokens）百分比计量条（≥80% 变红），agent_update 全量推送驱动；todo/compaction 气泡 t15 已有 |
+| 发消息（steer/queue 行为）                         | composer submit                          | ✅t15/t19/t20 | t19：运行中发送行为 toggle（steer 插入 / interrupt 先中断），activeTurnBehavior 随消息声明；t20：composer 常驻对话主页（附件/斜杠命令随迁）                                                                                                                                          |
+| 中断 / 删除 Agent                                  | `agent-controls`                         | ✅t16         | cancel_agent / delete_agent                                                                                                                                                                                                                                                          |
+| 归档 / 恢复                                        | agent archive                            | ✅t18         | archive_agent / refresh_agent（unarchive）                                                                                                                                                                                                                                           |
+| Subagents 轨道                                     | `subagents/`                             | ✅t19         | provider_subagents.list + update 推送（upsert/remove 实时维护）；标题/描述/副题/状态四态点。子代理时间线详情（timeline.get + 独立视图）未做 → 低频，🔄t20 备注                                                                                                                       |
+| Agent 标签/重命名/资料卡                           | `agent-profiles` `agent-labels`          | ✅t18/t19     | 标签（t18）；重命名（t19：update_agent name，导航栏同步）。资料卡（profile 详情页）未做 → 列表态信息已覆盖，价值低                                                                                                                                                                   |
+| 命令面板 / 斜杠命令                                | `client-slash-commands` `command-center` | ✅t19         | composer 输入 "/" 触发 list_commands 目录（前缀过滤 + 点按填充）；真实 daemon 现网该 agent 目录为空（RPC 闭环已验证，空目录面板不弹属预期）。全局命令面板（command-center 搜索/最近）未做 → 🔄t20                                                                                    |
+| 会话导入                                           | chat settings                            | ✅t18         | fetch_recent_provider_sessions + import_agent（创建页"导入"tab）                                                                                                                                                                                                                     |
+| 会话导出                                           | chat settings                            | ✅t19         | 时间线 → markdown → 剪贴板（与官方 app 的剪贴板导出同路径；小程序无文件系统落盘诉求）                                                                                                                                                                                                |
+| 上下文窗口/压缩指示                                | `context-window-*`                       | ✅t19         | lastUsage（contextWindowUsed/MaxTokens）百分比计量条（≥80% 变红），agent_update 全量推送驱动；todo/compaction 气泡 t15 已有                                                                                                                                                          |
 
 ## 4. 权限
 
@@ -80,82 +88,85 @@ pill（Agent 框架/模型/thinking effort/审批模式），右侧会话抽屉�
 
 ## 5. 文件体系（t17 建立，t19 补写回/条目/订阅/diff）
 
-| 功能要素                                     | app 参照                                | 小程序状态 | 说明                                                                  |
-| -------------------------------------------- | --------------------------------------- | ---------- | --------------------------------------------------------------------- |
-| 文件浏览器（目录树/返回/图标/大小/时间）     | `file-explorer/` + `panels/files-panel` | ✅t17      | file_explorer_request mode:list，目录优先排序                         |
-| 文本/代码预览（大文件截断提示）              | file panel preview                      | ✅t17      | maxBytes 512KB + 64K 字符渲染上限                                     |
-| 图片预览（缩略 + 全屏）                      | attachment lightbox                     | ✅t17      | 二进制帧读取 → 本地落地 → wx.previewImage                             |
-| PDF/Office 预览                              | 下载后系统打开                          | ✅t17      | 下载 → wx.openDocument（pdf/doc(x)/xls(x)/ppt(x)）                    |
-| 下载保存到手机                               | 下载管理                                | ✅t17      | USER_DATA_PATH/paseo-files + 进度条 + 转发另存（wx.shareFileMessage） |
-| 文件订阅变更（fs.file.subscribe）            | file watch                              | ✅t19      | 编辑器打开期间订阅 → fs.file.update 推送 → "远端已修改"横幅（保存冲突检测兜底） |
+| 功能要素                                     | app 参照                                | 小程序状态 | 说明                                                                                                                    |
+| -------------------------------------------- | --------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 文件浏览器（目录树/返回/图标/大小/时间）     | `file-explorer/` + `panels/files-panel` | ✅t17      | file_explorer_request mode:list，目录优先排序                                                                           |
+| 文本/代码预览（大文件截断提示）              | file panel preview                      | ✅t17      | maxBytes 512KB + 64K 字符渲染上限                                                                                       |
+| 图片预览（缩略 + 全屏）                      | attachment lightbox                     | ✅t17      | 二进制帧读取 → 本地落地 → wx.previewImage                                                                               |
+| PDF/Office 预览                              | 下载后系统打开                          | ✅t17      | 下载 → wx.openDocument（pdf/doc(x)/xls(x)/ppt(x)）                                                                      |
+| 下载保存到手机                               | 下载管理                                | ✅t17      | USER_DATA_PATH/paseo-files + 进度条 + 转发另存（wx.shareFileMessage）                                                   |
+| 文件订阅变更（fs.file.subscribe）            | file watch                              | ✅t19      | 编辑器打开期间订阅 → fs.file.update 推送 → "远端已修改"横幅（保存冲突检测兜底）                                         |
 | 文件编辑/写回（fs.file.write）               | file editor                             | ✅t19      | 预览进编辑器（textarea）；expectedModifiedAt/revision 冲突协议 + 三选处理（重新加载/覆盖远端/继续编辑），状态机单测覆盖 |
-| 新建/重命名/删除条目（fs.entry.\*）          | explorer 操作                           | ✅t19      | 头部"＋"新建文件/文件夹（可输入弹窗）；长按重命名/下载/删除（删除带确认） |
-| 附件上传（选图/选文件 → uploaded_file）      | `attachments/` + composer               | ✅t17      | file.upload.request + FileBegin/Chunk/End 二进制帧                    |
-| 附件随消息发送                               | composer submit                         | ✅t17      | send_agent_message attachments + messageId 幂等                       |
-| 时间线附件卡片（图片缩略/文件名+大小）       | `components/message` attachment pill    | ✅t17      | 本地台账 clientMessageId 回配对 + 同文本兜底                          |
-| 工作区文件拖入对话                           | `attachments/workspace-file-drag`       | ➖         | 小程序无拖拽；以"文件页下载后转发/上传"替代                           |
-| 文件 diff 浏览（checkout.commits.file_diff） | diff panel                              | ✅t19      | "改动"页：commits 列表（短 sha/作者/已推送徽标）→ 展开文件（+−统计/状态）→ 逐行着色只读 diff（横向滚动，hunk 头） |
+| 新建/重命名/删除条目（fs.entry.\*）          | explorer 操作                           | ✅t19      | 头部"＋"新建文件/文件夹（可输入弹窗）；长按重命名/下载/删除（删除带确认）                                               |
+| 附件上传（选图/选文件 → uploaded_file）      | `attachments/` + composer               | ✅t17      | file.upload.request + FileBegin/Chunk/End 二进制帧                                                                      |
+| 附件随消息发送                               | composer submit                         | ✅t17      | send_agent_message attachments + messageId 幂等                                                                         |
+| 时间线附件卡片（图片缩略/文件名+大小）       | `components/message` attachment pill    | ✅t17      | 本地台账 clientMessageId 回配对 + 同文本兜底                                                                            |
+| 工作区文件拖入对话                           | `attachments/workspace-file-drag`       | ➖         | 小程序无拖拽；以"文件页下载后转发/上传"替代                                                                             |
+| 文件 diff 浏览（checkout.commits.file_diff） | diff panel                              | ✅t19      | "改动"页：commits 列表（短 sha/作者/已推送徽标）→ 展开文件（+−统计/状态）→ 逐行着色只读 diff（横向滚动，hunk 头）       |
 
 ## 6. 终端与浏览器面板
 
-| 功能要素                          | app 参照                     | 小程序状态      | 说明                                                                                          |
-| --------------------------------- | ---------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| 功能要素                          | app 参照                     | 小程序状态          | 说明                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------- | ---------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 工作区终端（PTY 流）              | `terminal/` + terminal-panel | ✅t19/t20（适配版） | subscribe_terminal（visible-snapshot 回放）→ TerminalStream 帧（Restore/Output/Snapshot）→ ANSI 剥离纯文本行 + 行输入（terminal_input）。对照 app xterm 的简化：无 ANSI 着色/光标定位/键级输入/resize；工作区终端（create_terminal）+ 脚本输出两个入口；t20：create_terminal 打开的终端退出时 kill_terminal 清 PTY（t19 遗留） |
-| 浏览器面板（webview/Browser Use） | `desktop/browser`            | ➖              | Electron 专属（webviewTag）                                                                   |
-| 服务代理公网 URL                  | `service-proxy`              | ✅t18           | 脚本页展示 publicProxyUrl 主机；不承载反代                                                    |
+| 浏览器面板（webview/Browser Use） | `desktop/browser`            | ➖                  | Electron 专属（webviewTag）                                                                                                                                                                                                                                                                                                    |
+| 服务代理公网 URL                  | `service-proxy`              | ✅t18               | 脚本页展示 publicProxyUrl 主机；不承载反代                                                                                                                                                                                                                                                                                     |
 
 ## 7. 定时任务与脚本
 
-| 功能要素               | app 参照                                | 小程序状态 | 说明                                                       |
-| ---------------------- | --------------------------------------- | ---------- | ---------------------------------------------------------- |
+| 功能要素               | app 参照                                | 小程序状态 | 说明                                                                                                                           |
+| ---------------------- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | 定时任务列表/创建/启停 | `screens/schedules-screen` `schedules/` | ✅t18      | schedule/list/create/pause/resume/delete/run-once/logs；cron 预设 + 自定义（客户端 5 字段校验）；目标可选已有 agent 或每次新建 |
-| 工作区脚本运行         | workspace scripts                       | ✅t18      | workspace.script.list/start/stop；生命周期/健康状态展示    |
-| 脚本输出时间线         | scripts panel                           | ✅t19      | terminalId → "输出"按钮 → 终端页（同 §6 适配版终端流）     |
+| 工作区脚本运行         | workspace scripts                       | ✅t18      | workspace.script.list/start/stop；生命周期/健康状态展示                                                                        |
+| 脚本输出时间线         | scripts panel                           | ✅t19      | terminalId → "输出"按钮 → 终端页（同 §6 适配版终端流）                                                                         |
 
 ## 8. 通知与提醒
 
-| 功能要素                    | app 参照               | 小程序状态    | 说明                                          |
-| --------------------------- | ---------------------- | ------------- | --------------------------------------------- |
-| attention 红点（列表/详情） | attention dot          | ✅t15/t18     | 列表红点 + 高亮卡片                          |
+| 功能要素                    | app 参照               | 小程序状态    | 说明                                                                                                                               |
+| --------------------------- | ---------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| attention 红点（列表/详情） | attention dot          | ✅t15/t18     | 列表红点 + 高亮卡片                                                                                                                |
 | attention 实时提醒          | `push-notifications/`  | ✅t18（前台） | agent_attention_required 推送（legacy 免订阅）→ tabBar 徽标（设备 tab 计数）+ wx.vibrateShort（可关）；后台推送订阅消息 ⏸ 模板审批 |
-| 推送通知注册                | `push-notifications/`  | ⏸            | 微信订阅消息需模板审批，单独评估               |
-| 通知设置                    | settings notifications | ✅t18（振动） | 订阅消息设置 ⏸                                |
+| 推送通知注册                | `push-notifications/`  | ⏸             | 微信订阅消息需模板审批，单独评估                                                                                                   |
+| 通知设置                    | settings notifications | ✅t18（振动） | 订阅消息设置 ⏸                                                                                                                     |
 
 ## 9. 设置与外观
 
-| 功能要素                           | app 参照              | 小程序状态    | 说明                                       |
-| ---------------------------------- | --------------------- | ------------- | ------------------------------------------ |
-| 账号/设备连接信息                  | settings host         | ✅t15         |                                            |
-| daemon 状态（版本/relay 端点）     | daemon status         | ✅t15         | daemon.get_status                          |
-| 深色模式                           | appearance            | ✅t15/t18     | t18：三档主题（跟随系统/浅色/深色）——页面 tokens 双轨覆盖 + 导航/tabBar wx API 显式着色 |
-| 语言/i18n                          | `i18n/`               | ✅t15（中文） | 多语言未排期（t18 砍尾项）                 |
+| 功能要素                           | app 参照              | 小程序状态    | 说明                                                                                           |
+| ---------------------------------- | --------------------- | ------------- | ---------------------------------------------------------------------------------------------- |
+| 账号/设备连接信息                  | settings host         | ✅t15         |                                                                                                |
+| daemon 状态（版本/relay 端点）     | daemon status         | ✅t15         | daemon.get_status                                                                              |
+| 深色模式                           | appearance            | ✅t15/t18     | t18：三档主题（跟随系统/浅色/深色）——页面 tokens 双轨覆盖 + 导航/tabBar wx API 显式着色        |
+| 语言/i18n                          | `i18n/`               | ✅t15（中文） | 多语言未排期（t18 砍尾项）                                                                     |
 | 集成（forge/editor/browser tools） | settings integrations | 🔄t20（未做） | 本批未做（t20 聚焦对话主页重构，管理面批次顺延）；providers snapshot/mcp 配置 RPC 族需整组考古 |
-| 关于/诊断                          | settings              | ✅t15（基础） | 版本/连接信息展示；诊断导出未做 → 错误信息已就地展示，价值低，归入 t20 集成批次顺带 |
+| 关于/诊断                          | settings              | ✅t15（基础） | 版本/连接信息展示；诊断导出未做 → 错误信息已就地展示，价值低，归入 t20 集成批次顺带            |
 
 ## 10. 其他平台面
 
-| 功能要素                       | app 参照              | 小程序状态          | 说明                                        |
-| ------------------------------ | --------------------- | ------------------- | ------------------------------------------- |
-| 语音输入/听写                  | `audio/` `dictation/` | ⏸                   | wx 录音 API 可行，转写链路单独评估          |
-| 图片消息（base64 images 直发） | composer images       | ✅t17（经附件通道） | 小程序统一走 uploaded_file 附件（协议等价） |
-| 插件/原生面                    | `plugins/`            | ➖                   | 桌面端专属                                  |
-| MCP 服务器管理                 | settings mcp          | 🔄t20（未做）       | 本批未做；mcp.* RPC 族未考古；管理面低频，与集成设置合并批次 |
+| 功能要素                       | app 参照              | 小程序状态          | 说明                                                          |
+| ------------------------------ | --------------------- | ------------------- | ------------------------------------------------------------- |
+| 语音输入/听写                  | `audio/` `dictation/` | ⏸                   | wx 录音 API 可行，转写链路单独评估                            |
+| 图片消息（base64 images 直发） | composer images       | ✅t17（经附件通道） | 小程序统一走 uploaded_file 附件（协议等价）                   |
+| 插件/原生面                    | `plugins/`            | ➖                  | 桌面端专属                                                    |
+| MCP 服务器管理                 | settings mcp          | 🔄t20（未做）       | 本批未做；mcp.\* RPC 族未考古；管理面低频，与集成设置合并批次 |
 
-## 覆盖统计（t20 终审）
+## 覆盖统计（t21 终审）
 
-按上表逐行计（共 69 行）：
+按上表逐行计（共 73 行）：
 
-- ✅ 已覆盖 **59** 项（其中 t20 新增 8 项：三 tab 对话导航、豆包式直达、会话抽屉、composer 四 pill、会话中配置切换（set_agent_*）、发送即创建、线条图标体系、导航健壮性；另有 thinking effort 创建表单、kill_terminal、深色适配新页面并入既有行）
-- 🔄t20 待做 **3** 项（本批未做，管理面批次顺延）：项目设置/工作区归档、集成设置+诊断导出（RPC 族整组考古）、MCP 服务器管理（同前）；另 t19 遗留备注：子代理时间线详情、全局命令面板
+- ✅ 已覆盖 **63** 项（t21 新增 4 项：自动默认设备、顶栏设备按钮+顶部设备弹窗、掉线横幅、composer 草稿暂存；会话抽屉行迁移为顶部弹窗并入 t21，多设备切换行并入 t21；t20 新增 8 项：三 tab 对话导航、豆包式直达、会话抽屉、composer 四 pill、会话中配置切换（set*agent*\*）、发送即创建、线条图标体系、导航健壮性）
+- 🔄t20 待做 **3** 项（管理面批次顺延）：项目设置/工作区归档、集成设置+诊断导出（RPC 族整组考古）、MCP 服务器管理（同前）；另 t19 遗留备注：子代理时间线详情、全局命令面板
 - ⏸ 适配评估 **2** 项：后台推送订阅消息（微信模板审批门槛）、语音听写（转写链路）
 - ➖ 不适用 **4** 项：daemon 侧设备注册（桌面承担）、工作区文件拖拽（无拖拽能力）、浏览器面板（Electron 专属）、插件原生面（桌面专属）
 
 结论：移动端运营面（连接/会话/权限/文件/终端输出/定时/脚本/通知/外观）已全链路闭环，
-且 t20 起以对话为中心（打开即聊、四 pill 直选 agent/模型/thinking/审批模式）；
+t20 起以对话为中心（打开即聊、四 pill 直选 agent/模型/thinking/审批模式），
+t21 起设备选择也在对话页闭环（进入自动连默认设备、顶栏弹窗切换、掉线横幅恢复）；
 剩余 3 项均为低频管理面，2 项平台适配项单独评估。
 
 ## 验收证据
 
+- t21 单测新增 `tests/device-preference-store.test.ts`（默认设备选择策略、账号维度记忆、草稿 LRU 暂存、顶栏/横幅状态机、引导态，19 例）；session-store/composer-config/icon-assets/daemon-connection 既有套件不回归。
+- t21 真实环境自动化：`scripts/ui-automation-t21.mjs`（真实 hub 三设备预设——两在线一离线 + 真实 daemon 经 relay E2EE）：登录零手动选择落已连接对话页（auto_connect 事件）、设备弹窗三行（高亮/在线/离线置灰）、真实切换 A→B→A（草稿暂存还原）、会话弹窗列真实会话、zcode 短会话（"只回复 ok"，验证后删除）、掉线横幅出现→一键切换恢复、深色三档。截图 `docs/screenshots/t21-*.png`。
 - 单测（`npx vitest run` 全绿，218 通过 / 1 跳过）：
   - `tests/protocol-t19.test.ts`（t19 全部新 RPC 的 mock socket 全链路：writeFile written/conflict、fs.entry.\*、fs.file.subscribe→update、commits/file_diff、subscribe_terminal→slot/帧路由/terminal_input/exit、create_terminal、subagents list/update、list_commands、activeTurnBehavior、create worktree）
   - `tests/markdown.test.ts`（块级/行内/综合快照 13 例）、`tests/file-edit.test.ts`（写回冲突状态机 8 例）、`tests/terminal.test.ts`（ANSI 剥离/行缓冲/帧编解码 14 例）、`tests/diff-protocol.test.ts`（commits/diff 容错解析 6 例）

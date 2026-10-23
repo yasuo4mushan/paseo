@@ -1,22 +1,25 @@
 /**
- * 对话主页（t20，中心 tab，默认启动页）——豆包式直达：
- *  - 进入即上次活跃会话（sessionStore 持久化；无则空态 + 快捷输入框）；
- *  - 未连接设备 → 引导连接（设备页功能不动，点设备直达本页）；
- *  - 右上展开按钮呼出会话抽屉（全部会话/筛选/新建）；
- *  - 底部 composer 常驻：四个选择 pill——Agent 框架 / 模型 / thinking effort /
- *    审批模式（packages/app composer 的移动简化版，状态机见 utils/composer-config）：
- *      草稿态（无会话）：选择进入 create_agent_request.config；
- *      会话态：model/mode/thinking 改动走 set_agent_model/mode/thinking RPC。
- *  - 发送即创建（无会话时，需要已选工作区）或发到当前会话；
- *    附件 "+"、斜杠命令、运行中 steer/interrupt 沿用 t17/t19。
+ * 对话主页（t20 中心 tab，t21 设备选择重构）——豆包式直达 + 自动默认设备：
+ *  - 进入即自动连接：取「上次使用的设备」（按账号记忆），无记忆取首个在线设备，
+ *    后台静默连接（顶栏显示连接中），成功即落该设备会话；无可连设备显示引导；
+ *  - 顶栏 `[设备按钮] [会话标题/会话列表]`：设备按钮常显设备名 + 在线状态点，
+ *    点击弹顶部设备弹窗（切换连接/添加设备/管理设备/刷新）；会话标题点击弹
+ *    顶部会话弹窗（t20 右侧抽屉的交互语言迁移，数据沿用 sessionStore）；
+ *  - 设备状态实时：对话页期间 20s 轮询 devices.list（切后台暂停）刷新状态点；
+ *    当前设备掉线 → 顶部横幅 + 一键重连/切换；
+ *  - composer 草稿按「设备×会话」暂存（device-preference-store），切换设备/
+ *    会话回来还在；
+ *  - composer 四 pill（Agent 框架/模型/thinking/审批模式，t20）与发送即创建、
+ *    附件、斜杠命令、运行中 steer/interrupt 沿用 t17/t19/t20。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Taro, { useDidShow } from "@tarojs/taro";
+import Taro, { useDidHide, useDidShow } from "@tarojs/taro";
 import { Button, Image, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { MODAL_DANGER_COLOR } from "@/constants/colors";
-import { hasSession } from "@/hub/hub-client";
+import { getAccount, hasSession, hub, hubErrorMessage, isAuthExpired } from "@/hub/hub-client";
+import type { HubDevice } from "@/hub/hub-types";
 import type {
   ProviderAvailability,
   ProviderMode,
@@ -27,18 +30,25 @@ import type {
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { WorkspacePicker } from "@/components/workspace-picker";
-import { SessionDrawer } from "@/components/session-drawer";
+import { SessionPickerSheet } from "@/components/session-picker";
+import { DevicePickerSheet } from "@/components/device-picker";
 import { ConfigPickerSheet } from "@/components/config-picker";
 import { TimelineView } from "@/components/timeline";
 import { useAgentSession } from "@/hooks/use-agent-session";
 import { sessionStore } from "@/stores/session-store";
+import {
+  devicePreferenceStore,
+  draftKey,
+  selectDefaultDevice,
+} from "@/stores/device-preference-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { attentionStore } from "@/stores/attention-store";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
 import { useThemeClass } from "@/hooks/use-theme";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
+import { chatDeviceView, needsGuidance } from "@/utils/chat-device-state";
 import { iconUrl, providerIconUrl } from "@/utils/icons";
-import { safeSwitchTab } from "@/utils/navigation";
+import { safeNavigateTo, safeSwitchTab } from "@/utils/navigation";
 import {
   applyDraftSelection,
   draftPillViews,
@@ -61,6 +71,9 @@ const PILL_TITLES: Record<ComposerPill, string> = {
   thinking: "Thinking effort",
   mode: "审批模式",
 };
+
+/** 设备在线状态轮询间隔（与 daemon 心跳节奏对齐；切后台暂停）。 */
+const DEVICE_POLL_INTERVAL_MS = 20_000;
 
 interface PendingAttachment {
   key: string;
@@ -131,21 +144,186 @@ export default function ChatPage() {
     return sessionStore.refresh(() => conn.fetchAgents({ includeArchived: true }));
   }, []);
 
+  // ---- 设备列表（自动默认设备 + 20s 轮询，t21） ----
+
+  const [devices, setDevices] = useState<HubDevice[] | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const refreshDevices = useCallback(async (manual = false) => {
+    if (!hasSession()) return;
+    try {
+      const list = await hub.devices();
+      setDevices(list);
+      if (manual) Taro.showToast({ title: "已刷新", icon: "none", duration: 600 });
+    } catch (err) {
+      if (isAuthExpired(err) || !hasSession()) {
+        Taro.reLaunch({ url: "/pages/login/index" });
+        return;
+      }
+      if (manual) Taro.showToast({ title: hubErrorMessage(err), icon: "none" });
+      // 静默轮询失败不打扰（顶栏状态点保持上次快照）
+    }
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  }, []);
+  const startPolling = useCallback(() => {
+    stopPolling();
+    pollTimerRef.current = setInterval(() => void refreshDevices(false), DEVICE_POLL_INTERVAL_MS);
+  }, [refreshDevices, stopPolling]);
+  useEffect(() => stopPolling, [stopPolling]); // 卸载清理
+
+  // ---- 自动默认设备（t21 P0-1）：进入时未连接 → 记忆设备 > 首个在线设备 ----
+
+  const [autoConnect, setAutoConnect] = useState<"idle" | "connecting" | "failed">("idle");
+  const autoTriedRef = useRef(false);
+  // 切换/重连互斥（state 异步生效，双击在 ref 前都通过守卫的问题同设备页 P0-0）
+  const connectingRef = useRef(false);
+  const [connectingDeviceId, setConnectingDeviceId] = useState("");
+
+  const runAutoConnect = useCallback(async () => {
+    if (!hasSession()) return;
+    const status = connectionManager.getState().status;
+    if (status === "connected" || status === "connecting") return;
+    const account = getAccount();
+    setAutoConnect("connecting");
+    try {
+      const list = await hub.devices();
+      setDevices(list);
+      const remembered = account ? devicePreferenceStore.getRemembered(account.id) : null;
+      const pick = selectDefaultDevice(list, remembered);
+      if (!pick || !pick.offer) {
+        setAutoConnect("idle"); // 无可连设备 → 引导态（needsGuidance 接管）
+        return;
+      }
+      await connectionManager.connectOffer(pick.offer, {
+        deviceId: pick.deviceId,
+        name: pick.name,
+      });
+      if (account) {
+        devicePreferenceStore.setRemembered(account.id, {
+          deviceId: pick.deviceId,
+          name: pick.name,
+        });
+      }
+      setAutoConnect("idle");
+      recordAutomationEvent({
+        kind: "auto_connect",
+        deviceId: pick.deviceId,
+        name: pick.name,
+        source: remembered?.deviceId === pick.deviceId ? "remembered" : "first-online",
+      });
+    } catch (err) {
+      if (isAuthExpired(err) || !hasSession()) {
+        Taro.reLaunch({ url: "/pages/login/index" });
+        return;
+      }
+      setAutoConnect("failed");
+      recordAutomationEvent({
+        kind: "auto_connect_error",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, []);
+
   useDidShow(() => {
     if (!hasSession()) return;
+    void refreshDevices(false);
+    startPolling();
     if (connectionManager.getState().status === "connected") void refreshDirectory();
+    if (!autoTriedRef.current) {
+      autoTriedRef.current = true; // 一次页面生命周期只自动尝试一次；失败走手动重试
+      if (connectionManager.getState().status === "disconnected") void runAutoConnect();
+    }
   });
+  useDidHide(() => stopPolling());
+
   useEffect(() => {
     if (connState.status === "connected") void refreshDirectory();
   }, [connState.status, refreshDirectory]);
 
-  // 抽屉
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  // 右滑手势呼出抽屉（touchstart/touchend 位移判定，不与 ScrollView 横滚冲突：
-  // 时间线是纵向滚动，横向快速右滑 >60rpx 才触发）
+  // ---- 弹窗（顶部体系：设备/会话） ----
+
+  const [deviceSheetOpen, setDeviceSheetOpen] = useState(false);
+  const [sessionSheetOpen, setSessionSheetOpen] = useState(false);
+  // 右滑手势呼出会话弹窗（t20 抽屉手势迁移；横向快速右滑才触发）
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-  // composer 目录与草稿
+  // ---- 切换设备 / 重连（t21 P0-2/P0-4） ----
+
+  const draftTextRef = useRef("");
+  const draftKeyRef = useRef("");
+
+  const switchDevice = useCallback(
+    async (device: HubDevice) => {
+      if (connectingRef.current) return;
+      const from = connectionManager.getActiveDevice()?.deviceId ?? "";
+      if (device.deviceId === from && connState.status === "connected") {
+        setDeviceSheetOpen(false);
+        return;
+      }
+      if (!device.online || !device.offer) {
+        Taro.showToast({ title: "设备离线，无法连接", icon: "none" });
+        return;
+      }
+      connectingRef.current = true;
+      setConnectingDeviceId(device.deviceId);
+      setDeviceSheetOpen(false);
+      // 草稿先落袋（断开会话重置会触发 key 变化链，显式保存避免中间态竞态）
+      devicePreferenceStore.saveDraft(draftKeyRef.current, draftTextRef.current);
+      try {
+        await connectionManager.connectOffer(device.offer, {
+          deviceId: device.deviceId,
+          name: device.name,
+        });
+        const account = getAccount();
+        if (account) {
+          devicePreferenceStore.setRemembered(account.id, {
+            deviceId: device.deviceId,
+            name: device.name,
+          });
+        }
+        Taro.showToast({ title: `已连接 ${device.name}`, icon: "success", duration: 800 });
+        recordAutomationEvent({
+          kind: "device_switch",
+          deviceId: device.deviceId,
+          name: device.name,
+          from,
+        });
+      } catch (err) {
+        Taro.showToast({ title: hubErrorMessage(err), icon: "none" });
+        recordAutomationEvent({
+          kind: "device_switch_error",
+          deviceId: device.deviceId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      } finally {
+        connectingRef.current = false;
+        setConnectingDeviceId("");
+      }
+    },
+    [connState.status],
+  );
+
+  /** 横幅「重连」：当前设备还在线 → 直连；否则弹设备弹窗选别的。 */
+  const reconnectCurrent = useCallback(async () => {
+    const active = connectionManager.getActiveDevice();
+    const target = active
+      ? ((devices ?? []).find((d) => d.deviceId === active.deviceId) ?? null)
+      : null;
+    if (target?.online && target.offer) {
+      await switchDevice(target);
+      return;
+    }
+    setDeviceSheetOpen(true);
+  }, [devices, switchDevice]);
+
+  // ---- composer 目录与草稿 ----
+
   const workspace = useWorkspaceSelection();
   const [workspacePickerVisible, setWorkspacePickerVisible] = useState(false);
   const [providers, setProviders] = useState<ProviderAvailability[] | null>(null);
@@ -211,7 +389,12 @@ export default function ChatPage() {
       setModels(modelList);
       setModes(modeList);
       // 草稿态：目录就绪后保持草稿取默认值（provider 不变时也重取默认模型/档位/模式）
-      setDraft((prev) => seedDraft({ providers: providers ?? [], models: modelList, modes: modeList }, prev.provider));
+      setDraft((prev) =>
+        seedDraft(
+          { providers: providers ?? [], models: modelList, modes: modeList },
+          prev.provider,
+        ),
+      );
     })();
     return () => {
       disposed = true;
@@ -231,10 +414,7 @@ export default function ChatPage() {
   }, [providers, catalog, activeAgent]);
 
   const pillViews = useMemo(
-    () =>
-      snapshot
-        ? sessionPillViews(snapshot, catalog)
-        : draftPillViews(draft, catalog),
+    () => (snapshot ? sessionPillViews(snapshot, catalog) : draftPillViews(draft, catalog)),
     [snapshot, draft, catalog],
   );
 
@@ -269,11 +449,27 @@ export default function ChatPage() {
   // ---- 发送侧（乐观追加 + 幂等 id；t19 activeTurnBehavior 沿用） ----
 
   const [draftText, setDraftText] = useState("");
+  draftTextRef.current = draftText;
   const [sending, setSending] = useState(false);
   const [interruptOnSend, setInterruptOnSend] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
   const bottomAnchor = useRef(`bottom-${Date.now()}`);
   const timelineRef = useRef("");
+
+  // 草稿按「设备×会话」暂存（t21 P1）：key 变化 → 存旧取新；发送成功清当前 key。
+  const deviceKey = connectionManager.getActiveDevice()?.deviceId ?? "manual";
+  const currentDraftKey = draftKey(deviceKey, activeId);
+  useEffect(() => {
+    if (draftKeyRef.current === currentDraftKey) return;
+    const prev = draftKeyRef.current;
+    draftKeyRef.current = currentDraftKey;
+    if (prev) devicePreferenceStore.saveDraft(prev, draftTextRef.current);
+    setDraftText(devicePreferenceStore.loadDraft(currentDraftKey));
+  }, [currentDraftKey]);
+  useDidHide(() => {
+    // 离开页面兜底保存（切 tab/退后台）
+    devicePreferenceStore.saveDraft(draftKeyRef.current, draftTextRef.current);
+  });
 
   // 斜杠命令目录（首次输入 / 拉取；会话态）
   const [commands, setCommands] = useState<SlashCommand[] | null>(null);
@@ -407,6 +603,7 @@ export default function ChatPage() {
           messageAttachmentStore.record(agent.id, { clientMessageId, text, cards });
         }
         sessionStore.setActive(agent.id);
+        devicePreferenceStore.clearDraft(draftKeyRef.current); // 已发出，草稿清
         setDraftText("");
         setPendingFiles([]);
         recordAutomationEvent({
@@ -439,7 +636,11 @@ export default function ChatPage() {
     const attachments = pendingFiles
       .map((f) => f.attachment)
       .filter((a): a is UploadedFileAttachment => a !== undefined);
-    session.appendOptimisticUser(text || "（附件）", clientMessageId, cards.length > 0 ? cards : undefined);
+    session.appendOptimisticUser(
+      text || "（附件）",
+      clientMessageId,
+      cards.length > 0 ? cards : undefined,
+    );
     bottomAnchor.current = `bottom-${Date.now()}`;
     try {
       const conn = connectionManager.requireConnection();
@@ -454,6 +655,7 @@ export default function ChatPage() {
       if (!result.accepted) {
         setConfigError(result.error ?? "消息未被接受");
       } else {
+        devicePreferenceStore.clearDraft(draftKeyRef.current); // 已发出，草稿清
         setPendingFiles([]);
       }
     } catch (err) {
@@ -472,8 +674,8 @@ export default function ChatPage() {
     }
   };
 
-  // 抽屉长按动作：归档/恢复/删除（RPC + 目录刷新）
-  const drawerArchive = useCallback(async (agentId: string, currentlyArchived: boolean) => {
+  // 会话弹窗长按动作：归档/恢复/删除（RPC + 目录刷新）
+  const sessionArchive = useCallback(async (agentId: string, currentlyArchived: boolean) => {
     const conn = connectionManager.getConnection();
     if (!conn) return;
     try {
@@ -497,7 +699,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  const drawerDelete = useCallback(async (agentId: string) => {
+  const sessionDelete = useCallback(async (agentId: string) => {
     const { confirm } = await Taro.showModal({
       title: "删除会话",
       content: "删除后该会话将从设备上永久移除，确定删除？",
@@ -519,15 +721,15 @@ export default function ChatPage() {
     }
   }, []);
 
-  const onWorkspaceSelected = useCallback((ws: WorkspaceDescriptor) => {
-    workspaceStore.select(ws);
-    // 换工作区可能影响模型目录（cwd 相关），重新装配草稿
-    draftSeeded.current = false;
-    setDraft((prev) => seedDraft(
-      { providers: providers ?? [], models, modes },
-      prev.provider,
-    ));
-  }, [providers, models, modes]);
+  const onWorkspaceSelected = useCallback(
+    (ws: WorkspaceDescriptor) => {
+      workspaceStore.select(ws);
+      // 换工作区可能影响模型目录（cwd 相关），重新装配草稿
+      draftSeeded.current = false;
+      setDraft((prev) => seedDraft({ providers: providers ?? [], models, modes }, prev.provider));
+    },
+    [providers, models, modes],
+  );
 
   const sendable =
     (draftText.trim() || pendingFiles.some((f) => f.status === "ready")) && !sending && connected;
@@ -540,7 +742,19 @@ export default function ChatPage() {
 
   if (!authed) return <View />;
 
-  const headerTitle = snapshot?.title ?? activeAgent?.title ?? (activeAgent ? activeAgent.id.slice(0, 8) : "新对话");
+  // 顶栏设备视图（状态点/文案/横幅；hub online 为唯一在线语义——t23 合流点）
+  const activeDevice = connectionManager.getActiveDevice();
+  const deviceView = chatDeviceView({
+    connectionStatus: connState.status,
+    activeDevice,
+    devices,
+  });
+  const connecting = connState.status === "connecting";
+  const guidance = !connected && !connecting && needsGuidance(connState.status, devices);
+  const autoConnectFailed = !connected && !connecting && autoConnect === "failed";
+
+  const headerTitle =
+    snapshot?.title ?? activeAgent?.title ?? (activeAgent ? activeAgent.id.slice(0, 8) : "新对话");
   const projectLabel = activeAgent
     ? (activeAgent.cwd.split("/").filter(Boolean).pop() ?? activeAgent.cwd)
     : (workspace?.label ?? "选择项目");
@@ -558,27 +772,46 @@ export default function ChatPage() {
         touchStart.current = null;
         const ev = e as unknown as { changedTouches?: Array<{ clientX: number; clientY: number }> };
         const t = ev.changedTouches?.[0];
-        if (!start || !t || drawerOpen) return;
-        // 右滑呼出抽屉：横向位移 > 60 且纵向 < 40（避免与滚动混淆）
+        if (!start || !t || sessionSheetOpen) return;
+        // 右滑呼出会话弹窗：横向位移 > 60 且纵向 < 40（避免与滚动混淆）
         if (t.clientX - start.x > 60 && Math.abs(t.clientY - start.y) < 40 && connected) {
-          setDrawerOpen(true);
+          setSessionSheetOpen(true);
         }
       }}
     >
-      {/* 顶栏：标题 + 状态 + 展开会话栏 */}
+      {/* 顶栏：[设备按钮] [会话标题/会话列表按钮]（t21） */}
       <View className="chat-header">
-        <View className="chat-header-main">
+        <View
+          className={`chat-device-btn chat-device-dot-${deviceView.dot}`}
+          onClick={() => setDeviceSheetOpen(true)}
+        >
+          <View className="chat-device-statusdot" />
+          <View className="chat-device-label">{deviceView.deviceLabel}</View>
+          <Image className="icon icon-sm" src={iconUrl("chevron-down")} />
+        </View>
+        <View className="chat-header-main" onClick={() => connected && setSessionSheetOpen(true)}>
           <View className="chat-title-row">
             <View className="chat-title">{headerTitle}</View>
             {activeAgent && session.status ? (
               <View className={statusPillClass(session.status)}>
-                {snapshot?.archivedAt ? "已归档" : (STATUS_LABELS[session.status] ?? session.status)}
+                {snapshot?.archivedAt
+                  ? "已归档"
+                  : (STATUS_LABELS[session.status] ?? session.status)}
               </View>
+            ) : null}
+            {connected ? (
+              <Image className="icon icon-sm chat-title-chevron" src={iconUrl("chevron-down")} />
             ) : null}
           </View>
           <View className="chat-header-sub">
             {connected ? (
-              <View className="chat-project" onClick={() => !activeAgent && setWorkspacePickerVisible(true)}>
+              <View
+                className="chat-project"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!activeAgent) setWorkspacePickerVisible(true);
+                }}
+              >
                 <Image className="icon icon-sm" src={iconUrl("project")} />
                 <View className={`chat-project-text ${activeAgent ? "" : "chat-project-tap"}`}>
                   {projectLabel}
@@ -588,16 +821,38 @@ export default function ChatPage() {
                 ) : null}
               </View>
             ) : (
-              <View className="faint">{connState.status === "error" ? connState.message : "未连接设备"}</View>
+              <View className="faint">
+                {connecting
+                  ? "正在连接设备…"
+                  : connState.status === "error"
+                    ? connState.message
+                    : "未连接设备"}
+              </View>
             )}
           </View>
         </View>
-        <View className="chat-expand" onClick={() => setDrawerOpen(true)}>
-          <Image className="icon" src={iconUrl("expand")} />
-        </View>
       </View>
 
-      {/* 时间线 / 空态 */}
+      {/* 掉线/断开横幅（t21 P0-4）：一键重连/切换 */}
+      {deviceView.banner ? (
+        <View className="chat-banner">
+          <Image className="icon icon-sm" src={iconUrl("warning")} />
+          <View className="chat-banner-text">
+            {deviceView.banner.kind === "offline" ? "当前设备已离线" : "设备连接已断开"}
+          </View>
+          <View className="chat-banner-btn" onClick={() => void reconnectCurrent()}>
+            重连
+          </View>
+          <View
+            className="chat-banner-btn chat-banner-btn-ghost"
+            onClick={() => setDeviceSheetOpen(true)}
+          >
+            切换设备
+          </View>
+        </View>
+      ) : null}
+
+      {/* 时间线 / 连接态 */}
       <ScrollView
         className="chat-timeline"
         scrollY
@@ -608,17 +863,75 @@ export default function ChatPage() {
         {session.error || configError ? (
           <View className="error-inline">{session.error || configError}</View>
         ) : null}
-        {!connected ? (
-          <View className="card empty">
-            <Image className="icon icon-xl" src={iconUrl("devices")} />
-            <View className="empty-title">连接你的开发机开始对话</View>
-            <View className="empty-desc">
-              在设备页选择一台在线设备，连接后这里就是你的对话工作台。
+        {connecting ? (
+          // 连接中骨架（t21 P1）
+          <>
+            <View className="skeleton">
+              <View className="skeleton-bar" />
+              <View className="skeleton-bar skeleton-bar-short" />
             </View>
-            <Button className="btn btn-mini" onClick={() => void safeSwitchTab("/pages/devices/index")}>
-              去设备页
-            </Button>
-          </View>
+            <View className="skeleton">
+              <View className="skeleton-bar skeleton-bar-short" />
+              <View className="skeleton-bar" />
+            </View>
+          </>
+        ) : !connected ? (
+          autoConnectFailed ? (
+            <View className="card empty">
+              <Image className="icon icon-xl" src={iconUrl("warning")} />
+              <View className="empty-title">自动连接失败</View>
+              <View className="empty-desc">
+                {connState.status === "error"
+                  ? connState.message
+                  : "连接未建立，可重试或换一台设备。"}
+              </View>
+              <View className="chat-guide-row">
+                <Button className="btn btn-mini" onClick={() => void runAutoConnect()}>
+                  重试
+                </Button>
+                <Button className="btn btn-mini btn-ghost" onClick={() => setDeviceSheetOpen(true)}>
+                  选其他设备
+                </Button>
+              </View>
+            </View>
+          ) : guidance ? (
+            <View className="card empty">
+              <Image className="icon icon-xl" src={iconUrl("devices")} />
+              <View className="empty-title">没有可连接的在线设备</View>
+              <View className="empty-desc">
+                在开发机上安装 aaswitch daemon 并登录同一账号，设备会自动出现在这里。
+              </View>
+              <View className="chat-guide-row">
+                <Button
+                  className="btn btn-mini"
+                  onClick={() => void safeSwitchTab("/pages/devices/index")}
+                >
+                  去设备页
+                </Button>
+                <Button
+                  className="btn btn-mini btn-ghost"
+                  onClick={() => void safeNavigateTo("/pages/pair/index")}
+                >
+                  手动配对
+                </Button>
+                <Button
+                  className="btn btn-mini btn-ghost"
+                  onClick={() => void refreshDevices(true).then(() => runAutoConnect())}
+                >
+                  刷新
+                </Button>
+              </View>
+            </View>
+          ) : (
+            <View className="card empty">
+              <Image className="icon icon-xl" src={iconUrl("devices")} />
+              <View className="empty-title">连接你的开发机开始对话</View>
+              <View className="empty-desc">选一台设备连接，连接后这里就是你的对话工作台。</View>
+              <Button className="btn btn-mini" onClick={() => setDeviceSheetOpen(true)}>
+                选择设备
+              </Button>
+            </View>
+          )
         ) : activeAgent ? (
           session.entries.length === 0 ? (
             <View className="card empty">
@@ -645,7 +958,10 @@ export default function ChatPage() {
       <View className="chat-composer">
         {activeAgent && session.status === "running" ? (
           <View className="chat-live-row">
-            <Button className="btn btn-mini btn-ghost chat-live-btn" onClick={() => void interrupt()}>
+            <Button
+              className="btn btn-mini btn-ghost chat-live-btn"
+              onClick={() => void interrupt()}
+            >
               中断
             </Button>
             <Button
@@ -743,27 +1059,47 @@ export default function ChatPage() {
             value={draftText}
             onInput={(e) => setDraftText(e.detail.value)}
             onConfirm={() => void send()}
-            placeholder={connected ? (activeAgent ? "输入消息…" : "描述任务，发送即创建会话…") : "连接设备后开始对话"}
+            placeholder={
+              connected
+                ? activeAgent
+                  ? "输入消息…"
+                  : "描述任务，发送即创建会话…"
+                : "连接设备后开始对话"
+            }
             placeholderClass="composer-placeholder"
             confirmType="send"
             confirmHold
             disabled={!connected}
           />
-          <View
-            className={`send-btn ${sendable ? "send-ready" : ""}`}
-            onClick={() => void send()}
-          >
+          <View className={`send-btn ${sendable ? "send-ready" : ""}`} onClick={() => void send()}>
             <Image className="icon" src={iconUrl("send", "-inverse")} />
           </View>
         </View>
       </View>
 
-      <SessionDrawer
-        visible={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+      <DevicePickerSheet
+        visible={deviceSheetOpen}
+        onClose={() => setDeviceSheetOpen(false)}
+        devices={devices}
+        activeDeviceId={activeDevice?.deviceId ?? null}
+        connectingDeviceId={connectingDeviceId}
+        onSelect={(device) => void switchDevice(device)}
+        onRefresh={() => void refreshDevices(true)}
+        onAddDevice={() => {
+          setDeviceSheetOpen(false);
+          void safeNavigateTo("/pages/pair/index");
+        }}
+        onManage={() => {
+          setDeviceSheetOpen(false);
+          void safeSwitchTab("/pages/devices/index");
+        }}
+      />
+      <SessionPickerSheet
+        visible={sessionSheetOpen}
+        onClose={() => setSessionSheetOpen(false)}
         onSelect={(id) => sessionStore.setActive(id)}
-        onArchive={(id, archived) => void drawerArchive(id, archived)}
-        onDelete={(id) => void drawerDelete(id)}
+        onArchive={(id, archived) => void sessionArchive(id, archived)}
+        onDelete={(id) => void sessionDelete(id)}
         onNewChat={() => sessionStore.setActive(null)}
       />
       <ConfigPickerSheet

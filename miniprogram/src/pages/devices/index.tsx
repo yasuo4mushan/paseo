@@ -3,13 +3,14 @@ import Taro, { useDidShow, usePullDownRefresh } from "@tarojs/taro";
 import { Button, Image, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import { deviceStatusStore, type DeviceStatusEntry } from "@/connection/device-status-store";
-import { hasSession } from "@/hub/hub-client";
+import { getAccount, hasSession } from "@/hub/hub-client";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useDeviceStatuses } from "@/hooks/use-device-statuses";
 import { useThemeClass } from "@/hooks/use-theme";
+import { devicePreferenceStore } from "@/stores/device-preference-store";
 import { formatRelativeTime } from "@/utils/time";
 import { iconUrl } from "@/utils/icons";
-import { safeReLaunch, safeSwitchTab } from "@/utils/navigation";
+import { safeNavigateTo, safeReLaunch, safeSwitchTab } from "@/utils/navigation";
 import "./index.css";
 
 const OS_META: Record<string, string> = {
@@ -100,6 +101,14 @@ export default function DevicesPage() {
         deviceId: entry.deviceId,
         name: entry.name,
       });
+      // t21：连上的设备记忆为「上次使用的设备」（对话页自动连接的候选）
+      const account = getAccount();
+      if (account) {
+        devicePreferenceStore.setRemembered(account.id, {
+          deviceId: entry.deviceId,
+          name: entry.name,
+        });
+      }
       // t20：连上即达对话主页（switchTab 不入页面栈——修复旧版 navigateTo:fail
       // timeout 的结构性根因：await 长握手后与用户连点/其他转场并发导航）。
       await safeSwitchTab("/pages/chat/index");
@@ -118,6 +127,13 @@ export default function DevicesPage() {
 
   return (
     <View className={`page devices-page ${themeClass}`}>
+      {/* t21：设备页降级为管理页——日常连接在对话页顶栏弹窗完成，这里管理设备 */}
+      <View className="devices-manage-tip">
+        <Image className="icon icon-sm" src={iconUrl("devices")} />
+        <View className="devices-manage-text">
+          设备管理 · 点击在线设备连接；日常切换可在对话页顶栏完成
+        </View>
+      </View>
       {snapshot.error ? (
         <View className="error-inline">{snapshot.error}</View>
       ) : snapshot.loading && snapshot.entries.length === 0 ? (
@@ -177,6 +193,11 @@ export default function DevicesPage() {
           </View>
         </>
       )}
+      <View className="devices-pair-entry" onClick={() => void safeNavigateTo("/pages/pair/index")}>
+        <Image className="icon icon-sm" src={iconUrl("plus")} />
+        <View className="devices-pair-text">手动配对新设备（粘贴 relay:// 或扫码）</View>
+        <View className="cell-arrow">›</View>
+      </View>
       {snapshot.error ? (
         <Button className="btn btn-ghost btn-block" onClick={() => void refresh()}>
           重试

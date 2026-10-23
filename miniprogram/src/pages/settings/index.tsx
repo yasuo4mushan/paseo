@@ -222,8 +222,8 @@ export default function SettingsPage() {
         onClick={() => Taro.switchTab({ url: "/pages/devices/index" })}
       >
         <View className="cell-grow">
-          <View className="cell-label">切换设备</View>
-          <View className="faint">查看 hub 设备列表，选一台在线设备连接</View>
+          <View className="cell-label">管理设备</View>
+          <View className="faint">设备列表/连接/手动配对；日常切换在对话页顶栏</View>
         </View>
         <View className="cell-arrow">›</View>
       </View>

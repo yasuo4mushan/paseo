@@ -1,0 +1,57 @@
+/* 顶部下拉弹窗壳（t21）：遮罩 + 顶部滑下面板（tokens 深浅双轨自动生效）。 */
+
+.ts-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.ts-panel {
+  width: 100%;
+  max-height: 74vh;
+  background: var(--card);
+  border-radius: 0 0 24rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+  animation: ts-drop 0.22s ease-out;
+}
+
+@keyframes ts-drop {
+  from {
+    transform: translateY(-16%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.ts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 28rpx 12rpx;
+}
+
+.ts-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.ts-close {
+  padding: 8rpx;
+}
+
+.ts-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--divider);
+}

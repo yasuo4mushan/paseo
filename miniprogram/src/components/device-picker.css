@@ -1,0 +1,113 @@
+/* 设备选择顶部弹窗（t21）：列表行/在线点/快捷操作（tokens 深浅双轨）。 */
+
+.dp-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 52vh;
+  padding: 8rpx 16rpx 16rpx;
+  box-sizing: border-box;
+}
+
+.dp-row {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 20rpx;
+  border-radius: var(--radius);
+}
+
+.dp-row-active {
+  background: var(--brand-fade);
+}
+
+.dp-row-offline {
+  opacity: 0.55;
+}
+
+.dp-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--text-3);
+  margin-right: 18rpx;
+  flex-shrink: 0;
+}
+
+.dp-dot-online {
+  background: var(--brand);
+}
+
+.dp-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.dp-name {
+  font-size: 28rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dp-row-active .dp-name {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.dp-sub {
+  font-size: 22rpx;
+  color: var(--text-2);
+  margin-top: 4rpx;
+}
+
+.dp-row .pill {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+
+.dp-skeleton {
+  padding: 24rpx 20rpx;
+}
+
+.dp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64rpx 32rpx;
+}
+
+.dp-empty-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-top: 16rpx;
+}
+
+.dp-empty-sub {
+  font-size: 22rpx;
+  color: var(--text-2);
+  text-align: center;
+  margin-top: 8rpx;
+}
+
+/* 底部快捷操作 */
+
+.dp-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 16rpx 0;
+}
+
+.dp-action:active {
+  background: var(--divider);
+}
+
+.dp-action-text {
+  font-size: 24rpx;
+  color: var(--text-1);
+}

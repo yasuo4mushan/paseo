@@ -1,4 +1,4 @@
-/* 对话主页（t20）：豆包式直达 —— 顶栏 + 时间线 + 常驻 composer。 */
+/* 对话主页（t20 骨架，t21 顶栏设备按钮 + 掉线横幅）：豆包式直达。 */
 
 .chat-page {
   height: 100vh;
@@ -7,14 +7,69 @@
   background: var(--bg);
 }
 
-/* ---------- 顶栏 ---------- */
+/* ---------- 顶栏：[设备按钮] [会话标题/会话列表]（t21） ---------- */
 
 .chat-header {
   display: flex;
   align-items: center;
-  padding: 20rpx 24rpx 12rpx 32rpx;
+  padding: 20rpx 24rpx 12rpx 24rpx;
   background: var(--card);
   border-bottom: 1rpx solid var(--divider);
+}
+
+.chat-device-btn {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 320rpx;
+  background: var(--fill);
+  border-radius: var(--radius-round);
+  padding: 10rpx 18rpx;
+  margin-right: 20rpx;
+}
+
+.chat-device-label {
+  font-size: 24rpx;
+  color: var(--text-1);
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0 4rpx;
+}
+
+.chat-device-statusdot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--text-3);
+  flex-shrink: 0;
+}
+
+/* 状态点色调（与 chat-device-dot-* 对应；tokens 双轨自动适配深色） */
+.chat-device-dot-online .chat-device-statusdot {
+  background: var(--brand);
+}
+
+.chat-device-dot-offline .chat-device-statusdot {
+  background: var(--danger);
+}
+
+.chat-device-dot-connecting .chat-device-statusdot {
+  background: var(--warning);
+  animation: chat-dot-pulse 1s ease-in-out infinite;
+}
+
+@keyframes chat-dot-pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .chat-header-main {
@@ -35,7 +90,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 480rpx;
+  max-width: 380rpx;
+}
+
+.chat-title-chevron {
+  opacity: 0.5;
 }
 
 .chat-header-sub {
@@ -61,9 +120,51 @@
   color: var(--brand);
 }
 
-.chat-expand {
-  padding: 16rpx;
-  margin-left: 8rpx;
+/* ---------- 掉线/断开横幅（t21） ---------- */
+
+.chat-banner {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: var(--warning-fade);
+  padding: 14rpx 24rpx;
+  border-bottom: 1rpx solid var(--divider);
+}
+
+.chat-banner .icon {
+  flex-shrink: 0;
+}
+
+.chat-banner-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: var(--text-1);
+}
+
+.chat-banner-btn {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-inverse);
+  background: var(--brand);
+  border-radius: var(--radius-round);
+  padding: 10rpx 28rpx;
+}
+
+.chat-banner-btn-ghost {
+  background: var(--fill);
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+/* ---------- 引导态按钮排（t21：去设备页/手动配对/刷新） ---------- */
+
+.chat-guide-row {
+  display: flex;
+  gap: 16rpx;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* ---------- 时间线 ---------- */
