@@ -6,7 +6,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--mask);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
@@ -34,7 +34,7 @@
   padding: 8rpx 16rpx;
   border-radius: var(--radius-round);
   background: var(--warning-fade);
-  color: #d48806;
+  color: var(--warning-text);
 }
 
 .perm-remaining {

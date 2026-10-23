@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
 import { Button, Input, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { MODAL_DANGER_COLOR } from "@/constants/colors";
 import type {
   AgentSnapshot,
   ProviderAvailability,
@@ -183,7 +184,7 @@ export default function SchedulesPage() {
         title: "删除定时任务",
         content: `将删除「${schedule.name ?? promptPreview(schedule.prompt, 20)}」，确定？`,
         confirmText: "删除",
-        confirmColor: "#fa5151",
+        confirmColor: MODAL_DANGER_COLOR,
       });
       if (!confirm) return;
     }

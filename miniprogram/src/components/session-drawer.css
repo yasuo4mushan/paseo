@@ -3,7 +3,7 @@
 .sd-mask {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--mask);
   z-index: 110;
   display: flex;
   flex-direction: row;

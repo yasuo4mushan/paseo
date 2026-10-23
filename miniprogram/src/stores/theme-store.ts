@@ -42,6 +42,8 @@ export interface ThemeChromeColors {
   /** 导航栏前景：wx.setNavigationBarColor 仅接受 #ffffff / #000000。 */
   navFrontColor: "#ffffff" | "#000000";
   navBackgroundColor: string;
+  /** 窗口底色（下拉/回弹露出区域），对应 token --bg。 */
+  pageBackgroundColor: string;
   tabBar: {
     color: string;
     selectedColor: string;
@@ -54,6 +56,7 @@ export const THEME_CHROME: Record<ResolvedTheme, ThemeChromeColors> = {
   light: {
     navFrontColor: "#000000",
     navBackgroundColor: "#ffffff",
+    pageBackgroundColor: "#f7f8fa",
     tabBar: {
       color: "#8a8f99",
       selectedColor: "#07c160",
@@ -64,6 +67,7 @@ export const THEME_CHROME: Record<ResolvedTheme, ThemeChromeColors> = {
   dark: {
     navFrontColor: "#ffffff",
     navBackgroundColor: "#111111",
+    pageBackgroundColor: "#111111",
     tabBar: {
       color: "#5f6672",
       selectedColor: "#07c160",
@@ -79,8 +83,8 @@ class ThemeStore {
   private preference: ThemePreference = "auto";
   private systemTheme: ResolvedTheme = "light";
   private listeners = new Set<Listener>();
-  /** 宿主注入的 chrome 应用器（wx.setNavigationBarColor / setTabBarStyle）。 */
-  private applyChrome: ((colors: ThemeChromeColors) => void) | null = null;
+  /** 宿主注入的 chrome 应用器（wx.setNavigationBarColor / setTabBarStyle / setBackgroundColor）。 */
+  private chromeApplier: ((colors: ThemeChromeColors) => void) | null = null;
   private storage: {
     get: () => ThemePreference | null;
     set: (value: ThemePreference) => void;
@@ -95,7 +99,7 @@ class ThemeStore {
     systemTheme: string,
   ): void {
     this.storage = storage;
-    this.applyChrome = applyChrome;
+    this.chromeApplier = applyChrome;
     this.systemTheme = systemTheme === "dark" ? "dark" : "light";
     this.preference = normalizeThemePreference(storage.get());
     this.emitChrome();
@@ -123,6 +127,15 @@ class ThemeStore {
     return themePageClass(this.preference);
   }
 
+  /**
+   * t22：对当前页重设导航/tabBar/窗口底色。wx.setNavigationBarColor /
+   * setBackgroundColor 只作用于当前页，页面经 useThemeClass 在每次 didShow
+   * 调用本方法，手动档跨页导航不再露出系统档 chrome。
+   */
+  applyChrome(): void {
+    this.emitChrome();
+  }
+
   setPreference(preference: ThemePreference): void {
     const next = normalizeThemePreference(preference);
     if (next === this.preference) return;
@@ -138,7 +151,7 @@ class ThemeStore {
   };
 
   private emitChrome(): void {
-    this.applyChrome?.(THEME_CHROME[this.getResolved()]);
+    this.chromeApplier?.(THEME_CHROME[this.getResolved()]);
   }
 
   private notify(): void {

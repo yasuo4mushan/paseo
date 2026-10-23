@@ -5,6 +5,11 @@
  * - 字阶：标题 34rpx/600 · 正文 28rpx · 辅助 24rpx；栅格 8pt（16rpx）。
  * - 深色模式：app.config darkmode + theme.json（导航/tabBar），页面 tokens 走
  *   prefers-color-scheme 媒体查询，token 名不改、页面只引用变量。
+ * - t22 纪律：色值字面量只允许出现在本文件（token 定义）和 src/constants/colors.ts
+ *   （wx API 需要字符串色值，CSS 变量不可用）；tests/dark-audit.test.ts 守门。
+ * - t22 机制：页面背景由页面根容器自绘（.page/.login-page 等 background: var(--bg)），
+ *   根容器同时携带 .theme-light/.theme-dark，手动档下整页背景与卡片一致翻转；
+ *   不再依赖 page 元素的媒体查询背景（手动档与系统档不一致时会露出错误底色）。
  */
 
 page {
@@ -26,6 +31,9 @@ page {
   --text-3: #b9c0cc;
   --text-inverse: #ffffff;
 
+  /* 警示文字：warning-fade 底上的深琥珀（深色档提亮，供 pill-warn/权限徽标） */
+  --warning-text: #d48806;
+
   /* 背景与分隔 */
   --bg: #f7f8fa;
   --card: #ffffff;
@@ -37,6 +45,35 @@ page {
   --radius-round: 999rpx;
 
   --shadow-card: 0 2rpx 8rpx rgba(31, 35, 41, 0.04);
+
+  /* ---------- 跨主题恒色 token（浅深同值，只在 page 定义一次） ---------- */
+
+  /* 弹层遮罩（半透明黑在浅深两档下都是标准 scrim） */
+  --mask: rgba(0, 0, 0, 0.45);
+  /* 开关旋钮（iOS 规范：旋钮浅深两档均为白色） */
+  --knob: #ffffff;
+  /* 品牌色气泡内的压暗填充（附件条） */
+  --brand-scrim: rgba(0, 0, 0, 0.12);
+
+  /* ---------- diff 着色（changes 页；深色档见下方覆盖） ---------- */
+  --diff-add-strong: #2da44e;
+  --diff-del-strong: #cf222e;
+  --diff-add-text: #116329;
+  --diff-add-bg: rgba(46, 160, 67, 0.15);
+  --diff-del-text: #82071e;
+  --diff-del-bg: rgba(248, 81, 73, 0.15);
+
+  /* ---------- 终端表面（恒暗：终端约定俗成深底，不随主题翻转） ---------- */
+  --term-bg: #101418;
+  --term-panel: #161b21;
+  --term-input-bg: #22292f;
+  --term-text: #d7dde3;
+  --term-line: #c9d3da;
+  --term-dim: #9aa4ad;
+  --term-pill-bg: rgba(255, 255, 255, 0.08);
+  --term-live: #3fb950;
+  --term-live-bg: rgba(63, 185, 80, 0.15);
+  --term-closed: #8b949e;
 
   background: var(--bg);
   font-size: 28rpx;
@@ -56,10 +93,19 @@ page {
     --text-2: #9da3ae;
     --text-3: #5f6672;
 
+    --warning-text: #e6a23c;
+
     --bg: #111111;
     --card: #1e1e1e;
     --fill: #2a2a2a;
     --divider: #333333;
+
+    --diff-add-strong: #3fb950;
+    --diff-del-strong: #f85149;
+    --diff-add-text: #3fb950;
+    --diff-add-bg: rgba(46, 160, 67, 0.2);
+    --diff-del-text: #f85149;
+    --diff-del-bg: rgba(248, 81, 73, 0.2);
 
     --shadow-card: none;
   }
@@ -81,10 +127,19 @@ page {
   --text-2: #5f6672;
   --text-3: #b9c0cc;
 
+  --warning-text: #d48806;
+
   --bg: #f7f8fa;
   --card: #ffffff;
   --fill: #f2f3f5;
   --divider: #f0f0f0;
+
+  --diff-add-strong: #2da44e;
+  --diff-del-strong: #cf222e;
+  --diff-add-text: #116329;
+  --diff-add-bg: rgba(46, 160, 67, 0.15);
+  --diff-del-text: #82071e;
+  --diff-del-bg: rgba(248, 81, 73, 0.15);
 
   --shadow-card: 0 2rpx 8rpx rgba(31, 35, 41, 0.04);
 }
@@ -99,10 +154,19 @@ page {
   --text-2: #9da3ae;
   --text-3: #5f6672;
 
+  --warning-text: #e6a23c;
+
   --bg: #111111;
   --card: #1e1e1e;
   --fill: #2a2a2a;
   --divider: #333333;
+
+  --diff-add-strong: #3fb950;
+  --diff-del-strong: #f85149;
+  --diff-add-text: #3fb950;
+  --diff-add-bg: rgba(46, 160, 67, 0.2);
+  --diff-del-text: #f85149;
+  --diff-del-bg: rgba(248, 81, 73, 0.2);
 
   --shadow-card: none;
 }
@@ -113,6 +177,9 @@ page {
   padding: 24rpx 32rpx;
   min-height: 100vh;
   box-sizing: border-box;
+  /* t22：根容器自绘页面底色。根容器携带 .theme-light/.theme-dark，
+     手动档下底色与页面内容用同一套变量，整页一致翻转。 */
+  background: var(--bg);
 }
 
 .card {
@@ -305,7 +372,7 @@ page {
 
 .pill-warn {
   background: var(--warning-fade);
-  color: #d48806;
+  color: var(--warning-text);
 }
 
 .pill-warn .pill-dot {
@@ -640,7 +707,7 @@ page {
 .attach-file {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.12);
+  background: var(--brand-scrim);
   border-radius: var(--radius);
   padding: 14rpx 20rpx;
 }

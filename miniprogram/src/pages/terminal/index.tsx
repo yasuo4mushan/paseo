@@ -52,7 +52,8 @@ interface TerminalViewLine {
 }
 
 export default function TerminalPage() {
-  const themeClass = useThemeClass();
+  // 终端是恒暗表面：导航栏由页面 config 固定深色，退出主题 chrome 重设（t22）
+  const themeClass = useThemeClass({ chrome: false });
   const [terminalId, setTerminalId] = useState("");
   const [headTitle, setHeadTitle] = useState("");
   const [lines, setLines] = useState<TerminalViewLine[]>([]);
