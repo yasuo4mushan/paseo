@@ -352,6 +352,25 @@ page {
   background: var(--brand);
 }
 
+/* t23 设备三态：connected 绿实心 / online 蓝（仅 hub 心跳） */
+.pill-solid {
+  background: var(--brand);
+  color: var(--text-inverse);
+}
+
+.pill-solid .pill-dot {
+  background: var(--text-inverse);
+}
+
+.pill-info {
+  background: var(--info-fade);
+  color: var(--info);
+}
+
+.pill-info .pill-dot {
+  background: var(--info);
+}
+
 .pill-running {
   background: var(--brand-fade);
   color: var(--brand);

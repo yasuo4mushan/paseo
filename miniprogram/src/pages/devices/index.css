@@ -33,6 +33,14 @@
   white-space: nowrap;
 }
 
+/* t23："已连接（未上表）"卡片说明（本地已连、hub 未上报心跳） */
+.device-hint {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #d48806;
+}
+
 .device-offline {
   opacity: 0.72;
 }

@@ -46,6 +46,13 @@
   line-height: 1.6;
 }
 
+/* t23："已连接（未上表）"说明（与设备页 device-hint 同色） */
+.settings-unreported {
+  font-size: 24rpx;
+  line-height: 1.4;
+  color: #d48806;
+}
+
 /* ---------- t18：主题三档 + 振动开关 + 切换设备 ---------- */
 
 .settings-switch-device {

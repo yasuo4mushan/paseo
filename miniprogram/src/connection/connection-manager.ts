@@ -9,6 +9,7 @@
 
 import Taro from "@tarojs/taro";
 import { DaemonConnection, type DaemonConnectionState } from "./daemon-connection";
+import { deviceStatusStore, type ActiveConnectionIdentity } from "./device-status-store";
 import {
   buildRelayClientWebSocketUrl,
   buildRelayUriFromOffer,
@@ -121,6 +122,36 @@ class ConnectionManager {
     return this.activeDevice;
   }
 
+  /**
+   * t23：当前活跃连接的只读标识（设备页/设置页/t21 顶栏统一状态语义用）。
+   * 仅 state === "connected" 时非 null；deviceId 来自设备页入口，serverId
+   * 覆盖手动配对（relay offer）。不改变任何连接逻辑。
+   */
+  getActiveConnectionIdentity(): ActiveConnectionIdentity | null {
+    return this.computeActiveConnectionIdentity();
+  }
+
+  private computeActiveConnectionIdentity(): ActiveConnectionIdentity | null {
+    if (this.state.status !== "connected") return null;
+    const target = this.stored;
+    if (this.activeDevice) {
+      return {
+        deviceId: this.activeDevice.deviceId,
+        serverId: target?.kind === "relay" ? target.offer.serverId : null,
+        label: this.activeDevice.name,
+      };
+    }
+    if (!target) return null;
+    return target.kind === "relay"
+      ? { deviceId: null, serverId: target.offer.serverId, label: target.offer.endpoint }
+      : { deviceId: null, serverId: null, label: target.url };
+  }
+
+  /** 每次状态转移后向 deviceStatusStore 广播连接标识（只读推送）。 */
+  private syncDeviceStatusStore(): void {
+    deviceStatusStore.applyActiveConnection(this.computeActiveConnectionIdentity());
+  }
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
@@ -197,6 +228,7 @@ class ConnectionManager {
 
   private setState(next: ManagerState): void {
     this.state = next;
+    this.syncDeviceStatusStore();
     this.notify();
   }
 
