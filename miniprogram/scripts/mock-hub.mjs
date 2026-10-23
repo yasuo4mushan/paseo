@@ -9,6 +9,11 @@
  * - 设备 1：在线，带真实可连 relay offer（remoteagent.agentsworkforyou.cn，模拟器实测可通）
  * - 设备 2：离线，offer 为 null
  *
+ * t31 动态设备注册：daemon 以 PASEO_HUB_URL/PASEO_HUB_TOKEN 指到本 mock 时，
+ * devices.register / devices.heartbeat / devices.list 收纳其注册（进程内，重启即清）。
+ * MOCK_STATIC_DEVICES=0 可隐藏上面两台固定设备（隔离 daemon 验收时避免
+ * 自动连接逻辑选到固定在线设备）。
+ *
  * 用法：node scripts/mock-hub.mjs [port]   （默认 8788，监听 0.0.0.0）
  */
 
@@ -31,6 +36,7 @@ const DEMO_PASS = "demo12345";
 let changedPass = DEMO_PASS;
 
 function devices() {
+  if (process.env.MOCK_STATIC_DEVICES === "0") return [];
   return [
     {
       deviceId: "dev-mbp",
@@ -49,6 +55,33 @@ function devices() {
       offer: null,
     },
   ];
+}
+
+// t31：动态注册设备（隔离 daemon；serverId 幂等复用 deviceId）
+const dynamicDevices = new Map();
+let dynamicSeq = 0;
+
+function upsertDynamicDevice(body) {
+  const offer = body?.offer;
+  if (!offer || typeof offer.serverId !== "string" || !offer.serverId) return null;
+  let device = null;
+  for (const candidate of dynamicDevices.values()) {
+    if (candidate.offer?.serverId === offer.serverId) {
+      device = candidate;
+      break;
+    }
+  }
+  if (!device) {
+    dynamicSeq += 1;
+    device = { deviceId: `dev-dyn-${dynamicSeq}` };
+    dynamicDevices.set(device.deviceId, device);
+  }
+  if (typeof body.name === "string" && body.name) device.name = body.name;
+  if (typeof body.os === "string" && body.os) device.os = body.os;
+  device.offer = offer;
+  device.online = true;
+  device.lastSeenAt = new Date().toISOString();
+  return device;
 }
 
 function readBody(req) {
@@ -163,8 +196,40 @@ const server = createServer(async (req, res) => {
         send(200, { ok: false, error: { code: "auth.unauthorized", message: "未登录或会话过期" } });
         return;
       }
-      send(200, { ok: true, data: { devices: devices() } });
+      send(200, { ok: true, data: { devices: [...devices(), ...dynamicDevices.values()] } });
       return;
+    case "devices.register": {
+      if (!authed) {
+        send(200, { ok: false, error: { code: "auth.unauthorized", message: "未登录或会话过期" } });
+        return;
+      }
+      const device = upsertDynamicDevice(body);
+      if (!device) {
+        send(200, { ok: false, error: { code: "devices.offer_invalid", message: "offer 无效" } });
+        return;
+      }
+      console.log(
+        `dynamic device registered: ${device.deviceId} ${device.name} → ${device.offer.endpoint}`,
+      );
+      send(200, { ok: true, data: { deviceId: device.deviceId } });
+      return;
+    }
+    case "devices.heartbeat": {
+      if (!authed) {
+        send(200, { ok: false, error: { code: "auth.unauthorized", message: "未登录或会话过期" } });
+        return;
+      }
+      const device = dynamicDevices.get(body?.deviceId);
+      if (!device) {
+        send(200, { ok: false, error: { code: "devices.not_found", message: "未知设备" } });
+        return;
+      }
+      if (body.offer) device.offer = body.offer;
+      device.online = true;
+      device.lastSeenAt = new Date().toISOString();
+      send(200, { ok: true, data: {} });
+      return;
+    }
     default:
       send(404, {
         ok: false,

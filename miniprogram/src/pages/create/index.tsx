@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Taro from "@tarojs/taro";
+import Taro, { useLoad } from "@tarojs/taro";
 import { Button, Input, Picker, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
 import type {
@@ -85,6 +85,11 @@ export default function CreateAgentPage() {
   const connected = connectionState.status === "connected";
 
   const [tab, setTab] = useState<PageTab>("create");
+
+  // t31：?tab=import 直达导入 tab（会话弹窗「导入已有会话」入口跳转用）
+  useLoad((options) => {
+    if (options?.tab === "import") setTab("import");
+  });
 
   // ---- 向导状态（级联规则见 wizard-model） ----
   const [wizard, setWizard] = useState<WizardState>(() =>

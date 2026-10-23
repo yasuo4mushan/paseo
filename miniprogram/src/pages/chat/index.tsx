@@ -33,6 +33,7 @@ import { WorkspacePicker } from "@/components/workspace-picker";
 import { SessionPickerSheet } from "@/components/session-picker";
 import { DevicePickerSheet } from "@/components/device-picker";
 import { ConfigPickerSheet } from "@/components/config-picker";
+import { WorkspaceFilesSheet } from "@/components/workspace-files-sheet";
 import { TimelineView } from "@/components/timeline";
 import { useAgentSession } from "@/hooks/use-agent-session";
 import { useMessageActions } from "@/hooks/use-message-actions";
@@ -247,10 +248,11 @@ export default function ChatPage() {
     if (connState.status === "connected") void refreshDirectory();
   }, [connState.status, refreshDirectory]);
 
-  // ---- 弹窗（顶部体系：设备/会话） ----
+  // ---- 弹窗（顶部体系：设备/会话；t31 文件侧滑面板） ----
 
   const [deviceSheetOpen, setDeviceSheetOpen] = useState(false);
   const [sessionSheetOpen, setSessionSheetOpen] = useState(false);
+  const [filesSheetOpen, setFilesSheetOpen] = useState(false);
   // 右滑手势呼出会话弹窗（t20 抽屉手势迁移；横向快速右滑才触发）
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -798,7 +800,7 @@ export default function ChatPage() {
         }
       }}
     >
-      {/* 顶栏：[设备按钮] [会话标题/会话列表按钮]（t21） */}
+      {/* 顶栏：[设备按钮] [会话标题/会话列表按钮] [新建][文件]（t21；t31 新建/文件显性化） */}
       <View className="chat-header">
         <View
           className={`chat-device-btn chat-device-dot-${deviceView.dot}`}
@@ -849,6 +851,28 @@ export default function ChatPage() {
               </View>
             )}
           </View>
+        </View>
+        {/* t31：新建对话显式入口（点按 = 快捷新对话回欢迎态；长按 = 高级创建向导） */}
+        <View
+          className="chat-new-btn"
+          onClick={() => sessionStore.setActive(null)}
+          onLongPress={() => void safeNavigateTo("/pages/create/index")}
+        >
+          <Image className="icon icon-sm" src={iconUrl("plus", "-inverse")} />
+          <View className="chat-new-text">新建</View>
+        </View>
+        {/* t31：项目文件侧滑面板入口（会话 cwd 优先，回落已选工作区） */}
+        <View
+          className={`chat-files-btn ${connected ? "" : "chat-files-btn-off"}`}
+          onClick={() => {
+            if (!connected) {
+              Taro.showToast({ title: "连接设备后可浏览项目文件", icon: "none" });
+              return;
+            }
+            setFilesSheetOpen(true);
+          }}
+        >
+          <Image className="icon" src={iconUrl("file")} />
         </View>
       </View>
 
@@ -1142,6 +1166,12 @@ export default function ChatPage() {
         selectedId={workspace?.workspaceId ?? null}
         onClose={() => setWorkspacePickerVisible(false)}
         onSelect={onWorkspaceSelected}
+      />
+      <WorkspaceFilesSheet
+        visible={filesSheetOpen}
+        onClose={() => setFilesSheetOpen(false)}
+        cwd={activeAgent?.cwd || workspace?.directory || ""}
+        workspaceLabel={projectLabel}
       />
       <PermissionOverlay />
     </View>

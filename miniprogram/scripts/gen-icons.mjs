@@ -301,6 +301,29 @@ const shapes = {
       LINE,
     );
   },
+  import: (cov, c) => {
+    // 导入（下载入托盘）：竖线 + 箭头头 + 底部托盘
+    c.covLine(cov, 40.5, 13, 40.5, 42, LINE);
+    c.covPolyline(
+      cov,
+      [
+        [28, 32],
+        [40.5, 45],
+        [53, 32],
+      ],
+      LINE,
+    );
+    c.covPolyline(
+      cov,
+      [
+        [16, 52],
+        [16, 66],
+        [65, 66],
+        [65, 52],
+      ],
+      LINE,
+    );
+  },
 };
 
 /** agent 品牌简约字形标（线条几何，非官方 logo，仅识别用）。 */
@@ -386,7 +409,7 @@ const MANIFEST_ENTRIES = [
   ["bell", "通知（铃铛）", []],
   ["archive", "归档（收纳盒）", []],
   ["tag", "标签（价签）", []],
-  ["plus", "加号（新建/附件）", []],
+  ["plus", "加号（新建/附件）", ["inverse"]],
   ["send", "发送（纸飞机）", ["active", "inverse"]],
   ["paperclip", "附件（回形针）", []],
   ["close", "关闭（×）", []],
@@ -401,6 +424,7 @@ const MANIFEST_ENTRIES = [
   ["bot", "机器人（空态）", []],
   ["spark", "星芒（空态点缀）", ["active"]],
   ["refresh", "刷新（循环箭头）", []],
+  ["import", "导入（下载入托盘）", []],
   ["brand-claude", "Claude 品牌标（星芒）", []],
   ["brand-codex", "Codex 品牌标（六边形）", []],
   ["brand-zcode", "zcode 品牌标（Z）", []],

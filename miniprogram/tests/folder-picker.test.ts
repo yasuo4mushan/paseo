@@ -3,6 +3,7 @@
  * - daemon 归一化路径 → trail 段数组（初始 "~" 浏览还原 home 路径）
  * - trail 的进出/回点/面包屑/绝对路径拼接（POSIX 根与 "~" 根两档）
  * - 新建文件夹名校验
+ * - t31 相对路径目录栈（文件面板/files 页共用）
  */
 
 import { describe, expect, it } from "vitest";
@@ -10,6 +11,8 @@ import {
   absoluteTrailPath,
   breadcrumbSegments,
   childTrail,
+  dirStackFromPath,
+  parentDirPath,
   parentTrail,
   relativeTrailPath,
   trailFromDaemonPath,
@@ -97,5 +100,27 @@ describe("validateFolderName", () => {
     expect(validateFolderName("我的项目")).toBeNull();
     expect(validateFolderName("web app")).toBeNull();
     expect(validateFolderName("app.v2")).toBeNull();
+  });
+});
+
+describe("t31 dirStackFromPath（文件面板/files 页初始定位）", () => {
+  it("相对路径 → 每层累计路径的目录栈", () => {
+    expect(dirStackFromPath("src/lib/deep")).toEqual(["src", "src/lib", "src/lib/deep"]);
+  });
+
+  it("根（''/'.'/'/'）→ 空栈；容错空段", () => {
+    expect(dirStackFromPath("")).toEqual([]);
+    expect(dirStackFromPath(".")).toEqual([]);
+    expect(dirStackFromPath("/")).toEqual([]);
+    expect(dirStackFromPath("src//lib")).toEqual(["src", "src/lib"]);
+  });
+});
+
+describe("t31 parentDirPath（文件所在目录）", () => {
+  it("多级取父；一级/根回 '.'", () => {
+    expect(parentDirPath("src/lib/a.ts")).toBe("src/lib");
+    expect(parentDirPath("README.md")).toBe(".");
+    expect(parentDirPath("")).toBe(".");
+    expect(parentDirPath("./src/a.ts")).toBe("src");
   });
 });

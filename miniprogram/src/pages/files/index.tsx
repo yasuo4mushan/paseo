@@ -35,6 +35,7 @@ import {
   saveBytesToDownload,
   shareFile,
 } from "@/utils/file-ops";
+import { dirStackFromPath } from "@/utils/folder-path";
 import {
   initialFileEditState,
   nextFileEditState,
@@ -129,12 +130,17 @@ export default function FilesPage() {
   const [download, setDownload] = useState<DownloadState | null>(null);
   // t24：cwd 直达参数（会话详情"文件"按钮/向导第④步入口带会话目录进来）
   const [cwdOverride, setCwdOverride] = useState("");
+  // t31：path = 初始子目录（文件面板跳转定位所在目录）；open = 自动打开预览的文件
+  const initialPathRef = useRef("");
+  const pendingOpenRef = useRef<string | null>(null);
   // t24：无工作区时的冷启动兜底（设备卡"文件"直达可能还没选过工作区）
   const [autoSelectState, setAutoSelectState] = useState<"idle" | "trying" | "none">("idle");
 
   useLoad((options) => {
     const raw = options?.cwd ? decodeURIComponent(options.cwd) : "";
     setCwdOverride(raw.startsWith("/") || raw.startsWith("~") ? raw : "");
+    initialPathRef.current = options?.path ? decodeURIComponent(options.path) : "";
+    pendingOpenRef.current = options?.open ? decodeURIComponent(options.open) : null;
   });
 
   const cwd = cwdOverride || workspace?.directory || "";
@@ -201,9 +207,27 @@ export default function FilesPage() {
 
   useEffect(() => {
     if (!cwd) return;
-    void loadDirectory(".");
-    setDirStack([]);
-  }, [cwd, loadDirectory]);
+    // t31：首次定位支持 ?path= 子目录（文件面板跳转"文件所在目录"），后续 cwd
+    // 变化仍回根。initialPathRef 一次性消费。deps 含 cwdOverride：冷启动兜底可能
+    // 先经 workspace 把 cwd 填成与 cwdOverride 相同的值，useLoad 到达时 cwd 不变、
+    // 不重跑本效应 → open/path 参数无人消费；cwdOverride 变化强制重载一次。
+    const start = initialPathRef.current || ".";
+    initialPathRef.current = "";
+    setDirStack(dirStackFromPath(start));
+    void loadDirectory(start);
+  }, [cwd, cwdOverride, loadDirectory]);
+
+  // t31：?open= 自动打开预览。目录列表就绪后匹配一次即清，失败静默留给手点。
+  // useLoad 早于首次效应提交：挂载轮 entries=[] 不得消费（否则目标被空列表清掉，
+  // 后续加载完成再也不开）；加载失败同样保留目标无害。
+  useEffect(() => {
+    const target = pendingOpenRef.current;
+    if (!target || loading || entries.length === 0) return;
+    pendingOpenRef.current = null;
+    const entry = entries.find((e) => e.path === target);
+    if (entry) void openFile(entry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, loading]);
 
   usePullDownRefresh(async () => {
     const current = dirStack[dirStack.length - 1] ?? ".";
