@@ -480,12 +480,14 @@ export function createHubAccountManager(
 
     async logout() {
       if (isConfigured()) {
+        // The hub invalidates the session token on auth.logout, so the device
+        // must be unregistered first — devices.unregister needs a live token.
+        await unregisterDevice();
         try {
           await callApi("auth.logout", {});
         } catch (error) {
           log?.warn({ err: error }, "Best-effort hub logout failed");
         }
-        await unregisterDevice();
       }
       generation += 1;
       clearTimer();

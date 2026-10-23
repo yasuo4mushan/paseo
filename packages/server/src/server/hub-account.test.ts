@@ -31,6 +31,8 @@ interface MockHubState {
   devices: Map<string, MockHubDevice>;
   failFirstRegisterOnce: boolean;
   rejectTokens: boolean;
+  /** Mirrors the real hub: auth.logout invalidates the session token. */
+  loggedOut: boolean;
 }
 
 type MockHubRouteResult =
@@ -55,6 +57,7 @@ function routeMockHubAuth(
         error: { code: "auth.invalid_credentials", message: "bad credentials", status: 400 },
       };
     }
+    state.loggedOut = false;
     return {
       data: { token: state.token, account: { id: "acc-1", phone: payload.phone } },
     };
@@ -94,6 +97,10 @@ function routeMockHubRequest(
 
   if (method === "auth.logout") {
     state.logouts += 1;
+    // Real-hub semantics: the session token dies with the logout, so any
+    // later devices.* call with it must 401 — this is what pins the
+    // unregister-before-logout order in hub-account logout().
+    state.loggedOut = true;
     return { data: { ok: true } };
   }
   if (method === "devices.register") {
@@ -146,6 +153,7 @@ async function startMockHub(): Promise<{ state: MockHubState; close: () => Promi
     devices: new Map(),
     failFirstRegisterOnce: false,
     rejectTokens: false,
+    loggedOut: false,
   };
 
   const server = http.createServer((req, res) => {
@@ -156,7 +164,8 @@ async function startMockHub(): Promise<{ state: MockHubState; close: () => Promi
     req.on("end", () => {
       const method = (req.url ?? "").replace(/^\/api\//, "");
       const payload = body ? (JSON.parse(body) as Record<string, unknown>) : {};
-      const isAuthorized = req.headers.authorization === `Bearer ${state.token}`;
+      const isAuthorized =
+        !state.loggedOut && req.headers.authorization === `Bearer ${state.token}`;
       const result = routeMockHubRequest(state, method, payload, isAuthorized);
       res.setHeader("Content-Type", "application/json");
       if ("error" in result) {
