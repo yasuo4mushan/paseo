@@ -72,7 +72,7 @@
   margin-top: 8rpx;
   font-size: 24rpx;
   line-height: 1.4;
-  color: #d48806;
+  color: var(--warning-text);
 }
 
 .device-offline {

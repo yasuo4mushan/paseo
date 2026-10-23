@@ -50,7 +50,7 @@
 .settings-unreported {
   font-size: 24rpx;
   line-height: 1.4;
-  color: #d48806;
+  color: var(--warning-text);
 }
 
 /* ---------- t18：主题三档 + 振动开关 + 切换设备 ---------- */
