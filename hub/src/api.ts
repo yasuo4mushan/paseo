@@ -46,8 +46,15 @@ export interface MethodDef {
   handler: (ctx: ApiContext, body: unknown, auth: AuthContext | null) => Promise<unknown> | unknown;
 }
 
-function accountPublic(account: Pick<AccountRecord, "id" | "phone" | "createdAt">): AccountPublic {
-  return { id: account.id, phone: account.phone, createdAt: account.createdAt };
+function accountPublic(
+  account: Pick<AccountRecord, "id" | "phone" | "createdAt" | "passwordSet">,
+): AccountPublic {
+  return {
+    id: account.id,
+    phone: account.phone,
+    createdAt: account.createdAt,
+    passwordSet: account.passwordSet ?? true,
+  };
 }
 
 function devicePublic(

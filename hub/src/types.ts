@@ -80,6 +80,8 @@ export interface AccountPublic {
   /** Normalized 11-digit CN mobile. Absent only on legacy username-era accounts. */
   phone: string;
   createdAt: string;
+  /** False while the account has no usable password (wx-phone created, initial password pending). */
+  passwordSet: boolean;
 }
 
 export interface DevicePublic {
