@@ -1656,6 +1656,73 @@ export const en = {
       settings: "Settings",
     },
   },
+  hubOnboarding: {
+    title: "Sign in to aaswitch",
+    subtitle:
+      "Sign in to register this device with the aaswitch hub so the miniprogram on your phone can reach it",
+    sidebarLogin: "Sign in to aaswitch",
+    mode: {
+      login: "Sign in",
+      register: "Create account",
+    },
+    fields: {
+      phone: "Phone number",
+      phonePlaceholder: "11-digit mainland China phone number",
+      password: "Password",
+      passwordPlaceholder: "Password (at least 8 characters)",
+    },
+    actions: {
+      login: "Sign in",
+      register: "Create account",
+      skip: "Use locally without signing in",
+    },
+    device: {
+      title: "Confirm this device",
+      subtitle: "This machine will be registered with the aaswitch hub under this name",
+      nameLabel: "Device name",
+      nameHint: "Defaults to this machine's hostname",
+      confirm: "Confirm registration",
+    },
+    providers: {
+      title: "Set up your agents",
+      subtitle:
+        "Install and sign in to the agents you plan to use. You can also do this later in Settings.",
+      refreshHint: "Already ran the command?",
+      refresh: "Refresh",
+      refreshFailed: "Unable to refresh provider status.",
+      loginHint: "Run this in a terminal to sign in:",
+      installHint: "Install it in a terminal:",
+      zcodeReady: "ZCode desktop detected — ready to go.",
+      next: "Done",
+      states: {
+        ready: "Ready",
+        needsLogin: "Sign-in needed",
+        notInstalled: "Not installed",
+        checking: "Checking…",
+      },
+    },
+    done: {
+      title: "You're all set",
+      subtitle:
+        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+      enter: "Enter the app",
+    },
+    errors: {
+      phoneRequired: "Enter your phone number",
+      invalidPhone: "Enter a valid 11-digit mainland China phone number",
+      passwordRequired: "Enter a password",
+      passwordTooShort: "Password must be at least 8 characters",
+      invalidCredentials: "Incorrect phone number or password",
+      phoneTaken: "This phone number is already registered",
+      sessionExpired: "Your session has expired. Sign in again.",
+      rateLimited: "Too many attempts. Try again later.",
+      invalidRequest: "Invalid request.",
+      internalError: "Server error. Try again later.",
+      urlInvalid: "The hub address is invalid.",
+      wxUnavailable: "WeChat sign-in is temporarily unavailable. Try again later.",
+    },
+    commandCopyFailed: "Unable to copy the command.",
+  },
   modelSelector: {
     title: "Select provider",
     selectModel: "Select model",
