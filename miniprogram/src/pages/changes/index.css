@@ -106,12 +106,12 @@
 }
 
 .commit-add {
-  color: #2da44e;
+  color: var(--diff-add-strong);
   font-size: 22rpx;
 }
 
 .commit-del {
-  color: #cf222e;
+  color: var(--diff-del-strong);
   font-size: 22rpx;
 }
 
@@ -216,13 +216,13 @@
 }
 
 .diff-line-add {
-  color: #116329;
-  background: rgba(46, 160, 67, 0.15);
+  color: var(--diff-add-text);
+  background: var(--diff-add-bg);
 }
 
 .diff-line-remove {
-  color: #82071e;
-  background: rgba(248, 81, 73, 0.15);
+  color: var(--diff-del-text);
+  background: var(--diff-del-bg);
 }
 
 .diff-line-header {

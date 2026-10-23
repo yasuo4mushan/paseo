@@ -68,6 +68,8 @@ function installTheme(): void {
       backgroundColor: colors.navBackgroundColor,
     }).catch(() => {});
     Taro.setTabBarStyle(colors.tabBar).catch(() => {});
+    // t22：窗口底色（下拉/回弹露出区域）与 --bg 同步，避免手动深色档边缘闪白。
+    Taro.setBackgroundColor({ backgroundColor: colors.pageBackgroundColor }).catch(() => {});
   };
   const systemTheme =
     (Taro.getSystemInfoSync().theme as string | undefined) ?? "light";

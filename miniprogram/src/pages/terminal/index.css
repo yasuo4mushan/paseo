@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #101418;
+  background: var(--term-bg);
 }
 
 .term-head {
@@ -18,7 +18,7 @@
 }
 
 .term-title {
-  color: #d7dde3;
+  color: var(--term-text);
   font-size: 28rpx;
   font-weight: 600;
   overflow: hidden;
@@ -30,17 +30,17 @@
   font-size: 22rpx;
   border-radius: var(--radius-round);
   padding: 4rpx 16rpx;
-  color: #9aa4ad;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--term-dim);
+  background: var(--term-pill-bg);
 }
 
 .term-pill-live {
-  color: #3fb950;
-  background: rgba(63, 185, 80, 0.15);
+  color: var(--term-live);
+  background: var(--term-live-bg);
 }
 
 .term-pill-closed {
-  color: #8b949e;
+  color: var(--term-closed);
 }
 
 .term-error {
@@ -70,7 +70,7 @@
   font-family: "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
   font-size: 24rpx;
   line-height: 1.55;
-  color: #c9d3da;
+  color: var(--term-line);
   white-space: pre;
 }
 
@@ -84,14 +84,14 @@
   align-items: center;
   gap: 16rpx;
   padding: 16rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: #161b21;
+  background: var(--term-panel);
 }
 
 .term-input {
   flex: 1;
-  background: #22292f;
+  background: var(--term-input-bg);
   border-radius: var(--radius);
   padding: 14rpx 20rpx;
-  color: #d7dde3;
+  color: var(--term-text);
   font-size: 26rpx;
 }

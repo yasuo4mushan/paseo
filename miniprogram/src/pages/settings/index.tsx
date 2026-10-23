@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { MODAL_DANGER_COLOR } from "@/constants/colors";
 import type { DaemonStatus } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useThemeClass } from "@/hooks/use-theme";
@@ -104,7 +105,7 @@ export default function SettingsPage() {
       title: "退出登录",
       content: "将清除本机账号会话并断开设备连接，确定继续？",
       confirmText: "退出",
-      confirmColor: "#FA5151",
+      confirmColor: MODAL_DANGER_COLOR,
       success: (res) => {
         if (!res.confirm) return;
         connectionManager.disconnect();
@@ -301,7 +302,7 @@ export default function SettingsPage() {
               title: "清除已保存连接",
               content: "将删除本机保存的配对信息（等同密码），确定继续？",
               confirmText: "清除",
-              confirmColor: "#FA5151",
+              confirmColor: MODAL_DANGER_COLOR,
               success: (res) => {
                 if (res.confirm) {
                   connectionManager.forget();

@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Taro, { usePullDownRefresh } from "@tarojs/taro";
 import { Button, ScrollView, Textarea, View, Image } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { MODAL_DANGER_COLOR } from "@/constants/colors";
 import type { FileExplorerEntry } from "@/connection/protocol-types";
 import { decodeUtf8 } from "@/connection/utf8";
 import { useThemeClass } from "@/hooks/use-theme";
@@ -398,7 +399,7 @@ export default function FilesPage() {
         content: "有未保存的修改，确定关闭编辑器？",
         confirmText: "放弃",
         cancelText: "继续编辑",
-        confirmColor: "#fa5151",
+        confirmColor: MODAL_DANGER_COLOR,
       });
       if (!confirm) return;
     }
@@ -600,7 +601,7 @@ export default function FilesPage() {
           entry.kind === "directory" ? "文件夹内容将一并删除。" : ""
         }`,
         confirmText: "删除",
-        confirmColor: "#fa5151",
+        confirmColor: MODAL_DANGER_COLOR,
         cancelText: "取消",
       });
       if (!confirm) return;

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Button, Image, Input, ScrollView, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { MODAL_DANGER_COLOR } from "@/constants/colors";
 import { hasSession } from "@/hub/hub-client";
 import type {
   ProviderAvailability,
@@ -501,7 +502,7 @@ export default function ChatPage() {
       title: "删除会话",
       content: "删除后该会话将从设备上永久移除，确定删除？",
       confirmText: "删除",
-      confirmColor: "#fa5151",
+      confirmColor: MODAL_DANGER_COLOR,
       cancelText: "取消",
     });
     if (!confirm) return;

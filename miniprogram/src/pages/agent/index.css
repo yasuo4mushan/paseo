@@ -223,7 +223,7 @@
 }
 
 .subagent-dot-running {
-  background: #f5a623;
+  background: var(--warning);
 }
 
 .subagent-dot-completed {
@@ -231,7 +231,7 @@
 }
 
 .subagent-dot-failed {
-  background: #fa5151;
+  background: var(--danger);
 }
 
 .subagent-dot-canceled {
@@ -264,7 +264,7 @@
 }
 
 .subagent-status-running {
-  color: #f5a623;
+  color: var(--warning);
 }
 
 .subagent-status-completed {
@@ -272,7 +272,7 @@
 }
 
 .subagent-status-failed {
-  color: #fa5151;
+  color: var(--danger);
 }
 
 .ctx-gauge {
@@ -298,7 +298,7 @@
 }
 
 .ctx-gauge-fill.ctx-gauge-hot {
-  background: #fa5151;
+  background: var(--danger);
 }
 
 .ctx-gauge-text {

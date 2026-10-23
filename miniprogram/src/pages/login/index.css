@@ -4,6 +4,8 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  /* t22：根容器自绘底色，手动主题档下与内容一致（同 .page 机制） */
+  background: var(--bg);
 }
 
 .login-hero {

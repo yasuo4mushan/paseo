@@ -95,5 +95,5 @@
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--knob);
 }
