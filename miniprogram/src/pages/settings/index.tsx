@@ -6,11 +6,7 @@ import type { DaemonStatus } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { useThemeClass } from "@/hooks/use-theme";
 import { attentionStore } from "@/stores/attention-store";
-import {
-  THEME_LABELS,
-  themeStore,
-  type ThemePreference,
-} from "@/stores/theme-store";
+import { THEME_LABELS, themeStore, type ThemePreference } from "@/stores/theme-store";
 import {
   DEFAULT_HUB_BASE,
   getAccount,
@@ -77,7 +73,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (state.status === "connected") {
-      connectionManager.fetchDaemonStatus().then(setDaemonStatus).catch(() => setDaemonStatus(null));
+      connectionManager
+        .fetchDaemonStatus()
+        .then(setDaemonStatus)
+        .catch(() => setDaemonStatus(null));
     }
   }, [state.status]);
 
@@ -157,7 +156,11 @@ export default function SettingsPage() {
           <View className="cell-grow cell-label">连接状态</View>
           <View
             className={`cell-value ${
-              state.status === "connected" ? "value-ok" : state.status === "error" ? "value-bad" : ""
+              state.status === "connected"
+                ? "value-ok"
+                : state.status === "error"
+                  ? "value-bad"
+                  : ""
             }`}
           >
             {STATUS_TEXT[state.status] ?? state.status}
@@ -166,9 +169,7 @@ export default function SettingsPage() {
         </View>
         <View className="cell">
           <View className="cell-grow cell-label">当前设备</View>
-          <View className="cell-value">
-            {activeDevice ? activeDevice.name : endpointLabel()}
-          </View>
+          <View className="cell-value">{activeDevice ? activeDevice.name : endpointLabel()}</View>
         </View>
         {info ? (
           <View className="cell">
@@ -203,8 +204,8 @@ export default function SettingsPage() {
         onClick={() => Taro.switchTab({ url: "/pages/devices/index" })}
       >
         <View className="cell-grow">
-          <View className="cell-label">切换设备</View>
-          <View className="faint">查看 hub 设备列表，选一台在线设备连接</View>
+          <View className="cell-label">管理设备</View>
+          <View className="faint">设备列表/连接/手动配对；日常切换在对话页顶栏</View>
         </View>
         <View className="cell-arrow">›</View>
       </View>
@@ -271,11 +272,14 @@ export default function SettingsPage() {
         )}
       </View>
       {hubBase !== DEFAULT_HUB_BASE ? (
-        <View className="faint settings-note" onClick={() => {
-          resetHubBase();
-          setHubBaseState(DEFAULT_HUB_BASE);
-          Taro.showToast({ title: "已恢复默认", icon: "none" });
-        }}>
+        <View
+          className="faint settings-note"
+          onClick={() => {
+            resetHubBase();
+            setHubBaseState(DEFAULT_HUB_BASE);
+            Taro.showToast({ title: "已恢复默认", icon: "none" });
+          }}
+        >
           当前使用自定义地址，点此恢复默认 {DEFAULT_HUB_BASE}
         </View>
       ) : (

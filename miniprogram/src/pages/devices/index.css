@@ -2,6 +2,40 @@
   padding-top: 24rpx;
 }
 
+/* t21：管理页定位提示 + 手动配对入口 */
+
+.devices-manage-tip {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 4rpx 8rpx 20rpx;
+}
+
+.devices-manage-text {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+
+.devices-pair-entry {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 26rpx 32rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.devices-pair-entry:active {
+  background: var(--fill);
+}
+
+.devices-pair-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--text-1);
+}
+
 .device-card {
   display: flex;
   align-items: center;

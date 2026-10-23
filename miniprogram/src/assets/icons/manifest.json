@@ -1,190 +1,126 @@
 {
   "chat": {
     "description": "会话（气泡）",
-    "files": [
-      "chat.png",
-      "chat-active.png"
-    ]
+    "files": ["chat.png", "chat-active.png"]
   },
   "devices": {
     "description": "设备（显示器）",
-    "files": [
-      "devices.png",
-      "devices-active.png"
-    ]
+    "files": ["devices.png", "devices-active.png"]
   },
   "settings": {
     "description": "设置（三档滑杆）",
-    "files": [
-      "settings.png",
-      "settings-active.png"
-    ]
+    "files": ["settings.png", "settings-active.png"]
   },
   "file": {
     "description": "文件（折角文档）",
-    "files": [
-      "file.png"
-    ]
+    "files": ["file.png"]
   },
   "terminal": {
     "description": "终端（> _）",
-    "files": [
-      "terminal.png"
-    ]
+    "files": ["terminal.png"]
   },
   "diff": {
     "description": "改动（+/− 与分隔线）",
-    "files": [
-      "diff.png"
-    ]
+    "files": ["diff.png"]
   },
   "schedule": {
     "description": "定时（时钟）",
-    "files": [
-      "schedule.png",
-      "schedule-warning.png"
-    ]
+    "files": ["schedule.png", "schedule-warning.png"]
   },
   "bell": {
     "description": "通知（铃铛）",
-    "files": [
-      "bell.png"
-    ]
+    "files": ["bell.png"]
   },
   "archive": {
     "description": "归档（收纳盒）",
-    "files": [
-      "archive.png"
-    ]
+    "files": ["archive.png"]
   },
   "tag": {
     "description": "标签（价签）",
-    "files": [
-      "tag.png"
-    ]
+    "files": ["tag.png"]
   },
   "plus": {
     "description": "加号（新建/附件）",
-    "files": [
-      "plus.png"
-    ]
+    "files": ["plus.png"]
   },
   "send": {
     "description": "发送（纸飞机）",
-    "files": [
-      "send.png",
-      "send-active.png",
-      "send-inverse.png"
-    ]
+    "files": ["send.png", "send-active.png", "send-inverse.png"]
   },
   "paperclip": {
     "description": "附件（回形针）",
-    "files": [
-      "paperclip.png"
-    ]
+    "files": ["paperclip.png"]
   },
   "close": {
     "description": "关闭（×）",
-    "files": [
-      "close.png"
-    ]
+    "files": ["close.png"]
   },
   "back": {
     "description": "返回（左箭头）",
-    "files": [
-      "back.png"
-    ]
+    "files": ["back.png"]
   },
   "chevron-down": {
     "description": "下箭头（选择器）",
-    "files": [
-      "chevron-down.png"
-    ]
+    "files": ["chevron-down.png"]
   },
   "expand": {
     "description": "展开栏（右侧轨道）",
-    "files": [
-      "expand.png"
-    ]
+    "files": ["expand.png"]
   },
   "project": {
     "description": "项目（文件夹）",
-    "files": [
-      "project.png"
-    ]
+    "files": ["project.png"]
   },
   "check": {
     "description": "完成（✓）",
-    "files": [
-      "check.png",
-      "check-active.png"
-    ]
+    "files": ["check.png", "check-active.png"]
   },
   "warning": {
     "description": "警告（三角）",
-    "files": [
-      "warning.png"
-    ]
+    "files": ["warning.png"]
   },
   "image": {
     "description": "图片（山与日）",
-    "files": [
-      "image.png"
-    ]
+    "files": ["image.png"]
   },
   "bot": {
     "description": "机器人（空态）",
-    "files": [
-      "bot.png"
-    ]
+    "files": ["bot.png"]
   },
   "spark": {
     "description": "星芒（空态点缀）",
-    "files": [
-      "spark.png",
-      "spark-active.png"
-    ]
+    "files": ["spark.png", "spark-active.png"]
+  },
+  "refresh": {
+    "description": "刷新（循环箭头）",
+    "files": ["refresh.png"]
   },
   "brand-claude": {
     "description": "Claude 品牌标（星芒）",
-    "files": [
-      "brand-claude.png"
-    ]
+    "files": ["brand-claude.png"]
   },
   "brand-codex": {
     "description": "Codex 品牌标（六边形）",
-    "files": [
-      "brand-codex.png"
-    ]
+    "files": ["brand-codex.png"]
   },
   "brand-zcode": {
     "description": "zcode 品牌标（Z）",
-    "files": [
-      "brand-zcode.png"
-    ]
+    "files": ["brand-zcode.png"]
   },
   "brand-kimi": {
     "description": "Kimi 品牌标（轨道圆）",
-    "files": [
-      "brand-kimi.png"
-    ]
+    "files": ["brand-kimi.png"]
   },
   "brand-codebuddy": {
     "description": "CodeBuddy 品牌标（同心圆）",
-    "files": [
-      "brand-codebuddy.png"
-    ]
+    "files": ["brand-codebuddy.png"]
   },
   "brand-qoder": {
     "description": "Qoder 品牌标（菱形）",
-    "files": [
-      "brand-qoder.png"
-    ]
+    "files": ["brand-qoder.png"]
   },
   "brand-qwen": {
     "description": "Qwen 品牌标（双弧）",
-    "files": [
-      "brand-qwen.png"
-    ]
+    "files": ["brand-qwen.png"]
   }
 }
