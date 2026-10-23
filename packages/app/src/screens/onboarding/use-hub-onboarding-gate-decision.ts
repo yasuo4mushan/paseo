@@ -19,7 +19,10 @@ function resolveHubSupported(
   serverInfoLoaded: boolean,
   featureFlag: boolean,
 ): boolean | null {
-  if (serverId === null) return false;
+  // No online host yet: still unknown — the startup route may redirect into
+  // the app before the daemon's session comes online, and treating this as
+  // "unsupported" would let the gate slip past before hub.status can load.
+  if (serverId === null) return null;
   if (serverInfoLoaded) return featureFlag;
   return null;
 }
