@@ -289,14 +289,14 @@ interface ResolvedServiceProxy {
 export interface ResolvedHubAccount {
   baseUrl: string;
   token: string | null;
-  username: string | null;
+  phone: string | null;
   deviceName: string | null;
   tokenFromEnv: boolean;
 }
 
 /**
  * Zero-config default for the aaswitch device hub. Users sign in with just a
- * username and password; the address only changes via persisted config or
+ * phone number and password; the address only changes via persisted config or
  * `PASEO_HUB_URL` (for example when a self-hosted hub or the final aaswitch
  * domain is used). Swap this constant when the aaswitch domain is ready.
  */
@@ -328,7 +328,7 @@ function resolveHubAccountConfig(
       normalizeHubBaseUrl(persisted.hub?.baseUrl) ??
       normalizeHubBaseUrl(DEFAULT_HUB_BASE_URL)!,
     token: nonEmptyEnv(env.PASEO_HUB_TOKEN) ?? persisted.hub?.token ?? null,
-    username: persisted.hub?.username?.trim() || null,
+    phone: persisted.hub?.phone?.trim() || null,
     deviceName: persisted.hub?.deviceName?.trim() || null,
     tokenFromEnv: Boolean(nonEmptyEnv(env.PASEO_HUB_TOKEN)),
   };

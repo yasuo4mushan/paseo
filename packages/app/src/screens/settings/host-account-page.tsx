@@ -26,12 +26,24 @@ function isBlank(value: string): boolean {
 }
 
 interface AccountFormState {
-  username: string;
+  phone: string;
   password: string;
   deviceName: string;
 }
 
-const EMPTY_FORM: AccountFormState = { username: "", password: "", deviceName: "" };
+const EMPTY_FORM: AccountFormState = { phone: "", password: "", deviceName: "" };
+
+interface PasswordFormState {
+  oldPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+}
+
+const EMPTY_PASSWORD_FORM: PasswordFormState = {
+  oldPassword: "",
+  newPassword: "",
+  newPasswordConfirm: "",
+};
 
 function AccountIdentityRows({ status }: { status: HubAccountStatus }) {
   const { t } = useTranslation();
@@ -39,7 +51,7 @@ function AccountIdentityRows({ status }: { status: HubAccountStatus }) {
     <>
       <View style={settingsStyles.row}>
         <View style={settingsStyles.rowContent}>
-          <Text style={settingsStyles.rowTitle}>{status.username ?? ""}</Text>
+          <Text style={settingsStyles.rowTitle}>{status.phone ?? ""}</Text>
           <Text style={settingsStyles.rowHint}>{status.baseUrl ?? ""}</Text>
         </View>
       </View>
@@ -63,12 +75,152 @@ function AccountIdentityRows({ status }: { status: HubAccountStatus }) {
   );
 }
 
+function AccountPasswordCard({ serverId, onDone }: { serverId: string; onDone: () => void }) {
+  const { t } = useTranslation();
+  const client = useHostRuntimeClient(serverId);
+  const [form, setForm] = useState<PasswordFormState>(EMPTY_PASSWORD_FORM);
+  const [expanded, setExpanded] = useState(false);
+
+  const changeMutation = useMutation({
+    mutationFn: async () => {
+      if (!client) throw new Error(t("workspace.terminal.hostDisconnected"));
+      await client.changeHubAccountPassword({
+        // WeChat one-click accounts that never set a password leave this blank.
+        ...(form.oldPassword.trim() ? { oldPassword: form.oldPassword } : {}),
+        newPassword: form.newPassword,
+      });
+    },
+    onSuccess: () => {
+      setForm(EMPTY_PASSWORD_FORM);
+      setExpanded(false);
+      onDone();
+    },
+  });
+
+  const handleChange = useCallback((patch: Partial<PasswordFormState>) => {
+    setForm((current) => ({ ...current, ...patch }));
+  }, []);
+  const changeOld = useCallback(
+    (value: string) => handleChange({ oldPassword: value }),
+    [handleChange],
+  );
+  const changeNew = useCallback(
+    (value: string) => handleChange({ newPassword: value }),
+    [handleChange],
+  );
+  const changeConfirm = useCallback(
+    (value: string) => handleChange({ newPasswordConfirm: value }),
+    [handleChange],
+  );
+  const expand = useCallback(() => setExpanded(true), []);
+  const collapse = useCallback(() => {
+    setExpanded(false);
+    setForm(EMPTY_PASSWORD_FORM);
+  }, []);
+  const submitChange = useCallback(() => {
+    changeMutation.mutate();
+  }, [changeMutation]);
+
+  if (!expanded) {
+    return (
+      <View style={[settingsStyles.row, settingsStyles.rowBorder]}>
+        <View style={settingsStyles.rowContent}>
+          <Button variant="secondary" onPress={expand} testID="hub-account-change-password-expand">
+            {t("settings.host.account.actions.changePassword")}
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
+  const canSubmit =
+    form.newPassword.length >= 8 &&
+    form.newPassword === form.newPasswordConfirm &&
+    !changeMutation.isPending;
+
+  return (
+    <View style={[settingsStyles.row, settingsStyles.rowBorder]}>
+      <View style={settingsStyles.rowContent}>
+        <Field
+          label={t("settings.host.account.fields.oldPassword")}
+          hint={t("settings.host.account.fields.oldPasswordHint")}
+        >
+          <FormTextInput
+            initialValue=""
+            onChangeText={changeOld}
+            placeholder={t("settings.host.account.fields.oldPassword")}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!changeMutation.isPending}
+            accessibilityLabel={t("settings.host.account.fields.oldPassword")}
+          />
+        </Field>
+        <Field label={t("settings.host.account.fields.newPassword")}>
+          <FormTextInput
+            initialValue=""
+            onChangeText={changeNew}
+            placeholder={t("settings.host.account.fields.newPasswordPlaceholder")}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!changeMutation.isPending}
+            accessibilityLabel={t("settings.host.account.fields.newPassword")}
+          />
+        </Field>
+        <Field
+          label={t("settings.host.account.fields.newPasswordConfirm")}
+          error={
+            form.newPasswordConfirm && form.newPassword !== form.newPasswordConfirm
+              ? t("settings.host.account.fields.passwordMismatch")
+              : null
+          }
+        >
+          <FormTextInput
+            initialValue=""
+            onChangeText={changeConfirm}
+            placeholder={t("settings.host.account.fields.newPasswordConfirm")}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!changeMutation.isPending}
+            accessibilityLabel={t("settings.host.account.fields.newPasswordConfirm")}
+          />
+        </Field>
+        {changeMutation.error ? (
+          <View style={styles.feedback}>
+            <Alert size="sm" variant="error" title={errorMessage(changeMutation.error)} />
+          </View>
+        ) : null}
+        <View style={styles.actions}>
+          <Button variant="outline" onPress={collapse} disabled={changeMutation.isPending}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant="default"
+            onPress={submitChange}
+            loading={changeMutation.isPending}
+            disabled={!canSubmit}
+            testID="hub-account-change-password-submit"
+          >
+            {t("settings.host.account.actions.changePassword")}
+          </Button>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function AccountSignedInCard({
   status,
+  serverId,
+  onPasswordChanged,
   onLogout,
   logoutPending,
 }: {
   status: HubAccountStatus;
+  serverId: string;
+  onPasswordChanged: () => void;
   onLogout: () => void;
   logoutPending: boolean;
 }) {
@@ -76,6 +228,7 @@ function AccountSignedInCard({
   return (
     <View style={settingsStyles.card}>
       <AccountIdentityRows status={status} />
+      <AccountPasswordCard serverId={serverId} onDone={onPasswordChanged} />
       {status.lastError ? (
         <View style={[settingsStyles.row, settingsStyles.rowBorder]}>
           <View style={settingsStyles.rowContent}>
@@ -128,7 +281,7 @@ function AccountLoginForm({
       // The daemon knows its hub address (env override, persisted config, or
       // the built-in default), so the form only collects credentials.
       await client.loginHubAccount({
-        username: form.username.trim(),
+        phone: form.phone.trim(),
         password: form.password,
       });
     },
@@ -138,7 +291,7 @@ function AccountLoginForm({
     mutationFn: async () => {
       if (!client) throw new Error(t("workspace.terminal.hostDisconnected"));
       await client.registerHubAccount({
-        username: form.username.trim(),
+        phone: form.phone.trim(),
         password: form.password,
         ...(form.deviceName.trim() ? { deviceName: form.deviceName.trim() } : {}),
       });
@@ -147,11 +300,11 @@ function AccountLoginForm({
   });
 
   const pending = loginMutation.isPending || registerMutation.isPending;
-  const canSubmit = !isBlank(form.username) && !isBlank(form.password);
+  const canSubmit = !isBlank(form.phone) && !isBlank(form.password);
   const mutationError = loginMutation.error ?? registerMutation.error;
 
-  const changeUsername = useCallback(
-    (value: string) => onFormChange({ username: value }),
+  const changePhone = useCallback(
+    (value: string) => onFormChange({ phone: value }),
     [onFormChange],
   );
   const changePassword = useCallback(
@@ -178,15 +331,16 @@ function AccountLoginForm({
         </View>
       </View>
       <View style={[settingsStyles.row, settingsStyles.rowBorder]}>
-        <Field label={t("settings.host.account.fields.username")}>
+        <Field label={t("settings.host.account.fields.phone")}>
           <FormTextInput
             initialValue=""
-            onChangeText={changeUsername}
-            placeholder={t("settings.host.account.fields.usernamePlaceholder")}
+            onChangeText={changePhone}
+            placeholder={t("settings.host.account.fields.phonePlaceholder")}
             autoCapitalize="none"
             autoCorrect={false}
+            keyboardType="phone-pad"
             editable={!pending}
-            accessibilityLabel={t("settings.host.account.fields.username")}
+            accessibilityLabel={t("settings.host.account.fields.phone")}
           />
         </Field>
         <Field label={t("settings.host.account.fields.password")}>
@@ -298,6 +452,9 @@ export function HostAccountPage({ serverId }: { serverId: string }) {
     setForm(EMPTY_FORM);
     refreshStatus();
   }, [refreshStatus]);
+  const handlePasswordChanged = useCallback(() => {
+    refreshStatus();
+  }, [refreshStatus]);
 
   if (!hosts.some((host) => host.serverId === serverId)) {
     return (
@@ -325,6 +482,8 @@ export function HostAccountPage({ serverId }: { serverId: string }) {
       {status?.loggedIn ? (
         <AccountSignedInCard
           status={status}
+          serverId={serverId}
+          onPasswordChanged={handlePasswordChanged}
           onLogout={submitLogout}
           logoutPending={logoutMutation.isPending}
         />

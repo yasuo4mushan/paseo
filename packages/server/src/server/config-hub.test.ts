@@ -21,7 +21,7 @@ describe("hub account config resolution", () => {
       hub: {
         baseUrl: "http://hub.example.cn",
         token: "persisted-token",
-        username: "alice",
+        phone: "13800138000",
         deviceName: "mac-studio",
       },
     } as PersistedConfig;
@@ -29,7 +29,7 @@ describe("hub account config resolution", () => {
     expect(config.hub).toEqual({
       baseUrl: "http://hub.example.cn",
       token: "persisted-token",
-      username: "alice",
+      phone: "13800138000",
       deviceName: "mac-studio",
       tokenFromEnv: false,
     });
@@ -49,7 +49,7 @@ describe("hub account config resolution", () => {
     expect(config.hub).toEqual({
       baseUrl: "http://env.example.cn",
       token: "env-token",
-      username: null,
+      phone: null,
       deviceName: null,
       tokenFromEnv: true,
     });
@@ -86,7 +86,7 @@ describe("hub account config resolution", () => {
     expect(config.hub).toEqual({
       baseUrl: "http://remoteagent.agentsworkforyou.cn",
       token: null,
-      username: null,
+      phone: null,
       deviceName: null,
       tokenFromEnv: false,
     });

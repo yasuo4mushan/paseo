@@ -14,6 +14,7 @@ function startMockHub(): Promise<{
   logins: Array<Record<string, unknown>>;
   registerCalls: Array<Record<string, unknown>>;
   heartbeatCalls: Array<Record<string, unknown>>;
+  passwordChanges: Array<Record<string, unknown>>;
   accountRegisters: number;
   logouts: number;
   close: () => Promise<void>;
@@ -21,6 +22,7 @@ function startMockHub(): Promise<{
   const logins: Array<Record<string, unknown>> = [];
   const registerCalls: Array<Record<string, unknown>> = [];
   const heartbeatCalls: Array<Record<string, unknown>> = [];
+  const passwordChanges: Array<Record<string, unknown>> = [];
   let accountRegisters = 0;
   let logouts = 0;
   let deviceCounter = 0;
@@ -44,20 +46,33 @@ function startMockHub(): Promise<{
       };
       if (method === "auth.login") {
         logins.push(payload);
-        if (payload.username !== "alice" || payload.password !== "secret") {
+        if (payload.phone !== "13800138000" || payload.password !== "secret8ch") {
           fail("auth.invalid_credentials", "bad credentials");
           return;
         }
-        send({ token: "tok-1", account: { id: "acc-1", username: payload.username } });
+        send({ token: "tok-1", account: { id: "acc-1", phone: payload.phone } });
         return;
       }
       if (method === "auth.register") {
         accountRegisters += 1;
-        if (payload.username === "taken") {
-          fail("auth.username_taken", "username taken");
+        if (payload.phone === "13900139000") {
+          fail("auth.phone_taken", "phone taken");
           return;
         }
-        send({ account: { id: "acc-1", username: payload.username } });
+        send({ account: { id: "acc-1", phone: payload.phone } });
+        return;
+      }
+      if (method === "auth.password.change") {
+        passwordChanges.push(payload);
+        if (req.headers.authorization !== "Bearer tok-1") {
+          fail("auth.token_invalid", "missing token");
+          return;
+        }
+        if (payload.oldPassword !== undefined && payload.oldPassword !== "secret8ch") {
+          fail("auth.invalid_credentials", "old password is incorrect");
+          return;
+        }
+        send({ ok: true });
         return;
       }
       if (method === "auth.logout") {
@@ -100,6 +115,7 @@ function startMockHub(): Promise<{
         logins,
         registerCalls,
         heartbeatCalls,
+        passwordChanges,
         get accountRegisters() {
           return accountRegisters;
         },
@@ -158,7 +174,7 @@ async function createSession(
     serverId: "srv-1",
     daemonPublicKeyB64: "6Gj1cQ0T3Fv7YhN2mK8pR5wXeZbAqL4sD9uH7oP6jEw=",
     getRelayConfig: () => relayConfig,
-    initial: { baseUrl, token: null, username: null, deviceName: null },
+    initial: { baseUrl, token: null, phone: null, deviceName: null },
     heartbeatIntervalMs: options?.heartbeatIntervalMs ?? 20,
     backoffBaseMs: 10,
   });
@@ -210,17 +226,17 @@ describe("HubAccountSession", () => {
         type: "hub.login.request",
         requestId: "req-2",
         baseUrl: `${hub.baseUrl}/api/`,
-        username: "alice",
-        password: "secret",
+        phone: "13800138000",
+        password: "secret8ch",
       });
       expect(emitted).toContainEqual({
         type: "hub.login.response",
-        payload: { requestId: "req-2", accountId: "acc-1", username: "alice" },
+        payload: { requestId: "req-2", accountId: "acc-1", phone: "13800138000" },
       });
       await session.handleRequest({ type: "hub.status.request", requestId: "req-3" });
       const statusResponse = emitted.findLast((msg) => msg.type === "hub.status.response");
       expect(statusResponse).toMatchObject({
-        payload: { requestId: "req-3", status: { loggedIn: true, username: "alice" } },
+        payload: { requestId: "req-3", status: { loggedIn: true, phone: "13800138000" } },
       });
     } finally {
       await hub.close();
@@ -235,7 +251,7 @@ describe("HubAccountSession", () => {
         type: "hub.login.request",
         requestId: "req-4",
         baseUrl: hub.baseUrl,
-        username: "alice",
+        phone: "13800138000",
         password: "wrong",
       });
       const error = emitted.find((msg) => msg.type === "rpc_error");
@@ -256,22 +272,22 @@ describe("HubAccountSession", () => {
         type: "hub.register.request",
         requestId: "req-5",
         baseUrl: hub.baseUrl,
-        username: "alice",
-        password: "secret",
+        phone: "13800138000",
+        password: "secret8ch",
         deviceName: "mac-studio",
       });
       expect(hub.accountRegisters).toBe(1);
-      expect(hub.logins).toEqual([{ username: "alice", password: "secret" }]);
+      expect(hub.logins).toEqual([{ phone: "13800138000", password: "secret8ch" }]);
       expect(emitted).toContainEqual({
         type: "hub.register.response",
-        payload: { requestId: "req-5", accountId: "acc-1", username: "alice" },
+        payload: { requestId: "req-5", accountId: "acc-1", phone: "13800138000" },
       });
     } finally {
       await hub.close();
     }
   });
 
-  test("register with a taken username surfaces auth.username_taken", async () => {
+  test("register with a taken phone surfaces auth.phone_taken", async () => {
     const hub = await startMockHub();
     try {
       const { session, emitted } = await createSession(hub.baseUrl);
@@ -279,12 +295,12 @@ describe("HubAccountSession", () => {
         type: "hub.register.request",
         requestId: "req-6",
         baseUrl: hub.baseUrl,
-        username: "taken",
-        password: "secret",
+        phone: "13900139000",
+        password: "secret8ch",
       });
       const error = emitted.find((msg) => msg.type === "rpc_error");
       expect(error).toMatchObject({
-        payload: { requestId: "req-6", code: "auth.username_taken" },
+        payload: { requestId: "req-6", code: "auth.phone_taken" },
       });
     } finally {
       await hub.close();
@@ -298,15 +314,15 @@ describe("HubAccountSession", () => {
       await session.handleRequest({
         type: "hub.login.request",
         requestId: "req-7",
-        username: "alice",
-        password: "secret",
+        phone: "13800138000",
+        password: "secret8ch",
       });
       expect(emitted).toContainEqual({
         type: "hub.login.response",
-        payload: { requestId: "req-7", accountId: "acc-1", username: "alice" },
+        payload: { requestId: "req-7", accountId: "acc-1", phone: "13800138000" },
       });
       // The request hit the mock hub this manager was configured with.
-      expect(hub.logins).toEqual([{ username: "alice", password: "secret" }]);
+      expect(hub.logins).toEqual([{ phone: "13800138000", password: "secret8ch" }]);
       expect(emitted.find((msg) => msg.type === "rpc_error")).toBeUndefined();
     } finally {
       await hub.close();
@@ -325,14 +341,93 @@ describe("HubAccountSession", () => {
       await session.handleRequest({
         type: "hub.login.request",
         requestId: "req-8",
-        username: "alice",
-        password: "secret",
+        phone: "13800138000",
+        password: "secret8ch",
       });
       expect(emitted.find((msg) => msg.type === "rpc_error")).toBeUndefined();
       await waitFor("immediate register", () => hub.registerCalls.length >= 1);
       expect(hub.heartbeatCalls.length).toBe(0);
       expect(hub.registerCalls[0].name).toBeTruthy();
       expect(hub.registerCalls[0].offer).toMatchObject({ serverId: "srv-1" });
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("password change forwards to the hub with the session token", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl);
+      await session.handleRequest({
+        type: "hub.login.request",
+        requestId: "req-9",
+        phone: "13800138000",
+        password: "secret8ch",
+      });
+      await session.handleRequest({
+        type: "hub.password.change.request",
+        requestId: "req-10",
+        oldPassword: "secret8ch",
+        newPassword: "new-secret8ch",
+      });
+      expect(emitted).toContainEqual({
+        type: "hub.password.change.response",
+        payload: { requestId: "req-10" },
+      });
+      expect(hub.passwordChanges).toEqual([
+        { oldPassword: "secret8ch", newPassword: "new-secret8ch" },
+      ]);
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("password change without oldPassword still reaches the hub (wx-account form)", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl);
+      await session.handleRequest({
+        type: "hub.login.request",
+        requestId: "req-11",
+        phone: "13800138000",
+        password: "secret8ch",
+      });
+      await session.handleRequest({
+        type: "hub.password.change.request",
+        requestId: "req-12",
+        newPassword: "first-secret8ch",
+      });
+      expect(emitted.find((msg) => msg.type === "rpc_error")).toBeUndefined();
+      expect(emitted).toContainEqual({
+        type: "hub.password.change.response",
+        payload: { requestId: "req-12" },
+      });
+      expect(hub.passwordChanges).toEqual([{ newPassword: "first-secret8ch" }]);
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("password change with a wrong old password surfaces the hub error", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl);
+      await session.handleRequest({
+        type: "hub.login.request",
+        requestId: "req-13",
+        phone: "13800138000",
+        password: "secret8ch",
+      });
+      await session.handleRequest({
+        type: "hub.password.change.request",
+        requestId: "req-14",
+        oldPassword: "wrong-old",
+        newPassword: "new-secret8ch",
+      });
+      const error = emitted.find((msg) => msg.type === "rpc_error");
+      expect(error).toMatchObject({
+        payload: { requestId: "req-14", code: "auth.invalid_credentials" },
+      });
     } finally {
       await hub.close();
     }

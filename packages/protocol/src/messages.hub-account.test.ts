@@ -5,6 +5,8 @@ import {
   HubAccountLoginResponseSchema,
   HubAccountLogoutRequestSchema,
   HubAccountLogoutResponseSchema,
+  HubAccountPasswordChangeRequestSchema,
+  HubAccountPasswordChangeResponseSchema,
   HubAccountRegisterRequestSchema,
   HubAccountRegisterResponseSchema,
   HubAccountStatusRequestSchema,
@@ -26,7 +28,7 @@ describe("hub account RPC schemas", () => {
           configured: true,
           loggedIn: true,
           baseUrl: "http://hub.example.cn",
-          username: "alice",
+          phone: "13800138000",
           deviceName: "mac-studio",
           deviceId: "dev-1",
           registered: true,
@@ -36,6 +38,7 @@ describe("hub account RPC schemas", () => {
       },
     });
     expect(response.payload.status.deviceId).toBe("dev-1");
+    expect(response.payload.status.phone).toBe("13800138000");
   });
 
   test("parses login and register requests", () => {
@@ -44,17 +47,17 @@ describe("hub account RPC schemas", () => {
         type: "hub.login.request",
         requestId: "req-2",
         baseUrl: "http://hub.example.cn",
-        username: "alice",
+        phone: "13800138000",
         password: "secret",
       }),
-    ).toMatchObject({ type: "hub.login.request", username: "alice" });
+    ).toMatchObject({ type: "hub.login.request", phone: "13800138000" });
 
     expect(
       HubAccountRegisterRequestSchema.parse({
         type: "hub.register.request",
         requestId: "req-3",
         baseUrl: "http://hub.example.cn",
-        username: "alice",
+        phone: "13800138000",
         password: "secret",
         deviceName: "mac-studio",
       }),
@@ -66,7 +69,7 @@ describe("hub account RPC schemas", () => {
         type: "hub.register.request",
         requestId: "req-3b",
         baseUrl: "http://hub.example.cn",
-        username: "alice",
+        phone: "13800138000",
         password: "secret",
       }).success,
     ).toBe(true);
@@ -77,7 +80,7 @@ describe("hub account RPC schemas", () => {
       HubAccountLoginRequestSchema.safeParse({
         type: "hub.login.request",
         requestId: "req-3c",
-        username: "alice",
+        phone: "13800138000",
         password: "secret",
       }).success,
     ).toBe(true);
@@ -85,7 +88,7 @@ describe("hub account RPC schemas", () => {
       HubAccountRegisterRequestSchema.safeParse({
         type: "hub.register.request",
         requestId: "req-3d",
-        username: "alice",
+        phone: "13800138000",
         password: "secret",
       }).success,
     ).toBe(true);
@@ -97,8 +100,21 @@ describe("hub account RPC schemas", () => {
         type: "hub.login.request",
         requestId: "req-4",
         baseUrl: "http://hub.example.cn",
-        username: "alice",
+        phone: "13800138000",
         password: "",
+      }).success,
+    ).toBe(false);
+  });
+
+  test("rejects a legacy username request — the hub is phone-only (t27)", () => {
+    // An old client sending `username` fails validation; the daemon surfaces
+    // that as an rpc_error. This is the intended understandable failure.
+    expect(
+      HubAccountLoginRequestSchema.safeParse({
+        type: "hub.login.request",
+        requestId: "req-4b",
+        username: "alice",
+        password: "secret",
       }).success,
     ).toBe(false);
   });
@@ -107,15 +123,15 @@ describe("hub account RPC schemas", () => {
     expect(
       HubAccountLoginResponseSchema.parse({
         type: "hub.login.response",
-        payload: { requestId: "req-5", accountId: "acc-1", username: "alice" },
+        payload: { requestId: "req-5", accountId: "acc-1", phone: "13800138000" },
       }).payload.accountId,
     ).toBe("acc-1");
     expect(
       HubAccountRegisterResponseSchema.parse({
         type: "hub.register.response",
-        payload: { requestId: "req-6", accountId: "acc-1", username: "alice" },
-      }).payload.username,
-    ).toBe("alice");
+        payload: { requestId: "req-6", accountId: "acc-1", phone: "13800138000" },
+      }).payload.phone,
+    ).toBe("13800138000");
     expect(
       HubAccountLogoutResponseSchema.parse({
         type: "hub.logout.response",
@@ -126,6 +142,42 @@ describe("hub account RPC schemas", () => {
       HubAccountLogoutRequestSchema.parse({ type: "hub.logout.request", requestId: "req-7" })
         .requestId,
     ).toBe("req-7");
+  });
+
+  test("parses password change requests and responses", () => {
+    // With old password (regular accounts).
+    expect(
+      HubAccountPasswordChangeRequestSchema.parse({
+        type: "hub.password.change.request",
+        requestId: "req-8",
+        oldPassword: "old-secret",
+        newPassword: "new-secret",
+      }),
+    ).toMatchObject({ oldPassword: "old-secret", newPassword: "new-secret" });
+
+    // Without old password (WeChat one-click accounts that never set one).
+    const parsed = HubAccountPasswordChangeRequestSchema.parse({
+      type: "hub.password.change.request",
+      requestId: "req-8b",
+      newPassword: "new-secret",
+    });
+    expect(parsed.oldPassword).toBeUndefined();
+    expect(parsed.newPassword).toBe("new-secret");
+
+    // newPassword is required.
+    expect(
+      HubAccountPasswordChangeRequestSchema.safeParse({
+        type: "hub.password.change.request",
+        requestId: "req-8c",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      HubAccountPasswordChangeResponseSchema.parse({
+        type: "hub.password.change.response",
+        payload: { requestId: "req-9" },
+      }).payload.requestId,
+    ).toBe("req-9");
   });
 
   test("server_info features accept the hubAccountRpc gate", () => {

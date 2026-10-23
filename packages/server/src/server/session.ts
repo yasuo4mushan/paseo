@@ -2818,6 +2818,7 @@ export class Session {
       case "hub.login.request":
       case "hub.register.request":
       case "hub.logout.request":
+      case "hub.password.change.request":
         if (!this.hubAccountSession) throw new Error("Hub account integration is unavailable");
         return this.hubAccountSession.handleRequest(msg);
       default:

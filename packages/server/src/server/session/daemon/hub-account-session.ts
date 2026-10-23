@@ -24,7 +24,8 @@ export type HubAccountRequestMessage = Extract<
       | "hub.status.request"
       | "hub.login.request"
       | "hub.register.request"
-      | "hub.logout.request";
+      | "hub.logout.request"
+      | "hub.password.change.request";
   }
 >;
 
@@ -72,20 +73,20 @@ export class HubAccountSession {
           const baseUrl = this.resolveBaseUrl(msg.baseUrl);
           const result = await hubLogin({
             baseUrl,
-            username: msg.username,
+            phone: msg.phone,
             password: msg.password,
           });
           await this.hubAccount.applyCredentials({
             baseUrl,
             token: result.token,
-            username: result.account.username,
+            phone: result.account.phone,
           });
           this.host.emit({
             type: "hub.login.response",
             payload: {
               requestId: msg.requestId,
               accountId: result.account.id,
-              username: result.account.username,
+              phone: result.account.phone,
             },
           });
           return;
@@ -94,14 +95,14 @@ export class HubAccountSession {
           const baseUrl = this.resolveBaseUrl(msg.baseUrl);
           const result = await hubRegisterAccount({
             baseUrl,
-            username: msg.username,
+            phone: msg.phone,
             password: msg.password,
           });
-          const login = await hubLogin({ baseUrl, username: msg.username, password: msg.password });
+          const login = await hubLogin({ baseUrl, phone: msg.phone, password: msg.password });
           await this.hubAccount.applyCredentials({
             baseUrl,
             token: login.token,
-            username: result.account.username,
+            phone: result.account.phone,
             deviceName: msg.deviceName,
           });
           this.host.emit({
@@ -109,8 +110,21 @@ export class HubAccountSession {
             payload: {
               requestId: msg.requestId,
               accountId: result.account.id,
-              username: result.account.username,
+              phone: result.account.phone,
             },
+          });
+          return;
+        }
+        case "hub.password.change.request": {
+          // Uses the signed-in session token; the hub keeps it valid and
+          // revokes the account's other sessions (they go offline).
+          await this.hubAccount.changePassword({
+            ...(msg.oldPassword ? { oldPassword: msg.oldPassword } : {}),
+            newPassword: msg.newPassword,
+          });
+          this.host.emit({
+            type: "hub.password.change.response",
+            payload: { requestId: msg.requestId },
           });
           return;
         }

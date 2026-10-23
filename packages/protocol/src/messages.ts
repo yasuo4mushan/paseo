@@ -1424,7 +1424,10 @@ export const HubManagementDaemonPermissionsUpdateRequestSchema = z.object({
 // Hub relationship RPCs above). Contract: POST <base>/api/<method>. `baseUrl` is
 // optional on login/register: the daemon falls back to its resolved hub config
 // (env override, persisted value, or the built-in default), so the standard
-// sign-in flow sends only username and password.
+// sign-in flow sends only phone and password. t27: the hub switched to
+// phone-number auth (auth.login/auth.register take `phone`); an old daemon
+// receiving a `phone` request fails its username validation with an rpc_error,
+// which is the intended understandable failure — no username back-compat shim.
 export const HubAccountStatusRequestSchema = z.object({
   type: z.literal("hub.status.request"),
   requestId: z.string(),
@@ -1433,20 +1436,29 @@ export const HubAccountLoginRequestSchema = z.object({
   type: z.literal("hub.login.request"),
   requestId: z.string(),
   baseUrl: z.string().min(1).optional(),
-  username: z.string().min(1),
+  phone: z.string().min(1),
   password: z.string().min(1),
 });
 export const HubAccountRegisterRequestSchema = z.object({
   type: z.literal("hub.register.request"),
   requestId: z.string(),
   baseUrl: z.string().min(1).optional(),
-  username: z.string().min(1),
+  phone: z.string().min(1),
   password: z.string().min(1),
   deviceName: z.string().min(1).optional(),
 });
 export const HubAccountLogoutRequestSchema = z.object({
   type: z.literal("hub.logout.request"),
   requestId: z.string(),
+});
+export const HubAccountPasswordChangeRequestSchema = z.object({
+  type: z.literal("hub.password.change.request"),
+  requestId: z.string(),
+  // Accounts created via WeChat one-click login that never set a password
+  // (hub-side passwordSet=false) may omit oldPassword; every other account
+  // must send it.
+  oldPassword: z.string().min(1).optional(),
+  newPassword: z.string().min(1),
 });
 
 export const DiagnosticsRequestSchema = z.object({
@@ -3271,6 +3283,7 @@ export const SessionInboundMessageSchema = z.discriminatedUnion("type", [
   HubAccountLoginRequestSchema,
   HubAccountRegisterRequestSchema,
   HubAccountLogoutRequestSchema,
+  HubAccountPasswordChangeRequestSchema,
   DiagnosticsRequestSchema,
   PluginCatalogGetRequestSchema,
   PluginListRequestSchema,
@@ -5100,7 +5113,7 @@ export const HubAccountStatusSchema = z.object({
   /** A login token is held. The hub may still reject it; `lastError` reports that. */
   loggedIn: z.boolean(),
   baseUrl: z.string().nullable(),
-  username: z.string().nullable(),
+  phone: z.string().nullable(),
   deviceName: z.string().nullable(),
   deviceId: z.string().nullable(),
   /** The device-registration loop currently holds a registration. */
@@ -5118,7 +5131,7 @@ export const HubAccountLoginResponseSchema = z.object({
   payload: z.object({
     requestId: z.string(),
     accountId: z.string(),
-    username: z.string(),
+    phone: z.string(),
   }),
 });
 export const HubAccountRegisterResponseSchema = z.object({
@@ -5126,11 +5139,15 @@ export const HubAccountRegisterResponseSchema = z.object({
   payload: z.object({
     requestId: z.string(),
     accountId: z.string(),
-    username: z.string(),
+    phone: z.string(),
   }),
 });
 export const HubAccountLogoutResponseSchema = z.object({
   type: z.literal("hub.logout.response"),
+  payload: z.object({ requestId: z.string() }),
+});
+export const HubAccountPasswordChangeResponseSchema = z.object({
+  type: z.literal("hub.password.change.response"),
   payload: z.object({ requestId: z.string() }),
 });
 
@@ -7036,6 +7053,7 @@ export const SessionOutboundMessageSchema = z.discriminatedUnion("type", [
   HubAccountLoginResponseSchema,
   HubAccountRegisterResponseSchema,
   HubAccountLogoutResponseSchema,
+  HubAccountPasswordChangeResponseSchema,
   DiagnosticsResponseSchema,
   GetDaemonConfigResponseMessageSchema,
   SetDaemonConfigResponseMessageSchema,

@@ -100,7 +100,7 @@ const HubAccountConfigSchema = z
     baseUrl: z.string().trim().min(1).optional(),
     token: z.string().min(1).optional(),
     deviceName: z.string().trim().min(1).optional(),
-    username: z.string().trim().min(1).optional(),
+    phone: z.string().trim().min(1).optional(),
     deviceId: z.string().min(1).optional(),
   })
   .strict()

@@ -546,13 +546,13 @@ function resolveExpressTrustProxySetting(config: PaseoDaemonConfig): true | stri
 function resolveHubAccountInitial(hub: ResolvedHubAccount | undefined): {
   baseUrl: string | null;
   token: string | null;
-  username: string | null;
+  phone: string | null;
   deviceName: string | null;
 } {
   return {
     baseUrl: hub?.baseUrl ?? null,
     token: hub?.token ?? null,
-    username: hub?.username ?? null,
+    phone: hub?.phone ?? null,
     deviceName: hub?.deviceName ?? null,
   };
 }
