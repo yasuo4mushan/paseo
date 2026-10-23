@@ -41,6 +41,42 @@ type MockHubRouteResult =
  * Pure routing for the mock hub: one branch per `api/<method>` from the t12
  * contract, kept out of the HTTP server callback so each piece stays simple.
  */
+/** auth.* routing, split out of routeMockHubRequest to keep complexity low. */
+function routeMockHubAuth(
+  state: MockHubState,
+  method: string,
+  payload: Record<string, unknown>,
+  isAuthorized: boolean,
+): MockHubRouteResult | null {
+  if (method === "auth.login") {
+    state.loginCalls.push(payload);
+    if (payload.phone !== "13800138000" || payload.password !== "secret") {
+      return {
+        error: { code: "auth.invalid_credentials", message: "bad credentials", status: 400 },
+      };
+    }
+    return {
+      data: { token: state.token, account: { id: "acc-1", phone: payload.phone } },
+    };
+  }
+  if (method === "auth.register") {
+    state.accountRegisters += 1;
+    return { data: { account: { id: "acc-1", phone: payload.phone } } };
+  }
+  if (method === "auth.password.change") {
+    if (state.rejectTokens || !isAuthorized) {
+      return { error: { code: "auth.token_invalid", message: "token invalid", status: 401 } };
+    }
+    if (payload.oldPassword !== undefined && payload.oldPassword !== "secret") {
+      return {
+        error: { code: "auth.invalid_credentials", message: "old password incorrect", status: 401 },
+      };
+    }
+    return { data: { ok: true } };
+  }
+  return null;
+}
+
 function routeMockHubRequest(
   state: MockHubState,
   method: string,
@@ -53,21 +89,9 @@ function routeMockHubRequest(
     }
   }
 
-  if (method === "auth.login") {
-    state.loginCalls.push(payload);
-    if (payload.username !== "alice" || payload.password !== "secret") {
-      return {
-        error: { code: "auth.invalid_credentials", message: "bad credentials", status: 400 },
-      };
-    }
-    return {
-      data: { token: state.token, account: { id: "acc-1", username: payload.username } },
-    };
-  }
-  if (method === "auth.register") {
-    state.accountRegisters += 1;
-    return { data: { account: { id: "acc-1", username: payload.username } } };
-  }
+  const auth = routeMockHubAuth(state, method, payload, isAuthorized);
+  if (auth) return auth;
+
   if (method === "auth.logout") {
     state.logouts += 1;
     return { data: { ok: true } };
@@ -197,7 +221,7 @@ async function createHarness(
     initial: {
       baseUrl,
       token: options?.token === undefined ? "tok-1" : options.token,
-      username: "alice",
+      phone: "13800138000",
       deviceName: "mac-studio",
     },
     heartbeatIntervalMs: options?.heartbeatIntervalMs ?? 40,
@@ -265,7 +289,7 @@ describe("hub account manager", () => {
       expect(status).toMatchObject({
         configured: true,
         loggedIn: true,
-        username: "alice",
+        phone: "13800138000",
         deviceName: "mac-studio",
         deviceId: "dev-1",
         registered: true,
@@ -361,7 +385,7 @@ describe("hub account manager", () => {
       await harness.manager.applyCredentials({
         baseUrl: `${hub.state.baseUrl}/api/`,
         token: "tok-1",
-        username: "alice",
+        phone: "13800138000",
         deviceName: "mac-studio",
       });
       // The pasted /api/ suffix is normalized away before persisting.
@@ -373,7 +397,7 @@ describe("hub account manager", () => {
       expect(afterLogin.hub).toMatchObject({
         baseUrl: hub.state.baseUrl,
         token: "tok-1",
-        username: "alice",
+        phone: "13800138000",
         deviceName: "mac-studio",
         deviceId: "dev-1",
       });
@@ -387,14 +411,14 @@ describe("hub account manager", () => {
         await readFile(path.join(harness.paseoHome, "config.json"), "utf8"),
       );
       expect(persisted.hub.token).toBeUndefined();
-      expect(persisted.hub.username).toBeUndefined();
+      expect(persisted.hub.phone).toBeUndefined();
       expect(persisted.hub.deviceId).toBeUndefined();
       expect(persisted.hub.baseUrl).toBe(hub.state.baseUrl);
 
       expect(harness.manager.status()).toMatchObject({
         loggedIn: false,
         registered: false,
-        username: null,
+        phone: null,
       });
     } finally {
       await hub.close();
@@ -413,7 +437,7 @@ describe("hub account manager", () => {
       await harness.manager.applyCredentials({
         baseUrl: hub.state.baseUrl,
         token: "tok-1",
-        username: "alice",
+        phone: "13800138000",
         deviceName: "mac-studio",
       });
       await waitFor("immediate register", () => hub.state.registerCalls.length >= 1, 2_000);
@@ -438,6 +462,26 @@ describe("hub account manager", () => {
       harness.relayConfig.enabled = true;
       await waitFor("register after relay enabled", () => hub.state.registerCalls.length >= 1);
       expect(harness.manager.status().registered).toBe(true);
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("changePassword forwards old/new password with the stored token", async () => {
+    const hub = await startMockHub();
+    try {
+      const harness = await createHarness(hub.state.baseUrl);
+      harness.manager.start();
+      await waitFor("register", () => hub.state.registerCalls.length >= 1);
+
+      await harness.manager.changePassword({
+        oldPassword: "secret",
+        newPassword: "new-secret-8ch",
+      });
+      // A wrong old password surfaces the hub error.
+      await expect(
+        harness.manager.changePassword({ oldPassword: "wrong", newPassword: "x-8chars" }),
+      ).rejects.toMatchObject({ code: "auth.invalid_credentials" });
     } finally {
       await hub.close();
     }

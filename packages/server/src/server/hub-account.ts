@@ -109,33 +109,57 @@ export async function callHubApi<T = unknown>(options: HubApiCallOptions): Promi
 
 export interface HubAccountLoginResult {
   token: string;
-  account: { id: string; username: string };
+  account: { id: string; phone: string };
 }
 
 export async function hubLogin(input: {
   baseUrl: string;
-  username: string;
+  phone: string;
   password: string;
   fetchImpl?: FetchLike;
 }): Promise<HubAccountLoginResult> {
   return callHubApi<HubAccountLoginResult>({
     baseUrl: input.baseUrl,
     method: "auth.login",
-    body: { username: input.username, password: input.password },
+    body: { phone: input.phone, password: input.password },
     fetchImpl: input.fetchImpl,
   });
 }
 
 export async function hubRegisterAccount(input: {
   baseUrl: string;
-  username: string;
+  phone: string;
   password: string;
   fetchImpl?: FetchLike;
-}): Promise<{ account: { id: string; username: string } }> {
-  return callHubApi<{ account: { id: string; username: string } }>({
+}): Promise<{ account: { id: string; phone: string } }> {
+  return callHubApi<{ account: { id: string; phone: string } }>({
     baseUrl: input.baseUrl,
     method: "auth.register",
-    body: { username: input.username, password: input.password },
+    body: { phone: input.phone, password: input.password },
+    fetchImpl: input.fetchImpl,
+  });
+}
+
+/**
+ * Change the signed-in account's hub password via `auth.password.change` using
+ * the stored session token. Accounts created through WeChat one-click login
+ * that never set a password (hub-side passwordSet=false) omit `oldPassword`.
+ */
+export async function hubChangePassword(input: {
+  baseUrl: string;
+  token: string;
+  oldPassword?: string;
+  newPassword: string;
+  fetchImpl?: FetchLike;
+}): Promise<void> {
+  await callHubApi({
+    baseUrl: input.baseUrl,
+    method: "auth.password.change",
+    body: {
+      ...(input.oldPassword ? { oldPassword: input.oldPassword } : {}),
+      newPassword: input.newPassword,
+    },
+    token: input.token,
     fetchImpl: input.fetchImpl,
   });
 }
@@ -151,9 +175,14 @@ export interface HubAccountManager {
   applyCredentials(input: {
     baseUrl: string;
     token: string;
-    username: string;
+    phone: string;
     deviceName?: string;
   }): Promise<void>;
+  /**
+   * Change the hub account password using the stored session token. The token
+   * itself survives (the hub only revokes the account's other sessions).
+   */
+  changePassword(input: { oldPassword?: string; newPassword: string }): Promise<void>;
   logout(): Promise<void>;
   start(): void;
   stop(): Promise<void>;
@@ -168,7 +197,7 @@ interface CreateHubAccountManagerOptions {
   initial: {
     baseUrl: string | null;
     token: string | null;
-    username: string | null;
+    phone: string | null;
     deviceName: string | null;
   };
   heartbeatIntervalMs?: number;
@@ -200,7 +229,7 @@ export function createHubAccountManager(
 
   let baseUrl = options.initial.baseUrl;
   let token = options.initial.token;
-  let username = options.initial.username;
+  let phone = options.initial.phone;
   let deviceName = options.initial.deviceName;
   let deviceId: string | null = null;
   let registeredOffer: string | null = null;
@@ -366,7 +395,7 @@ export function createHubAccountManager(
         configured: Boolean(baseUrl),
         loggedIn: Boolean(token),
         baseUrl,
-        username,
+        phone,
         deviceName: deviceName ?? os.hostname(),
         deviceId,
         registered,
@@ -382,7 +411,7 @@ export function createHubAccountManager(
       }
       baseUrl = normalizedBaseUrl;
       token = input.token;
-      username = input.username;
+      phone = input.phone;
       if (input.deviceName?.trim()) {
         deviceName = input.deviceName.trim();
       }
@@ -395,15 +424,25 @@ export function createHubAccountManager(
         ...hub,
         baseUrl: normalizedBaseUrl,
         token: input.token,
-        username: input.username,
+        phone: input.phone,
         ...(deviceName ? { deviceName } : {}),
       }));
-      log?.info(
-        { baseUrl: normalizedBaseUrl, username: input.username },
-        "Applied hub credentials",
-      );
+      log?.info({ baseUrl: normalizedBaseUrl }, "Applied hub credentials");
       generation += 1;
       scheduleTick(0);
+    },
+
+    async changePassword(input) {
+      if (!isConfigured()) {
+        throw new HubApiError("Not signed in to the hub", "auth.unauthorized");
+      }
+      // The stored token survives a password change; the hub revokes the
+      // account's other sessions.
+      await callApi("auth.password.change", {
+        ...(input.oldPassword ? { oldPassword: input.oldPassword } : {}),
+        newPassword: input.newPassword,
+      });
+      log?.info("Changed hub account password");
     },
 
     async logout() {
@@ -421,14 +460,14 @@ export function createHubAccountManager(
       registeredOffer = null;
       deviceId = null;
       token = null;
-      username = null;
+      phone = null;
       lastError = null;
       failures = 0;
       // Keep baseUrl and deviceName so the next login only needs credentials.
       await persistHub((hub) => ({
         ...hub,
         token: undefined,
-        username: undefined,
+        phone: undefined,
         deviceId: undefined,
       }));
     },

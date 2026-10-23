@@ -26,6 +26,19 @@
   padding: 24rpx 0;
 }
 
+/* t27：改密编辑器（同 hub-editor 形态；微信未设密账号免"当前密码"输入） */
+.pw-editor {
+  padding: 24rpx 0 8rpx;
+}
+
+.pw-editor .field {
+  margin-bottom: 24rpx;
+}
+
+.pw-editor-hint {
+  margin: 0 0 20rpx;
+}
+
 .hub-input {
   font-size: 26rpx;
 }

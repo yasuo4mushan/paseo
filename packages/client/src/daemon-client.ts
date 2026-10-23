@@ -5250,7 +5250,7 @@ export class DaemonClient {
   }
 
   async loginHubAccount(
-    input: { baseUrl?: string; username: string; password: string },
+    input: { baseUrl?: string; phone: string; password: string },
     requestId?: string,
   ) {
     this.requireHubAccountSupport();
@@ -5259,7 +5259,7 @@ export class DaemonClient {
       message: {
         type: "hub.login.request",
         ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
-        username: input.username,
+        phone: input.phone,
         password: input.password,
       },
       responseType: "hub.login.response",
@@ -5267,7 +5267,7 @@ export class DaemonClient {
   }
 
   async registerHubAccount(
-    input: { baseUrl?: string; username: string; password: string; deviceName?: string },
+    input: { baseUrl?: string; phone: string; password: string; deviceName?: string },
     requestId?: string,
   ) {
     this.requireHubAccountSupport();
@@ -5276,11 +5276,31 @@ export class DaemonClient {
       message: {
         type: "hub.register.request",
         ...(input.baseUrl ? { baseUrl: input.baseUrl } : {}),
-        username: input.username,
+        phone: input.phone,
         password: input.password,
         ...(input.deviceName ? { deviceName: input.deviceName } : {}),
       },
       responseType: "hub.register.response",
+    });
+  }
+
+  /**
+   * Change the signed-in hub account's password. Accounts created via WeChat
+   * one-click login that never set a password omit `oldPassword`.
+   */
+  async changeHubAccountPassword(
+    input: { oldPassword?: string; newPassword: string },
+    requestId?: string,
+  ) {
+    this.requireHubAccountSupport();
+    return this.sendCorrelatedSessionRequest({
+      requestId,
+      message: {
+        type: "hub.password.change.request",
+        ...(input.oldPassword ? { oldPassword: input.oldPassword } : {}),
+        newPassword: input.newPassword,
+      },
+      responseType: "hub.password.change.response",
     });
   }
 

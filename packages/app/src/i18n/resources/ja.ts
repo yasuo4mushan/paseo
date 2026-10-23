@@ -2524,10 +2524,17 @@ export const ja: TranslationResources = {
           "Relay is disabled on this host. Turn on relay so remote devices can connect.",
         loading: "Loading account status...",
         fields: {
-          username: "Username",
-          usernamePlaceholder: "Username",
+          phone: "Phone number",
+          phonePlaceholder: "Phone number",
+          oldPassword: "Current password",
+          oldPasswordHint:
+            "Leave blank only for accounts created via WeChat login without a password",
+          newPassword: "New password",
+          newPasswordPlaceholder: "At least 8 characters",
+          newPasswordConfirm: "Confirm new password",
+          passwordMismatch: "The new passwords do not match",
           password: "Password",
-          passwordPlaceholder: "Password",
+          passwordPlaceholder: "Password (at least 8 characters)",
           baseUrl: "Hub address",
           deviceName: "Device name (optional)",
           deviceNameHint: "Defaults to this machine's hostname",
@@ -2536,6 +2543,7 @@ export const ja: TranslationResources = {
           login: "Sign in",
           register: "Create account",
           logout: "Sign out",
+          changePassword: "Change password",
         },
       },
       skills: {

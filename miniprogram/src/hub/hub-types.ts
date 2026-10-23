@@ -1,20 +1,27 @@
 /**
  * Hub API 类型与防御式解析守卫。
  *
- * 契约（t12 hub 服务实现）：
+ * 契约（t26 hub 手机号版，见 hub/src/api.ts）：
  * - 传输：`POST <base>/<method>`，JSON body；响应 `{ok:true,data}` / `{ok:false,error:{code,message}}`。
- * - auth.register {username,password} → {account:{id,username}}
- * - auth.login {username,password} → {token,account}
+ * - auth.register {phone,password} → {account:{id,phone,createdAt}}
+ * - auth.login {phone,password} → {token,account}
+ * - auth.password.change（Bearer）{oldPassword?,newPassword} → {ok:true}
+ *   （wx-phone 创建且未设密的账号免 oldPassword）
+ * - auth.wx-phone {code} → {token,account,phone}
  * - auth.logout / auth.me → {account}
  * - devices.list → {devices:[{deviceId,name,os,online,lastSeenAt,offer:{...}|null}]}
  *
  * 解析策略与 protocol-types.ts 一致：只取认识的字段、形态不对的条目丢弃，
- * 保证 hub 后续加字段不破坏旧客户端。
+ * 保证 hub 后续加字段不破坏旧客户端。`passwordSet` 属于后加字段：hub 当前
+ * 未在 account 里下发时解析为 undefined，UI 按"已设密"处理。
  */
 
 export interface HubAccount {
   id: string;
-  username: string;
+  /** 归一化后的大陆手机号（11 位）；旧 username 时代账号没有 phone。 */
+  phone?: string;
+  /** 仅 wx-phone 创建且从未设密的账号为 false；undefined 视为已设密。 */
+  passwordSet?: boolean;
 }
 
 /** devices.list 返回的设备连接 offer（形态与 relay:// URI 解析结果一致）。 */
@@ -45,9 +52,11 @@ function str(value: unknown): string | null {
 export function parseHubAccount(value: unknown): HubAccount | null {
   if (!isRecord(value)) return null;
   const id = str(value.id);
-  const username = str(value.username);
-  if (!id || !username) return null;
-  return { id, username };
+  if (!id) return null;
+  const phone = str(value.phone);
+  const passwordSet = value.passwordSet === false ? false : undefined;
+  // 手机号缺失时账号仍可用（兼容旧数据）；至少要有 id。
+  return { id, ...(phone ? { phone } : {}), ...(passwordSet !== undefined ? { passwordSet } : {}) };
 }
 
 export function parseHubDeviceOffer(value: unknown): HubDeviceOffer | null {

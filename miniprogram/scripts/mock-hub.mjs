@@ -4,8 +4,8 @@
  * 按契约实现最小 Node http 服务：POST <base>/<method>，JSON body，
  * 响应 {ok:true,data} / {ok:false,error:{code,message}}，登录后校验 Bearer token。
  *
- * 固定数据：
- * - 账号 demo / demo123（其余凭据返回 auth.invalid_credentials）
+ * 固定数据（t27 起手机号版，与真实 hub 契约一致）：
+ * - 账号 13800138000 / demo12345（其余凭据返回 auth.invalid_credentials）
  * - 设备 1：在线，带真实可连 relay offer（remoteagent.agentsworkforyou.cn，模拟器实测可通）
  * - 设备 2：离线，offer 为 null
  *
@@ -25,7 +25,10 @@ const REAL_OFFER = {
 };
 
 const TOKEN = "mock-token-1";
-const ACCOUNT = { id: "acc_demo", username: "demo" };
+const ACCOUNT = { id: "acc_demo", phone: "13800138000" };
+const DEMO_PHONE = "13800138000";
+const DEMO_PASS = "demo12345";
+let changedPass = DEMO_PASS;
 
 function devices() {
   return [
@@ -77,25 +80,73 @@ const server = createServer(async (req, res) => {
 
   const body = await readBody(req);
   const authed = req.headers.authorization === `Bearer ${TOKEN}`;
-  console.log(`${new Date().toISOString()} ${method} authed=${authed} body=${JSON.stringify(body)}`);
+  console.log(
+    `${new Date().toISOString()} ${method} authed=${authed} body=${JSON.stringify(body)}`,
+  );
 
   switch (method) {
     case "auth.login":
-      if (body.username === "demo" && body.password === "demo123") {
+      if (body.phone === DEMO_PHONE && body.password === changedPass) {
         send(200, { ok: true, data: { token: TOKEN, account: ACCOUNT } });
       } else {
         send(200, {
           ok: false,
-          error: { code: "auth.invalid_credentials", message: "用户名或密码错误" },
+          error: { code: "auth.invalid_credentials", message: "手机号或密码错误" },
         });
       }
       return;
     case "auth.register":
-      if (typeof body.username === "string" && body.username.length >= 2 && body.password >= 6) {
-        send(200, { ok: true, data: { account: { id: `acc_${body.username}`, username: body.username } } });
+      if (
+        /^1[3-9]\d{9}$/.test(body.phone ?? "") &&
+        typeof body.password === "string" &&
+        body.password.length >= 8
+      ) {
+        if (body.phone === DEMO_PHONE) {
+          send(200, {
+            ok: false,
+            error: { code: "auth.phone_taken", message: "该手机号已注册" },
+          });
+        } else {
+          send(200, {
+            ok: true,
+            data: { account: { id: `acc_${body.phone}`, phone: body.phone } },
+          });
+        }
       } else {
-        send(200, { ok: false, error: { code: "auth.invalid_request", message: "参数无效" } });
+        send(200, {
+          ok: false,
+          error: { code: "auth.invalid_phone", message: "手机号格式不正确" },
+        });
       }
+      return;
+    case "auth.password.change":
+      if (!authed) {
+        send(200, { ok: false, error: { code: "auth.unauthorized", message: "未登录或会话过期" } });
+        return;
+      }
+      if (
+        typeof body.newPassword === "string" &&
+        body.newPassword.length >= 8 &&
+        body.oldPassword === changedPass
+      ) {
+        changedPass = body.newPassword;
+        send(200, { ok: true, data: { ok: true } });
+      } else if (body.oldPassword !== changedPass) {
+        send(200, {
+          ok: false,
+          error: { code: "auth.invalid_credentials", message: "旧密码不正确" },
+        });
+      } else {
+        send(200, {
+          ok: false,
+          error: { code: "hub.invalid_request", message: "新密码至少 8 位" },
+        });
+      }
+      return;
+    case "auth.wx-phone":
+      // mock 未启用微信一键登录：返回与真实 hub 相同的 auth.wx_disabled，
+      // 登录页探测后隐藏微信按钮（t27 门控策略）。
+      send(200, { ok: false, error: { code: "auth.wx_disabled", message: "wx login disabled" } });
       return;
     case "auth.me":
       if (!authed) {
@@ -115,10 +166,13 @@ const server = createServer(async (req, res) => {
       send(200, { ok: true, data: { devices: devices() } });
       return;
     default:
-      send(404, { ok: false, error: { code: "hub.not_found", message: `unknown method ${method}` } });
+      send(404, {
+        ok: false,
+        error: { code: "hub.not_found", message: `unknown method ${method}` },
+      });
   }
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`mock hub listening on http://0.0.0.0:${PORT}/api (demo/demo123)`);
+  console.log(`mock hub listening on http://0.0.0.0:${PORT}/api (${DEMO_PHONE}/${DEMO_PASS})`);
 });
