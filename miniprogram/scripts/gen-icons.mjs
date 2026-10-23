@@ -223,6 +223,12 @@ const shapes = {
       LINE,
     );
   },
+  more: (cov, c) => {
+    // t25 消息操作入口：三个圆点（小半径 + 5px 线宽叠出近似实心）
+    c.covCircle(cov, 20, 40.5, 3.5, LINE);
+    c.covCircle(cov, 40.5, 40.5, 3.5, LINE);
+    c.covCircle(cov, 61, 40.5, 3.5, LINE);
+  },
   warning: (cov, c) => {
     c.covPolyline(
       cov,
@@ -389,6 +395,7 @@ const MANIFEST_ENTRIES = [
   ["expand", "展开栏（右侧轨道）", []],
   ["project", "项目（文件夹）", []],
   ["check", "完成（✓）", ["active"]],
+  ["more", "更多操作（三点）", []],
   ["warning", "警告（三角）", []],
   ["image", "图片（山与日）", []],
   ["bot", "机器人（空态）", []],

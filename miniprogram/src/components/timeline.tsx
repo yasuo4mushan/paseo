@@ -2,10 +2,16 @@
  * 时间线展示组件（t20，从 pages/agent 提取共用）：气泡渲染
  * （用户/助手/思考/工具/todo/错误/通知/压缩）+ 附件卡片 + 时间戳。
  *
+ * t25 操作层（可选 props，不传则渲染与 t20 完全一致）：
+ *  - 用户/assistant 气泡支持长按或"…"按钮呼出操作单（复制/编辑重发/引用），
+ *    回调 onMessageAction；交互与 RPC 编排见 hooks/use-message-actions。
+ *  - 编辑态：editingKey 命中的用户气泡内联 textarea（预填原文），
+ *    保存/取消走 onEditSubmit/onEditCancel（页面持有编辑状态机）。
  * 纯展示；数据与订阅见 hooks/use-agent-session。
  */
 
-import { Image, View } from "@tarojs/components";
+import { useState } from "react";
+import { Image, Textarea, View } from "@tarojs/components";
 import type { AgentTimelineItem } from "@/connection/protocol-types";
 import { MarkdownView } from "@/components/markdown";
 import { iconUrl } from "@/utils/icons";
@@ -44,12 +50,20 @@ function bubbleClass(item: AgentTimelineItem): string {
   }
 }
 
+/** t25：可操作条目（仅用户/assistant 消息有操作单）。 */
+function isActionable(item: AgentTimelineItem): boolean {
+  return item.type === "user_message" || item.type === "assistant_message";
+}
+
 function TodoLines({ items }: { items: Array<{ text: string; completed: boolean }> }) {
   return (
     <View>
       {items.map((task, i) => (
         <View key={i} className={`todo-line ${task.completed ? "todo-done" : ""}`}>
-          <Image className="icon icon-sm todo-mark" src={toolStatusIcon(task.completed ? "completed" : "running")} />
+          <Image
+            className="icon icon-sm todo-mark"
+            src={toolStatusIcon(task.completed ? "completed" : "running")}
+          />
           <View className="todo-text">{task.text}</View>
         </View>
       ))}
@@ -120,24 +134,131 @@ function BubbleContent({ item }: { item: AgentTimelineItem }) {
   }
 }
 
-export function TimelineView({ entries }: { entries: TimelineDisplay[] }) {
+/**
+ * t25 气泡内联编辑态：textarea 预填原文（内部状态，避免每键击穿透页面），
+ * hint 说明保存后果（rewind 撤回 vs 草稿降级），保存/取消交页面状态机。
+ */
+function BubbleEdit({
+  initialText,
+  hint,
+  saving,
+  onSubmit,
+  onCancel,
+}: {
+  initialText: string;
+  hint: string;
+  saving: boolean;
+  onSubmit: (text: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState(initialText);
+  return (
+    <View className="msg-edit">
+      <Textarea
+        className="msg-edit-area"
+        value={text}
+        onInput={(e) => setText(e.detail.value)}
+        maxlength={8000}
+        autoHeight
+        showConfirmBar={false}
+        disabled={saving}
+        focus
+      />
+      <View className="msg-edit-hint">{hint}</View>
+      <View className="msg-edit-row">
+        <View
+          className={`msg-edit-btn msg-edit-cancel ${saving ? "msg-edit-disabled" : ""}`}
+          onClick={onCancel}
+        >
+          取消
+        </View>
+        <View
+          className={`msg-edit-btn msg-edit-save ${saving ? "msg-edit-disabled" : ""}`}
+          onClick={() => onSubmit(text)}
+        >
+          {saving ? "发送中…" : "发送修改"}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+export interface TimelineViewProps {
+  entries: TimelineDisplay[];
+  /** t25：长按/"…"操作单入口；不传则整个操作层不渲染。 */
+  onMessageAction?: (entry: TimelineDisplay) => void;
+  /** t25：正在编辑的条目 key（气泡切内联 textarea）。 */
+  editingKey?: string;
+  /** t25：编辑态提示文案（语义随 rewind/draft 模式不同，页面注入）。 */
+  editHint?: string;
+  /** t25：编辑保存中（rewind RPC 在途时禁用按钮）。 */
+  editSaving?: boolean;
+  onEditSubmit?: (entry: TimelineDisplay, text: string) => void;
+  onEditCancel?: () => void;
+}
+
+export function TimelineView({
+  entries,
+  onMessageAction,
+  editingKey,
+  editHint,
+  editSaving = false,
+  onEditSubmit,
+  onEditCancel,
+}: TimelineViewProps) {
+  const actionable = onMessageAction !== undefined;
   return (
     <View>
-      {entries.map((entry) => (
-        <View key={entry.key} className="timeline-item">
-          <View className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}>
-            <View className={bubbleClass(entry.item)}>
-              {entry.attachments ? <AttachmentCards cards={entry.attachments} /> : null}
+      {entries.map((entry) => {
+        const canOperate = actionable && isActionable(entry.item);
+        const editing = editingKey !== undefined && editingKey === entry.key;
+        const bubble = (
+          <View
+            className={bubbleClass(entry.item)}
+            onLongPress={canOperate ? () => onMessageAction?.(entry) : undefined}
+          >
+            {entry.attachments ? <AttachmentCards cards={entry.attachments} /> : null}
+            {editing && entry.item.type === "user_message" && onEditSubmit ? (
+              <BubbleEdit
+                initialText={entry.item.text}
+                hint={editHint ?? ""}
+                saving={editSaving}
+                onSubmit={(text) => onEditSubmit(entry, text)}
+                onCancel={() => onEditCancel?.()}
+              />
+            ) : (
               <BubbleContent item={entry.item} />
-            </View>
+            )}
           </View>
-          {entry.timestamp ? (
-            <View className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}>
-              {formatClock(entry.timestamp)}
+        );
+        return (
+          <View key={entry.key} className="timeline-item">
+            <View
+              className={`timeline-row ${entry.item.type === "user_message" ? "row-user" : ""}`}
+            >
+              {/* 用户气泡靠右："…"在左侧；assistant 气泡靠左："…"在右侧 */}
+              {canOperate && entry.item.type === "user_message" ? (
+                <View className="msg-more" onClick={() => onMessageAction?.(entry)}>
+                  <Image className="icon icon-sm" src={iconUrl("more")} />
+                </View>
+              ) : null}
+              {bubble}
+              {canOperate && entry.item.type !== "user_message" ? (
+                <View className="msg-more" onClick={() => onMessageAction?.(entry)}>
+                  <Image className="icon icon-sm" src={iconUrl("more")} />
+                </View>
+              ) : null}
             </View>
-          ) : null}
-        </View>
-      ))}
+            {entry.timestamp ? (
+              <View
+                className={`timeline-clock ${entry.item.type === "user_message" ? "row-user" : ""}`}
+              >
+                {formatClock(entry.timestamp)}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }

@@ -45,6 +45,16 @@ export interface AgentSnapshot {
   availableModes?: ProviderMode[];
   /** messages.ts AgentListItemPayload.labels：t18 归档/标签用（内部 paseo.* 前缀不展示）。 */
   labels?: Record<string, string>;
+  /**
+   * messages.ts AgentSnapshotPayload.capabilities（AgentCapabilityFlags 子集）。
+   * t25 编辑重发用：supportsRewindConversation 决定"编辑"走 rewind 回退语义
+   * 还是降级为"填入输入框作为新消息草稿"（app RewindMenu 的同源开关）。
+   */
+  capabilities?: {
+    supportsRewindConversation?: boolean;
+    supportsRewindFiles?: boolean;
+    supportsRewindBoth?: boolean;
+  };
   /** messages.ts AgentListItemPayload.attentionReason：finished | error | permission。 */
   attentionReason?: "finished" | "error" | "permission" | null;
   /**
@@ -601,6 +611,19 @@ export type SessionRequestMessage =
     }
   | { type: "agent.timeline.set_subscription.request"; requestId: string; agentIds: string[] }
   | {
+      /**
+       * t25：会话回退（messages.ts AgentRewindRequestMessageSchema，dotted 命名空间）。
+       * 编辑重发的底层语义：conversation 模式把会话回退到该消息之前（app 的
+       * RewindMenu 同款 RPC），随后客户端重发修正文本。messageId 取时间线
+       * user_message 条目上的 messageId（daemon 侧有 provider 回执映射）。
+       */
+      type: "agent.rewind.request";
+      requestId: string;
+      agentId: string;
+      messageId: string;
+      mode: "conversation" | "files" | "both";
+    }
+  | {
       type: "send_agent_message_request";
       requestId: string;
       agentId: string;
@@ -858,39 +881,39 @@ export type SessionRequestMessage =
       parentAgentId: string;
     }
   | {
-    /** t19：composer 斜杠命令目录（list_commands_request）。 */
-    type: "list_commands_request";
-    requestId: string;
-    agentId: string;
-  }
+      /** t19：composer 斜杠命令目录（list_commands_request）。 */
+      type: "list_commands_request";
+      requestId: string;
+      agentId: string;
+    }
   // --- t20：会话中配置切换（composer 四 pill 的审批模式/模型/thinking） ---
   | {
-    /** messages.ts SetAgentModeRequestMessageSchema（审批模式切换）。 */
-    type: "set_agent_mode_request";
-    agentId: string;
-    modeId: string;
-    requestId: string;
-  }
+      /** messages.ts SetAgentModeRequestMessageSchema（审批模式切换）。 */
+      type: "set_agent_mode_request";
+      agentId: string;
+      modeId: string;
+      requestId: string;
+    }
   | {
-    /** messages.ts SetAgentModelRequestMessageSchema（modelId null = 回默认）。 */
-    type: "set_agent_model_request";
-    agentId: string;
-    modelId: string | null;
-    requestId: string;
-  }
+      /** messages.ts SetAgentModelRequestMessageSchema（modelId null = 回默认）。 */
+      type: "set_agent_model_request";
+      agentId: string;
+      modelId: string | null;
+      requestId: string;
+    }
   | {
-    /** messages.ts SetAgentThinkingRequestMessageSchema（thinking 档位；null = 清除）。 */
-    type: "set_agent_thinking_request";
-    agentId: string;
-    thinkingOptionId: string | null;
-    requestId: string;
-  }
+      /** messages.ts SetAgentThinkingRequestMessageSchema（thinking 档位；null = 清除）。 */
+      type: "set_agent_thinking_request";
+      agentId: string;
+      thinkingOptionId: string | null;
+      requestId: string;
+    }
   | {
-    /** t20：验收后清理 PTY（messages.ts KillTerminalRequestSchema）。 */
-    type: "kill_terminal_request";
-    terminalId: string;
-    requestId: string;
-  };
+      /** t20：验收后清理 PTY（messages.ts KillTerminalRequestSchema）。 */
+      type: "kill_terminal_request";
+      terminalId: string;
+      requestId: string;
+    };
 
 /**
  * 权限回应（messages.ts AgentPermissionResponseMessageSchema）。
@@ -1006,7 +1029,11 @@ function parseProviderMode(value: unknown): ProviderMode | null {
   if (!isRecord(value)) return null;
   const id = str(value.id);
   if (!id) return null;
-  return { id, label: str(value.label) ?? id, description: nullableStr(value.description) ?? undefined };
+  return {
+    id,
+    label: str(value.label) ?? id,
+    description: nullableStr(value.description) ?? undefined,
+  };
 }
 
 export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
@@ -1040,6 +1067,7 @@ export function parseAgentSnapshot(value: unknown): AgentSnapshot | null {
     currentModeId: nullableStr(value.currentModeId),
     ...(availableModes.length > 0 ? { availableModes } : {}),
     labels: parseLabels(value.labels),
+    capabilities: parseRewindCapabilities(value.capabilities),
     attentionReason:
       value.attentionReason === "finished" || value.attentionReason === "error"
         ? value.attentionReason
@@ -1083,6 +1111,28 @@ function parseLabels(value: unknown): Record<string, string> | undefined {
     }
   }
   return count > 0 ? out : undefined;
+}
+
+/**
+ * t25：AgentCapabilityFlags 容错解析（子集：rewind 三开关）。
+ * 只在至少一个开关有值时返回对象，避免每条快照都挂空 capabilities。
+ */
+function parseRewindCapabilities(value: unknown): AgentSnapshot["capabilities"] | undefined {
+  if (!isRecord(value)) return undefined;
+  const caps: NonNullable<AgentSnapshot["capabilities"]> = {};
+  let count = 0;
+  for (const key of [
+    "supportsRewindConversation",
+    "supportsRewindFiles",
+    "supportsRewindBoth",
+  ] as const) {
+    const raw = value[key];
+    if (typeof raw === "boolean") {
+      caps[key] = raw;
+      count += 1;
+    }
+  }
+  return count > 0 ? caps : undefined;
 }
 
 export function parseTimelineItem(value: unknown): AgentTimelineItem {
@@ -1736,9 +1786,7 @@ export function parseAttentionPush(payload: unknown): AttentionPush | null {
 }
 
 /** fetch_recent_provider_sessions_response payload。 */
-export function parseRecentProviderSessionsResponse(
-  payload: unknown,
-): {
+export function parseRecentProviderSessionsResponse(payload: unknown): {
   entries: RecentProviderSession[];
   providerErrors: Array<{ provider: string; message: string }>;
 } | null {
@@ -1858,6 +1906,19 @@ export function parseKillTerminalResponse(
   const terminalId = str(payload.terminalId);
   if (!terminalId) return null;
   return { terminalId, success: bool(payload.success) };
+}
+
+/**
+ * t25：agent.rewind.response payload（requestId/agentId/ok/error）。
+ * ok=false 时 error 带 daemon 侧失败原因（如 provider 未回执前不可回退）。
+ */
+export function parseAgentRewindResponse(
+  payload: unknown,
+): { agentId: string; ok: boolean; error: string | null } | null {
+  if (!isRecord(payload)) return null;
+  const agentId = str(payload.agentId);
+  if (!agentId) return null;
+  return { agentId, ok: bool(payload.ok), error: nullableStr(payload.error) };
 }
 
 // ---------------------------------------------------------------------------

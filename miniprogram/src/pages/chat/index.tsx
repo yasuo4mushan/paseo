@@ -35,6 +35,7 @@ import { DevicePickerSheet } from "@/components/device-picker";
 import { ConfigPickerSheet } from "@/components/config-picker";
 import { TimelineView } from "@/components/timeline";
 import { useAgentSession } from "@/hooks/use-agent-session";
+import { useMessageActions } from "@/hooks/use-message-actions";
 import { sessionStore } from "@/stores/session-store";
 import {
   devicePreferenceStore,
@@ -561,6 +562,40 @@ export default function ChatPage() {
     }
   };
 
+  // t25：发送核心（编辑重发复用）。accepted 后清设备草稿与附件（t21 语义）。
+  const sendMessageCore = async (
+    text: string,
+    cards: AttachmentCard[],
+    attachments: UploadedFileAttachment[],
+  ) => {
+    if (!activeAgent) return;
+    setSending(true);
+    const clientMessageId = createClientMessageId();
+    session.appendOptimisticUser(text, clientMessageId, cards.length > 0 ? cards : undefined);
+    bottomAnchor.current = `bottom-${Date.now()}`;
+    try {
+      const conn = connectionManager.requireConnection();
+      messageAttachmentStore.record(activeAgent.id, { clientMessageId, text, cards });
+      const result = await conn.sendAgentMessage(activeAgent.id, text, {
+        messageId: clientMessageId,
+        ...(attachments.length > 0 ? { attachments } : {}),
+        ...(session.status === "running" && interruptOnSend
+          ? { activeTurnBehavior: "interrupt" as const }
+          : {}),
+      });
+      if (!result.accepted) {
+        setConfigError(result.error ?? "消息未被接受");
+      } else {
+        devicePreferenceStore.clearDraft(draftKeyRef.current);
+        setPendingFiles([]);
+      }
+    } catch (err) {
+      setConfigError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
   const send = async () => {
     const text = draftText.trim();
     const hasAttachments = pendingFiles.some((f) => f.status === "ready");
@@ -623,10 +658,8 @@ export default function ChatPage() {
       return;
     }
 
-    // 已有会话：常规发送
-    setSending(true);
+    // 已有会话：常规发送（核心在 sendMessageCore，含 sending 状态与乐观气泡）
     setDraftText("");
-    const clientMessageId = createClientMessageId();
     const cards: AttachmentCard[] = pendingFiles.map((f) => ({
       kind: f.localPath ? "image" : "file",
       fileName: f.fileName,
@@ -636,33 +669,7 @@ export default function ChatPage() {
     const attachments = pendingFiles
       .map((f) => f.attachment)
       .filter((a): a is UploadedFileAttachment => a !== undefined);
-    session.appendOptimisticUser(
-      text || "（附件）",
-      clientMessageId,
-      cards.length > 0 ? cards : undefined,
-    );
-    bottomAnchor.current = `bottom-${Date.now()}`;
-    try {
-      const conn = connectionManager.requireConnection();
-      messageAttachmentStore.record(activeAgent.id, { clientMessageId, text, cards });
-      const result = await conn.sendAgentMessage(activeAgent.id, text || "（附件）", {
-        messageId: clientMessageId,
-        ...(attachments.length > 0 ? { attachments } : {}),
-        ...(session.status === "running" && interruptOnSend
-          ? { activeTurnBehavior: "interrupt" as const }
-          : {}),
-      });
-      if (!result.accepted) {
-        setConfigError(result.error ?? "消息未被接受");
-      } else {
-        devicePreferenceStore.clearDraft(draftKeyRef.current); // 已发出，草稿清
-        setPendingFiles([]);
-      }
-    } catch (err) {
-      setConfigError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSending(false);
-    }
+    await sendMessageCore(text || "（附件）", cards, attachments);
   };
 
   const interrupt = async () => {
@@ -721,11 +728,23 @@ export default function ChatPage() {
     }
   }, []);
 
+  // t25：时间线消息操作（复制 / 编辑重发 rewind / 引用复制）
+  const messageActions = useMessageActions({
+    agentId: activeAgent?.id ?? "",
+    canRewind: snapshot?.capabilities?.supportsRewindConversation ?? false,
+    title: snapshot?.title ?? activeAgent?.title ?? null,
+    reload: session.reload,
+    resend: (text) => sendMessageCore(text, [], []),
+    applyDraft: (text) => setDraftText(text),
+  });
+
   const onWorkspaceSelected = useCallback(
     (ws: WorkspaceDescriptor) => {
       workspaceStore.select(ws);
       // 换工作区可能影响模型目录（cwd 相关），重新装配草稿
       draftSeeded.current = false;
+      // 上一轮"发送即创建"的失败随换区作废
+      setConfigError("");
       setDraft((prev) => seedDraft({ providers: providers ?? [], models, modes }, prev.provider));
     },
     [providers, models, modes],
@@ -940,7 +959,14 @@ export default function ChatPage() {
               <View className="empty-desc">在下方输入框给这个会话发第一条指令。</View>
             </View>
           ) : (
-            <TimelineView entries={session.entries} />
+            <TimelineView
+              entries={session.entries}
+              onMessageAction={(entry) => void messageActions.openActions(entry)}
+              editingKey={messageActions.editing?.entry.key}
+              editHint={messageActions.editing?.hint}
+              editSaving={messageActions.editSaving}
+              onEditSubmit={(_entry, text) => void messageActions.submitEdit(text)}
+            />
           )
         ) : (
           <View className="chat-welcome">

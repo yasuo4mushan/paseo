@@ -75,6 +75,10 @@
     "description": "完成（✓）",
     "files": ["check.png", "check-active.png"]
   },
+  "more": {
+    "description": "更多操作（三点）",
+    "files": ["more.png"]
+  },
   "warning": {
     "description": "警告（三角）",
     "files": ["warning.png"]
