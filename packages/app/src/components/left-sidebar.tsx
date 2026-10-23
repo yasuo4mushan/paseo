@@ -5,11 +5,21 @@ import {
   GitBranch,
   Server,
   Settings,
+  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type RefObject,
+} from "react";
 import {
   Pressable,
   StyleSheet as RNStyleSheet,
@@ -46,6 +56,8 @@ import { SidebarSectionHeader } from "@/components/sidebar/sidebar-section-heade
 import { Shortcut } from "@/components/ui/shortcut";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { HEADER_INNER_HEIGHT, useIsCompactFormFactor } from "@/constants/layout";
+import { isWeb } from "@/constants/platform";
+import { useHubAccountStatus } from "@/data/hub-account-status";
 import { useOpenAddProject } from "@/hooks/use-open-add-project";
 import { useImportSession } from "@/hooks/use-import-session";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
@@ -60,7 +72,7 @@ import { RetainedPanelActivity } from "@/components/retained-panel";
 import type { SidebarWorkspaceGroup } from "@/components/sidebar/sidebar-labels";
 import type { SidebarProjectIconTarget } from "@/utils/sidebar-project-row-model";
 import { type SidebarGroupMode, useSidebarViewStore } from "@/stores/sidebar-view-store";
-import { useHosts } from "@/runtime/host-runtime";
+import { useHosts, getHostRuntimeStore } from "@/runtime/host-runtime";
 import { PluginSidebarItem } from "@/plugins/sidebar-items";
 import { builtinSidebarNavLabelKey } from "@/sidebar-nav/model";
 import { useSidebarNavItems } from "@/sidebar-nav/use-sidebar-nav-items";
@@ -118,6 +130,7 @@ interface SidebarLabels {
   settings: string;
   searchHosts: string;
   usage: string;
+  accountLogin: string;
   closeSidebar: string;
 }
 
@@ -225,6 +238,7 @@ export const LeftSidebar = memo(function LeftSidebar({ active }: { active: boole
       settings: t("sidebar.actions.settings"),
       searchHosts: t("sidebar.host.searchPlaceholder"),
       usage: t(builtinSidebarNavLabelKey("usage")),
+      accountLogin: t("hubOnboarding.sidebarLogin"),
       closeSidebar: t("sidebar.actions.closeSidebar"),
     }),
     [t],
@@ -431,6 +445,7 @@ function SidebarFooter({
     settings: string;
     searchHosts: string;
     usage: string;
+    accountLogin: string;
   };
   handleAddHost: () => void;
   handleOpenHostSettings: (serverId: string) => void;
@@ -458,6 +473,7 @@ function SidebarFooter({
             onAddHost={handleAddHost}
             onOpenHostSettings={handleOpenHostSettings}
           />
+          <SidebarAccountEntry label={labels.accountLogin} />
           <View style={styles.footerSpacer} />
           <SidebarHelpMenu />
           <FooterIconButton
@@ -481,6 +497,44 @@ function SidebarUsageIcon({ label }: { label: string }) {
       testID="sidebar-usage-icon"
       label={label}
       icon={CircleGauge}
+    />
+  );
+}
+
+/**
+ * t29: on Web/desktop, the sidebar footer keeps a login entry while the
+ * primary host holds no hub login (after skipping the onboarding, or after a
+ * logout). Hidden once signed in and entirely absent on native.
+ */
+function SidebarAccountEntry({ label }: { label: string }) {
+  // Local mirror of `useEarliestOnlineHostServerId` (app/_layout) — importing
+  // the layout here would create a cycle, and the selector is three lines.
+  const store = getHostRuntimeStore();
+  const serverId = useSyncExternalStore(
+    (listener: () => void) => {
+      const unsubscribeAll = store.subscribeAll(listener);
+      const unsubscribeHostList = store.subscribeHostList(listener);
+      return () => {
+        unsubscribeAll();
+        unsubscribeHostList();
+      };
+    },
+    () => store.getEarliestOnlineHostServerId(),
+    () => store.getEarliestOnlineHostServerId(),
+  );
+  const { status, supported, connected } = useHubAccountStatus(serverId ?? "");
+  const shouldShow = isWeb && supported && connected && status !== null && !status.loggedIn;
+  const openOnboarding = useCallback(() => {
+    router.push("/onboarding");
+  }, []);
+
+  if (!shouldShow) return null;
+  return (
+    <FooterIconButton
+      onPress={openOnboarding}
+      testID="sidebar-account-login"
+      label={label}
+      icon={UserRound}
     />
   );
 }

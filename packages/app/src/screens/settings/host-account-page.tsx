@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";
+import { useRouter } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Alert } from "@/components/ui/alert";
@@ -9,16 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Field, FormTextInput } from "@/components/ui/form-field";
 import { SettingsSection } from "@/components/settings/headings/settings-section";
 import { useFetchQuery } from "@/data/query";
+import { hubAccountStatusQueryKey } from "@/data/hub-account-status";
+import { isWeb } from "@/constants/platform";
 import { useHostFeature } from "@/runtime/host-features";
 import { useHostRuntimeClient, useHostRuntimeIsConnected, useHosts } from "@/runtime/host-runtime";
 import { settingsStyles } from "@/styles/settings";
+import { useHubOnboardingGateStore } from "@/screens/onboarding/hub-onboarding-gate-store";
+import { hubAccountErrorKey } from "@/screens/onboarding/hub-account-form";
 
 import type { HubAccountStatus } from "@getpaseo/protocol/messages";
 
-const hubAccountQueryKey = (serverId: string) => ["hub-account-status", serverId] as const;
-
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** t27/t29 parity: hub auth error codes map to the same copy everywhere. */
+function accountErrorText(error: unknown, t: (key: string) => string): string {
+  const key = hubAccountErrorKey(error);
+  return key ? t(`hubOnboarding.errors.${key}`) : errorMessage(error);
 }
 
 function isBlank(value: string): boolean {
@@ -302,6 +311,7 @@ function AccountLoginForm({
   const pending = loginMutation.isPending || registerMutation.isPending;
   const canSubmit = !isBlank(form.phone) && !isBlank(form.password);
   const mutationError = loginMutation.error ?? registerMutation.error;
+  const mutationErrorText = mutationError ? accountErrorText(mutationError, (key) => t(key)) : null;
 
   const changePhone = useCallback(
     (value: string) => onFormChange({ phone: value }),
@@ -376,7 +386,11 @@ function AccountLoginForm({
         </Field>
         {mutationError ? (
           <View style={styles.feedback}>
-            <Alert size="sm" variant="error" title={errorMessage(mutationError)} />
+            <Alert
+              size="sm"
+              variant="error"
+              title={mutationErrorText ?? errorMessage(mutationError)}
+            />
           </View>
         ) : null}
         <View style={styles.actions}>
@@ -404,12 +418,14 @@ function AccountLoginForm({
 
 export function HostAccountPage({ serverId }: { serverId: string }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const client = useHostRuntimeClient(serverId);
   const isConnected = useHostRuntimeIsConnected(serverId);
   const supported = useHostFeature(serverId, "hubAccountRpc");
   const hosts = useHosts();
   const queryClient = useQueryClient();
-  const queryKey = useMemo(() => hubAccountQueryKey(serverId), [serverId]);
+  const rearmOnboardingGate = useHubOnboardingGateStore((state) => state.rearm);
+  const queryKey = useMemo(() => hubAccountStatusQueryKey(serverId), [serverId]);
   const [form, setForm] = useState<AccountFormState>(EMPTY_FORM);
 
   const statusQuery = useFetchQuery({
@@ -439,6 +455,12 @@ export function HostAccountPage({ serverId }: { serverId: string }) {
     onSuccess: () => {
       setForm(EMPTY_FORM);
       refreshStatus();
+      // t29: a logout re-arms the onboarding gate; on Web/desktop it also
+      // reopens the flow so signing back in is one tap away.
+      rearmOnboardingGate();
+      if (isWeb) {
+        router.replace("/onboarding");
+      }
     },
   });
   const submitLogout = useCallback(() => {

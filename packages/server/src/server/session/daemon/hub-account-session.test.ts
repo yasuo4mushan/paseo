@@ -15,6 +15,7 @@ function startMockHub(): Promise<{
   registerCalls: Array<Record<string, unknown>>;
   heartbeatCalls: Array<Record<string, unknown>>;
   passwordChanges: Array<Record<string, unknown>>;
+  unregisters: string[];
   accountRegisters: number;
   logouts: number;
   close: () => Promise<void>;
@@ -23,6 +24,7 @@ function startMockHub(): Promise<{
   const registerCalls: Array<Record<string, unknown>> = [];
   const heartbeatCalls: Array<Record<string, unknown>> = [];
   const passwordChanges: Array<Record<string, unknown>> = [];
+  const unregisters: string[] = [];
   let accountRegisters = 0;
   let logouts = 0;
   let deviceCounter = 0;
@@ -98,6 +100,7 @@ function startMockHub(): Promise<{
         return;
       }
       if (method === "devices.unregister") {
+        unregisters.push(payload.deviceId);
         devicesByDeviceId.delete(payload.deviceId);
         send({ ok: true });
         return;
@@ -116,6 +119,7 @@ function startMockHub(): Promise<{
         registerCalls,
         heartbeatCalls,
         passwordChanges,
+        unregisters,
         get accountRegisters() {
           return accountRegisters;
         },
@@ -427,6 +431,83 @@ describe("HubAccountSession", () => {
       const error = emitted.find((msg) => msg.type === "rpc_error");
       expect(error).toMatchObject({
         payload: { requestId: "req-14", code: "auth.invalid_credentials" },
+      });
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("device name set renames the registration and re-registers (t29)", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl, {
+        relayEnabled: true,
+        heartbeatIntervalMs: 60_000,
+      });
+      await session.handleRequest({
+        type: "hub.login.request",
+        requestId: "req-15",
+        phone: "13800138000",
+        password: "secret8ch",
+      });
+      await waitFor("first register", () => hub.registerCalls.length >= 1);
+      expect(hub.unregisters).toHaveLength(0);
+
+      await session.handleRequest({
+        type: "hub.device.name.set.request",
+        requestId: "req-16",
+        name: "  mac-studio-2  ",
+      });
+      expect(emitted.find((msg) => msg.type === "rpc_error")).toBeUndefined();
+      const response = emitted.findLast((msg) => msg.type === "hub.device.name.set.response");
+      expect(response).toMatchObject({
+        type: "hub.device.name.set.response",
+        payload: { requestId: "req-16", status: { deviceName: "mac-studio-2" } },
+      });
+      // The old registration row (the mock hub assigns dev-1 to the first
+      // register) is dropped and the next register uses the trimmed new name.
+      expect(hub.unregisters).toEqual(["dev-1"]);
+      await waitFor("re-register under new name", () => hub.registerCalls.length >= 2);
+      expect(hub.registerCalls[1].name).toBe("mac-studio-2");
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("device name set with no change is a no-op reply (t29)", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl, { relayEnabled: true });
+      await session.handleRequest({
+        type: "hub.device.name.set.request",
+        requestId: "req-17",
+        name: "  same-name  ",
+      });
+      // Not signed in: the name is only persisted for the next login; no hub
+      // calls happen.
+      const response = emitted.findLast((msg) => msg.type === "hub.device.name.set.response");
+      expect(response).toMatchObject({
+        payload: { requestId: "req-17", status: { deviceName: "same-name" } },
+      });
+      expect(hub.registerCalls).toHaveLength(0);
+      expect(hub.unregisters).toHaveLength(0);
+    } finally {
+      await hub.close();
+    }
+  });
+
+  test("device name set with a blank name surfaces hub.invalid_request (t29)", async () => {
+    const hub = await startMockHub();
+    try {
+      const { session, emitted } = await createSession(hub.baseUrl);
+      await session.handleRequest({
+        type: "hub.device.name.set.request",
+        requestId: "req-18",
+        name: "   ",
+      });
+      const error = emitted.find((msg) => msg.type === "rpc_error");
+      expect(error).toMatchObject({
+        payload: { requestId: "req-18", code: "hub.invalid_request" },
       });
     } finally {
       await hub.close();

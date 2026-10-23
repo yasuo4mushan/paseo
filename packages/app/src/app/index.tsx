@@ -13,6 +13,7 @@ import {
   useLastWorkspaceSelection,
 } from "@/stores/navigation-active-workspace-store";
 import { shouldUseDesktopDaemon } from "@/desktop/daemon/desktop-daemon";
+import { useHubOnboardingGateDecision } from "@/screens/onboarding/use-hub-onboarding-gate-decision";
 
 const isDesktop = shouldUseDesktopDaemon();
 
@@ -31,6 +32,9 @@ export default function Index() {
     workspaceSelectionServerId,
     workspaceSelectionWorkspaceId,
   );
+  // t29: on Web/desktop, an unauthenticated hub login holds the startup route
+  // in the onboarding flow instead of dropping the user into the empty app.
+  const onboardingGate = useHubOnboardingGateDecision();
 
   const startupRoute = resolveStartupRoute({
     route: { kind: "index", pathname },
@@ -46,6 +50,15 @@ export default function Index() {
     isWorkspaceSelectionLoaded,
     hasGivenUpWaitingForHost: bootstrapState.hasGivenUpWaitingForHost,
   });
+
+  // Only the decision that would enter the app consults the gate, so the
+  // splash/render paths and the remembered-workspace restore stay untouched.
+  if (startupRoute.kind === "redirect" && onboardingGate === "onboarding") {
+    return <Redirect href="/onboarding" />;
+  }
+  if (startupRoute.kind === "redirect" && onboardingGate === "pending") {
+    return <StartupSplashScreen bootstrapState={isDesktop ? bootstrapState : undefined} />;
+  }
 
   if (startupRoute.kind === "redirect") {
     return <Redirect href={startupRoute.href} />;
