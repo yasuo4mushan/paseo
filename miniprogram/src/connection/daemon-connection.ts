@@ -54,6 +54,7 @@ import {
   parseTerminalInfo,
   parseUpdateAgentResponse,
   parseAgentActionResponse,
+  parseAgentRewindResponse,
   parseKillTerminalResponse,
   parseWorkspaceScriptResponse,
   type AgentSnapshot,
@@ -834,6 +835,28 @@ export class DaemonConnection {
     );
     const parsed = parseKillTerminalResponse(response.payload);
     return parsed?.success ?? false;
+  }
+
+  /**
+   * t25：会话回退（agent.rewind.request → agent.rewind.response）。
+   * 编辑重发的底层语义：conversation 模式把会话回退到该 user_message 之前
+   * （daemon 侧先取消运行中 turn，回退后广播 timeline 重置）。响应在回退
+   * 完成后返回，调用方随后重取时间线 + 重发修正文本。
+   * messageId 取时间线 user_message 条目的 messageId（乐观本地条目没有 →
+   * 上层降级为草稿模式，不走本 RPC）。
+   */
+  async rewindAgent(
+    agentId: string,
+    messageId: string,
+    mode: "conversation" | "files" | "both",
+  ): Promise<void> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      { type: "agent.rewind.request", agentId, messageId, mode },
+      60_000,
+    );
+    const parsed = parseAgentRewindResponse(response.payload);
+    if (!parsed) throw new Error("回退响应解析失败");
+    if (!parsed.ok) throw new Error(parsed.error ?? "回退失败");
   }
 
   /** provider 会话列表（fetch_recent_provider_sessions_request）。 */

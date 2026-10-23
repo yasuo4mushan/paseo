@@ -19,7 +19,15 @@ const OUT_DIR = resolve(here, "../src/assets/icons");
 const shapes = {
   chat: (cov, c) => {
     c.covRoundRect(cov, 12, 14, 57, 42, 12, LINE);
-    c.covPolyline(cov, [[26, 54], [22, 68], [38, 56]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [26, 54],
+        [22, 68],
+        [38, 56],
+      ],
+      LINE,
+    );
     c.covLine(cov, 25, 29, 56, 29, LINE);
     c.covLine(cov, 25, 40, 46, 40, LINE);
   },
@@ -41,16 +49,39 @@ const shapes = {
   file: (cov, c) => {
     c.covPolyline(
       cov,
-      [[24, 12], [50, 12], [62, 24], [62, 68], [24, 68], [24, 12]],
+      [
+        [24, 12],
+        [50, 12],
+        [62, 24],
+        [62, 68],
+        [24, 68],
+        [24, 12],
+      ],
       LINE,
     );
-    c.covPolyline(cov, [[50, 12], [50, 24], [62, 24]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [50, 12],
+        [50, 24],
+        [62, 24],
+      ],
+      LINE,
+    );
     c.covLine(cov, 33, 40, 53, 40, LINE);
     c.covLine(cov, 33, 50, 46, 50, LINE);
   },
   terminal: (cov, c) => {
     c.covRoundRect(cov, 12, 16, 57, 49, 8, LINE);
-    c.covPolyline(cov, [[24, 31], [34, 40.5], [24, 50]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [24, 31],
+        [34, 40.5],
+        [24, 50],
+      ],
+      LINE,
+    );
     c.covLine(cov, 40, 50, 53, 50, LINE);
   },
   diff: (cov, c) => {
@@ -67,7 +98,15 @@ const shapes = {
   bell: (cov, c) => {
     c.covPolyline(
       cov,
-      [[26, 52], [26, 37], [32, 25], [40.5, 20], [49, 25], [55, 37], [55, 52]],
+      [
+        [26, 52],
+        [26, 37],
+        [32, 25],
+        [40.5, 20],
+        [49, 25],
+        [55, 37],
+        [55, 52],
+      ],
       LINE,
     );
     c.covLine(cov, 22, 57, 59, 57, LINE);
@@ -75,12 +114,31 @@ const shapes = {
   },
   archive: (cov, c) => {
     c.covRoundRect(cov, 13, 20, 55, 20, 4, LINE);
-    c.covPolyline(cov, [[19, 40], [19, 66], [62, 66], [62, 40]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [19, 40],
+        [19, 66],
+        [62, 66],
+        [62, 40],
+      ],
+      LINE,
+    );
     c.covLine(cov, 34, 30, 47, 30, LINE);
     c.covLine(cov, 35, 50, 46, 50, LINE);
   },
   tag: (cov, c) => {
-    c.covPolyline(cov, [[22, 22], [54, 12], [68, 46], [36, 60], [22, 22]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [22, 22],
+        [54, 12],
+        [68, 46],
+        [36, 60],
+        [22, 22],
+      ],
+      LINE,
+    );
     c.covCircle(cov, 31, 49, 4.5, LINE);
   },
   plus: (cov, c) => {
@@ -88,7 +146,17 @@ const shapes = {
     c.covLine(cov, 19, 40.5, 62, 40.5, LINE);
   },
   send: (cov, c) => {
-    c.covPolyline(cov, [[21, 17], [65, 40.5], [21, 64], [32, 40.5], [21, 17]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [21, 17],
+        [65, 40.5],
+        [21, 64],
+        [32, 40.5],
+        [21, 17],
+      ],
+      LINE,
+    );
   },
   paperclip: (cov, c) => {
     c.covArc(cov, 40.5, 36, 14.5, LINE, 10, 170); // 底部 U 弧
@@ -103,10 +171,26 @@ const shapes = {
     c.covLine(cov, 55, 26, 26, 55, LINE);
   },
   back: (cov, c) => {
-    c.covPolyline(cov, [[51, 19], [28, 40.5], [51, 62]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [51, 19],
+        [28, 40.5],
+        [51, 62],
+      ],
+      LINE,
+    );
   },
   "chevron-down": (cov, c) => {
-    c.covPolyline(cov, [[25, 34], [40.5, 50], [56, 34]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [25, 34],
+        [40.5, 50],
+        [56, 34],
+      ],
+      LINE,
+    );
   },
   expand: (cov, c) => {
     c.covRoundRect(cov, 12, 18, 57, 45, 7, LINE);
@@ -116,22 +200,63 @@ const shapes = {
   project: (cov, c) => {
     c.covPolyline(
       cov,
-      [[14, 24], [33, 24], [39, 30], [67, 30], [67, 60], [14, 60], [14, 24]],
+      [
+        [14, 24],
+        [33, 24],
+        [39, 30],
+        [67, 30],
+        [67, 60],
+        [14, 60],
+        [14, 24],
+      ],
       LINE,
     );
   },
   check: (cov, c) => {
-    c.covPolyline(cov, [[21, 43], [34, 56], [60, 26]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [21, 43],
+        [34, 56],
+        [60, 26],
+      ],
+      LINE,
+    );
+  },
+  more: (cov, c) => {
+    // t25 消息操作入口：三个圆点（小半径 + 5px 线宽叠出近似实心）
+    c.covCircle(cov, 20, 40.5, 3.5, LINE);
+    c.covCircle(cov, 40.5, 40.5, 3.5, LINE);
+    c.covCircle(cov, 61, 40.5, 3.5, LINE);
   },
   warning: (cov, c) => {
-    c.covPolyline(cov, [[40.5, 15], [64, 59], [17, 59], [40.5, 15]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [40.5, 15],
+        [64, 59],
+        [17, 59],
+        [40.5, 15],
+      ],
+      LINE,
+    );
     c.covLine(cov, 40.5, 30, 40.5, 44, LINE);
     c.covLine(cov, 40.5, 50, 40.5, 52.5, LINE);
   },
   image: (cov, c) => {
     c.covRoundRect(cov, 13, 19, 55, 43, 6, LINE);
     c.covCircle(cov, 29, 32, 4.5, LINE);
-    c.covPolyline(cov, [[21, 56], [38, 41], [47, 50], [55, 43], [62, 56]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [21, 56],
+        [38, 41],
+        [47, 50],
+        [55, 43],
+        [62, 56],
+      ],
+      LINE,
+    );
   },
   bot: (cov, c) => {
     c.covRoundRect(cov, 18, 27, 45, 38, 11, LINE);
@@ -142,8 +267,22 @@ const shapes = {
     c.covLine(cov, 33, 55, 48, 55, LINE);
   },
   spark: (cov, c) => {
-    c.covPolyline(cov, [[23, 23], [58, 58]], LINE);
-    c.covPolyline(cov, [[58, 23], [23, 58]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [23, 23],
+        [58, 58],
+      ],
+      LINE,
+    );
+    c.covPolyline(
+      cov,
+      [
+        [58, 23],
+        [23, 58],
+      ],
+      LINE,
+    );
     c.covLine(cov, 40.5, 14, 40.5, 30, LINE);
     c.covLine(cov, 40.5, 51, 40.5, 67, LINE);
     c.covLine(cov, 14, 40.5, 30, 40.5, LINE);
@@ -175,7 +314,16 @@ const brandShapes = {
     c.covPolyline(cov, pts, LINE, true);
   },
   "brand-zcode": (cov, c) => {
-    c.covPolyline(cov, [[27, 19], [55, 19], [27, 62], [55, 62]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [27, 19],
+        [55, 19],
+        [27, 62],
+        [55, 62],
+      ],
+      LINE,
+    );
   },
   "brand-kimi": (cov, c) => {
     c.covCircle(cov, 40.5, 40.5, 23, LINE);
@@ -186,7 +334,17 @@ const brandShapes = {
     c.covCircle(cov, 40.5, 40.5, 5.5, LINE);
   },
   "brand-qoder": (cov, c) => {
-    c.covPolyline(cov, [[40.5, 13], [68, 40.5], [40.5, 68], [13, 40.5], [40.5, 13]], LINE);
+    c.covPolyline(
+      cov,
+      [
+        [40.5, 13],
+        [68, 40.5],
+        [40.5, 68],
+        [13, 40.5],
+        [40.5, 13],
+      ],
+      LINE,
+    );
   },
   "brand-qwen": (cov, c) => {
     c.covArc(cov, 40.5, 40.5, 24, LINE, -55, 55);
@@ -224,6 +382,7 @@ const MANIFEST_ENTRIES = [
   ["expand", "展开栏（右侧轨道）", []],
   ["project", "项目（文件夹）", []],
   ["check", "完成（✓）", ["active"]],
+  ["more", "更多操作（三点）", []],
   ["warning", "警告（三角）", []],
   ["image", "图片（山与日）", []],
   ["bot", "机器人（空态）", []],

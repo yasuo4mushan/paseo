@@ -2,6 +2,7 @@
  * 会话详情管理页（t20 重构：时间线渲染与订阅提取到 hooks/use-agent-session +
  * components/timeline 共用；本页保留管理面——归档/标签/重命名/导出/子代理轨道/
  * 斜杠命令/上下文计量）。对话主入口移至 pages/chat（豆包式直达）。
+ * t25：时间线消息操作（复制/编辑重发/引用）与 chat 主页共用同一操作层。
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +16,8 @@ import type {
 } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
 import { TimelineView } from "@/components/timeline";
-import { useAgentSession, } from "@/hooks/use-agent-session";
+import { useAgentSession } from "@/hooks/use-agent-session";
+import { useMessageActions } from "@/hooks/use-message-actions";
 import { useThemeClass } from "@/hooks/use-theme";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
 import { displayLabels, setDisplayLabels } from "@/utils/agent-directory";
@@ -215,6 +217,36 @@ export default function AgentPage() {
     }
   };
 
+  /**
+   * 文本发送内核（t25 从 send() 提取）：composer 纯文本发送与时间线
+   * "编辑重发"（无附件）共用。乐观追加 + 幂等 id，失败走 toast。
+   */
+  const sendMessageCore = async (text: string) => {
+    if (!agentId || sending) return;
+    setSending(true);
+    const clientMessageId = createClientMessageId();
+    session.appendOptimisticUser(text, clientMessageId);
+    bottomAnchor.current = `bottom-${Date.now()}`;
+    try {
+      const conn = connectionManager.requireConnection();
+      messageAttachmentStore.record(agentId, { clientMessageId, text, cards: [] });
+      const result = await conn.sendAgentMessage(agentId, text, {
+        messageId: clientMessageId,
+        // t19：运行中按 toggle 决定 插入对话(steer) / 先中断再投递(interrupt)
+        ...(status === "running" && interruptOnSend
+          ? { activeTurnBehavior: "interrupt" as const }
+          : {}),
+      });
+      if (!result.accepted) {
+        Taro.showToast({ title: result.error ?? "消息未被接受", icon: "none" });
+      }
+    } catch (err) {
+      Taro.showToast({ title: err instanceof Error ? err.message : String(err), icon: "none" });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const send = async () => {
     const text = draft.trim();
     const hasAttachments = pendingFiles.some((f) => f.status === "ready");
@@ -227,8 +259,14 @@ export default function AgentPage() {
       Taro.showToast({ title: "有上传失败的附件，请移除", icon: "none" });
       return;
     }
-    setSending(true);
     setDraft("");
+    const hasReadyFiles = pendingFiles.some((f) => f.status === "ready");
+    if (!hasReadyFiles) {
+      // 纯文本路径（t25 编辑重发共用此内核）
+      await sendMessageCore(text);
+      return;
+    }
+    setSending(true);
     const clientMessageId = createClientMessageId();
     const cards: AttachmentCard[] = pendingFiles.map((f) => ({
       kind: f.localPath ? "image" : "file",
@@ -240,7 +278,11 @@ export default function AgentPage() {
       .map((f) => f.attachment)
       .filter((a): a is UploadedFileAttachment => a !== undefined);
     // 乐观追加本地用户消息（daemon 回推的 user_message 由 seq 去重）
-    session.appendOptimisticUser(text || "（附件）", clientMessageId, cards.length > 0 ? cards : undefined);
+    session.appendOptimisticUser(
+      text || "（附件）",
+      clientMessageId,
+      cards.length > 0 ? cards : undefined,
+    );
     bottomAnchor.current = `bottom-${Date.now()}`;
     try {
       const conn = connectionManager.requireConnection();
@@ -276,6 +318,16 @@ export default function AgentPage() {
       setCancelling(false);
     }
   };
+
+  // t25：时间线消息操作（复制 / 编辑重发 / 引用复制；语义同 chat 主页）
+  const messageActions = useMessageActions({
+    agentId,
+    canRewind: snapshot?.capabilities?.supportsRewindConversation ?? false,
+    title: snapshot?.title ?? null,
+    reload: session.reload,
+    resend: (text) => sendMessageCore(text),
+    applyDraft: (text) => setDraft(text),
+  });
 
   const remove = async () => {
     if (!agentId || deleting) return;
@@ -556,7 +608,15 @@ export default function AgentPage() {
             <View className="empty-desc">在下方输入框给 agent 发第一条指令。</View>
           </View>
         ) : (
-          <TimelineView entries={entries} />
+          <TimelineView
+            entries={entries}
+            onMessageAction={(entry) => void messageActions.openActions(entry)}
+            editingKey={messageActions.editing?.entry.key}
+            editHint={messageActions.editing?.hint}
+            editSaving={messageActions.editSaving}
+            onEditSubmit={(_entry, text) => void messageActions.submitEdit(text)}
+            onEditCancel={messageActions.cancelEdit}
+          />
         )}
         <View id={bottomAnchor.current} className="timeline-bottom" />
       </ScrollView>
@@ -645,7 +705,9 @@ export default function AgentPage() {
                 ) : (
                   <Image
                     className="icon icon-sm"
-                    src={iconUrl(file.status === "error" ? "warning" : file.localPath ? "image" : "paperclip")}
+                    src={iconUrl(
+                      file.status === "error" ? "warning" : file.localPath ? "image" : "paperclip",
+                    )}
                   />
                 )}
                 <View className="attach-chip-main">

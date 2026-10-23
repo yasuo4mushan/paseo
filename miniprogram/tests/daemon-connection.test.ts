@@ -256,6 +256,37 @@ describe("DaemonConnection", () => {
     await expect(conn.fetchAgents()).rejects.toThrow(/RPC 超时/);
   });
 
+  it("t25 rewindAgent：agent.rewind.request 形状正确，ok=true 解析通过", async () => {
+    const { conn, server } = await connectedHarness();
+    const promise = conn.rewindAgent(AGENT.id, "msg_1", "conversation");
+    const request = server.lastRequest();
+    expect(request?.type).toBe("agent.rewind.request");
+    expect(request?.agentId).toBe(AGENT.id);
+    expect(request?.messageId).toBe("msg_1");
+    expect(request?.mode).toBe("conversation");
+    server.pushSession({
+      type: "agent.rewind.response",
+      payload: { requestId: request?.requestId, agentId: AGENT.id, ok: true, error: null },
+    });
+    await expect(promise).resolves.toBeUndefined();
+  });
+
+  it("t25 rewindAgent：ok=false 抛 daemon 侧错误文案", async () => {
+    const { conn, server } = await connectedHarness();
+    const promise = conn.rewindAgent(AGENT.id, "msg_1", "conversation");
+    const request = server.lastRequest();
+    server.pushSession({
+      type: "agent.rewind.response",
+      payload: {
+        requestId: request?.requestId,
+        agentId: AGENT.id,
+        ok: false,
+        error: "Cannot rewind before the provider acknowledges the submitted prompt",
+      },
+    });
+    await expect(promise).rejects.toThrow(/provider acknowledges/);
+  });
+
   it("连接关闭时挂起请求被拒绝", async () => {
     const { conn, server } = await connectedHarness();
     const promise = conn.fetchAgents();

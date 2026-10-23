@@ -9,6 +9,8 @@
  *      会话态：model/mode/thinking 改动走 set_agent_model/mode/thinking RPC。
  *  - 发送即创建（无会话时，需要已选工作区）或发到当前会话；
  *    附件 "+"、斜杠命令、运行中 steer/interrupt 沿用 t17/t19。
+ *  - t25：时间线消息操作——长按/"…"呼出操作单（复制原文 / 用户消息编辑重发：
+ *    rewind 回退 + 重发，不支持回退的 provider 降级填入输入框 / 引用复制）。
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,6 +32,7 @@ import { SessionDrawer } from "@/components/session-drawer";
 import { ConfigPickerSheet } from "@/components/config-picker";
 import { TimelineView } from "@/components/timeline";
 import { useAgentSession } from "@/hooks/use-agent-session";
+import { useMessageActions } from "@/hooks/use-message-actions";
 import { sessionStore } from "@/stores/session-store";
 import { workspaceStore, type WorkspaceSelection } from "@/stores/workspace-store";
 import { attentionStore } from "@/stores/attention-store";
@@ -210,7 +213,12 @@ export default function ChatPage() {
       setModels(modelList);
       setModes(modeList);
       // 草稿态：目录就绪后保持草稿取默认值（provider 不变时也重取默认模型/档位/模式）
-      setDraft((prev) => seedDraft({ providers: providers ?? [], models: modelList, modes: modeList }, prev.provider));
+      setDraft((prev) =>
+        seedDraft(
+          { providers: providers ?? [], models: modelList, modes: modeList },
+          prev.provider,
+        ),
+      );
     })();
     return () => {
       disposed = true;
@@ -230,10 +238,7 @@ export default function ChatPage() {
   }, [providers, catalog, activeAgent]);
 
   const pillViews = useMemo(
-    () =>
-      snapshot
-        ? sessionPillViews(snapshot, catalog)
-        : draftPillViews(draft, catalog),
+    () => (snapshot ? sessionPillViews(snapshot, catalog) : draftPillViews(draft, catalog)),
     [snapshot, draft, catalog],
   );
 
@@ -364,6 +369,42 @@ export default function ChatPage() {
     }
   };
 
+  /**
+   * 已有会话的文本发送内核（t25 从 send() 提取）：composer 发送（带附件台账）
+   * 与时间线"编辑重发"（无附件）共用。失败走 configError 内联提示。
+   */
+  const sendMessageCore = async (
+    text: string,
+    cards: AttachmentCard[],
+    attachments: UploadedFileAttachment[],
+  ) => {
+    if (!activeAgent) return;
+    setSending(true);
+    const clientMessageId = createClientMessageId();
+    session.appendOptimisticUser(text, clientMessageId, cards.length > 0 ? cards : undefined);
+    bottomAnchor.current = `bottom-${Date.now()}`;
+    try {
+      const conn = connectionManager.requireConnection();
+      messageAttachmentStore.record(activeAgent.id, { clientMessageId, text, cards });
+      const result = await conn.sendAgentMessage(activeAgent.id, text, {
+        messageId: clientMessageId,
+        ...(attachments.length > 0 ? { attachments } : {}),
+        ...(session.status === "running" && interruptOnSend
+          ? { activeTurnBehavior: "interrupt" as const }
+          : {}),
+      });
+      if (!result.accepted) {
+        setConfigError(result.error ?? "消息未被接受");
+      } else if (cards.length > 0) {
+        setPendingFiles([]);
+      }
+    } catch (err) {
+      setConfigError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
+  };
+
   const send = async () => {
     const text = draftText.trim();
     const hasAttachments = pendingFiles.some((f) => f.status === "ready");
@@ -426,9 +467,7 @@ export default function ChatPage() {
     }
 
     // 已有会话：常规发送
-    setSending(true);
     setDraftText("");
-    const clientMessageId = createClientMessageId();
     const cards: AttachmentCard[] = pendingFiles.map((f) => ({
       kind: f.localPath ? "image" : "file",
       fileName: f.fileName,
@@ -438,28 +477,7 @@ export default function ChatPage() {
     const attachments = pendingFiles
       .map((f) => f.attachment)
       .filter((a): a is UploadedFileAttachment => a !== undefined);
-    session.appendOptimisticUser(text || "（附件）", clientMessageId, cards.length > 0 ? cards : undefined);
-    bottomAnchor.current = `bottom-${Date.now()}`;
-    try {
-      const conn = connectionManager.requireConnection();
-      messageAttachmentStore.record(activeAgent.id, { clientMessageId, text, cards });
-      const result = await conn.sendAgentMessage(activeAgent.id, text || "（附件）", {
-        messageId: clientMessageId,
-        ...(attachments.length > 0 ? { attachments } : {}),
-        ...(session.status === "running" && interruptOnSend
-          ? { activeTurnBehavior: "interrupt" as const }
-          : {}),
-      });
-      if (!result.accepted) {
-        setConfigError(result.error ?? "消息未被接受");
-      } else {
-        setPendingFiles([]);
-      }
-    } catch (err) {
-      setConfigError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSending(false);
-    }
+    await sendMessageCore(text || "（附件）", cards, attachments);
   };
 
   const interrupt = async () => {
@@ -470,6 +488,17 @@ export default function ChatPage() {
       setConfigError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  // t25：时间线消息操作（复制 / 编辑重发 / 引用复制）。编辑重发的 rewind
+  // 能力跟随快照（agent_update upsert 全量带 capabilities）。
+  const messageActions = useMessageActions({
+    agentId: activeAgent?.id ?? "",
+    canRewind: snapshot?.capabilities?.supportsRewindConversation ?? false,
+    title: snapshot?.title ?? activeAgent?.title ?? null,
+    reload: session.reload,
+    resend: (text) => sendMessageCore(text, [], []),
+    applyDraft: (text) => setDraftText(text),
+  });
 
   // 抽屉长按动作：归档/恢复/删除（RPC + 目录刷新）
   const drawerArchive = useCallback(async (agentId: string, currentlyArchived: boolean) => {
@@ -518,15 +547,17 @@ export default function ChatPage() {
     }
   }, []);
 
-  const onWorkspaceSelected = useCallback((ws: WorkspaceDescriptor) => {
-    workspaceStore.select(ws);
-    // 换工作区可能影响模型目录（cwd 相关），重新装配草稿
-    draftSeeded.current = false;
-    setDraft((prev) => seedDraft(
-      { providers: providers ?? [], models, modes },
-      prev.provider,
-    ));
-  }, [providers, models, modes]);
+  const onWorkspaceSelected = useCallback(
+    (ws: WorkspaceDescriptor) => {
+      workspaceStore.select(ws);
+      // 换工作区可能影响模型目录（cwd 相关），重新装配草稿
+      draftSeeded.current = false;
+      // 上一轮"发送即创建"的失败（如陈旧工作区目录不存在）随换区作废
+      setConfigError("");
+      setDraft((prev) => seedDraft({ providers: providers ?? [], models, modes }, prev.provider));
+    },
+    [providers, models, modes],
+  );
 
   const sendable =
     (draftText.trim() || pendingFiles.some((f) => f.status === "ready")) && !sending && connected;
@@ -539,7 +570,8 @@ export default function ChatPage() {
 
   if (!authed) return <View />;
 
-  const headerTitle = snapshot?.title ?? activeAgent?.title ?? (activeAgent ? activeAgent.id.slice(0, 8) : "新对话");
+  const headerTitle =
+    snapshot?.title ?? activeAgent?.title ?? (activeAgent ? activeAgent.id.slice(0, 8) : "新对话");
   const projectLabel = activeAgent
     ? (activeAgent.cwd.split("/").filter(Boolean).pop() ?? activeAgent.cwd)
     : (workspace?.label ?? "选择项目");
@@ -571,13 +603,18 @@ export default function ChatPage() {
             <View className="chat-title">{headerTitle}</View>
             {activeAgent && session.status ? (
               <View className={statusPillClass(session.status)}>
-                {snapshot?.archivedAt ? "已归档" : (STATUS_LABELS[session.status] ?? session.status)}
+                {snapshot?.archivedAt
+                  ? "已归档"
+                  : (STATUS_LABELS[session.status] ?? session.status)}
               </View>
             ) : null}
           </View>
           <View className="chat-header-sub">
             {connected ? (
-              <View className="chat-project" onClick={() => !activeAgent && setWorkspacePickerVisible(true)}>
+              <View
+                className="chat-project"
+                onClick={() => !activeAgent && setWorkspacePickerVisible(true)}
+              >
                 <Image className="icon icon-sm" src={iconUrl("project")} />
                 <View className={`chat-project-text ${activeAgent ? "" : "chat-project-tap"}`}>
                   {projectLabel}
@@ -587,7 +624,9 @@ export default function ChatPage() {
                 ) : null}
               </View>
             ) : (
-              <View className="faint">{connState.status === "error" ? connState.message : "未连接设备"}</View>
+              <View className="faint">
+                {connState.status === "error" ? connState.message : "未连接设备"}
+              </View>
             )}
           </View>
         </View>
@@ -614,7 +653,10 @@ export default function ChatPage() {
             <View className="empty-desc">
               在设备页选择一台在线设备，连接后这里就是你的对话工作台。
             </View>
-            <Button className="btn btn-mini" onClick={() => void safeSwitchTab("/pages/devices/index")}>
+            <Button
+              className="btn btn-mini"
+              onClick={() => void safeSwitchTab("/pages/devices/index")}
+            >
               去设备页
             </Button>
           </View>
@@ -626,7 +668,15 @@ export default function ChatPage() {
               <View className="empty-desc">在下方输入框给这个会话发第一条指令。</View>
             </View>
           ) : (
-            <TimelineView entries={session.entries} />
+            <TimelineView
+              entries={session.entries}
+              onMessageAction={(entry) => void messageActions.openActions(entry)}
+              editingKey={messageActions.editing?.entry.key}
+              editHint={messageActions.editing?.hint}
+              editSaving={messageActions.editSaving}
+              onEditSubmit={(_entry, text) => void messageActions.submitEdit(text)}
+              onEditCancel={messageActions.cancelEdit}
+            />
           )
         ) : (
           <View className="chat-welcome">
@@ -644,7 +694,10 @@ export default function ChatPage() {
       <View className="chat-composer">
         {activeAgent && session.status === "running" ? (
           <View className="chat-live-row">
-            <Button className="btn btn-mini btn-ghost chat-live-btn" onClick={() => void interrupt()}>
+            <Button
+              className="btn btn-mini btn-ghost chat-live-btn"
+              onClick={() => void interrupt()}
+            >
               中断
             </Button>
             <Button
@@ -742,16 +795,19 @@ export default function ChatPage() {
             value={draftText}
             onInput={(e) => setDraftText(e.detail.value)}
             onConfirm={() => void send()}
-            placeholder={connected ? (activeAgent ? "输入消息…" : "描述任务，发送即创建会话…") : "连接设备后开始对话"}
+            placeholder={
+              connected
+                ? activeAgent
+                  ? "输入消息…"
+                  : "描述任务，发送即创建会话…"
+                : "连接设备后开始对话"
+            }
             placeholderClass="composer-placeholder"
             confirmType="send"
             confirmHold
             disabled={!connected}
           />
-          <View
-            className={`send-btn ${sendable ? "send-ready" : ""}`}
-            onClick={() => void send()}
-          >
+          <View className={`send-btn ${sendable ? "send-ready" : ""}`} onClick={() => void send()}>
             <Image className="icon" src={iconUrl("send", "-inverse")} />
           </View>
         </View>

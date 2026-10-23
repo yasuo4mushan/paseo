@@ -12,7 +12,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { connectionManager } from "@/connection/connection-manager";
-import type { AgentSnapshot, AgentTimelineEntry, AgentTimelineItem } from "@/connection/protocol-types";
+import type {
+  AgentSnapshot,
+  AgentTimelineEntry,
+  AgentTimelineItem,
+} from "@/connection/protocol-types";
 import { messageAttachmentStore, type AttachmentCard } from "@/stores/message-attachment-store";
 
 export interface TimelineDisplay {
@@ -42,6 +46,11 @@ export function useAgentSession(agentId: string): {
   error: string;
   /** 乐观追加本地用户消息（daemon 回显后按 clientMessageId 去重取代）。 */
   appendOptimisticUser: (text: string, clientMessageId: string, cards?: AttachmentCard[]) => void;
+  /**
+   * t25：整体重取时间线尾部并替换本地条目。rewind（编辑重发）后 daemon 侧
+   * 时间线已截断，增量合并不会删旧条目，必须整表替换。
+   */
+  reload: () => Promise<void>;
 } {
   const [snapshot, setSnapshot] = useState<AgentSnapshot | null>(null);
   const [entries, setEntries] = useState<TimelineDisplay[]>([]);
@@ -151,22 +160,38 @@ export function useAgentSession(agentId: string): {
   }, [agentId]);
 
   const appendOptimisticUser = useMemo(
-    () =>
-      (text: string, clientMessageId: string, cards?: AttachmentCard[]) => {
-        const localSeq = 9_000_000_000 + (Date.now() % 1_000_000_000);
-        setEntries((prev) => [
-          ...prev,
-          {
-            key: `local-${clientMessageId}`,
-            seq: localSeq,
-            item: { type: "user_message", text, clientMessageId },
-            timestamp: new Date().toISOString(),
-            ...(cards && cards.length > 0 ? { attachments: cards } : {}),
-          },
-        ]);
-      },
+    () => (text: string, clientMessageId: string, cards?: AttachmentCard[]) => {
+      const localSeq = 9_000_000_000 + (Date.now() % 1_000_000_000);
+      setEntries((prev) => [
+        ...prev,
+        {
+          key: `local-${clientMessageId}`,
+          seq: localSeq,
+          item: { type: "user_message", text, clientMessageId },
+          timestamp: new Date().toISOString(),
+          ...(cards && cards.length > 0 ? { attachments: cards } : {}),
+        },
+      ]);
+    },
     [],
   );
 
-  return { snapshot, entries, status, error, appendOptimisticUser };
+  const reload = useMemo(
+    () => async () => {
+      if (!agentId) return;
+      const conn = connectionManager.getConnection();
+      if (!conn) return;
+      try {
+        const timeline = await conn.fetchAgentTimeline(agentId, 50);
+        // 整表替换（rewind 截断语义）；此后流推送照常增量合并
+        setEntries(timeline.map((entry) => timelineToDisplay(agentId, entry)));
+        bumpRef.current += 1;
+      } catch {
+        // 重取失败保留现有条目（下次流推送/进页会再同步）
+      }
+    },
+    [agentId],
+  );
+
+  return { snapshot, entries, status, error, appendOptimisticUser, reload };
 }
