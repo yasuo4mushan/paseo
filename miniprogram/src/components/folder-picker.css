@@ -1,0 +1,131 @@
+/* 设备侧文件夹选择器（t24）：向导第②步内联面板。 */
+
+.fp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.fp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fp-up,
+.fp-new {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: var(--text-2);
+  background: var(--fill);
+  border-radius: var(--radius-round);
+  padding: 10rpx 22rpx;
+}
+
+.fp-new {
+  color: var(--brand);
+  background: var(--brand-fade);
+  font-weight: 600;
+}
+
+.fp-up:active,
+.fp-new:active {
+  opacity: 0.8;
+}
+
+.fp-crumbs {
+  width: 100%;
+  white-space: nowrap;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 14rpx 20rpx;
+  box-sizing: border-box;
+}
+
+.fp-crumb-row {
+  display: inline-flex;
+  align-items: center;
+}
+
+.fp-crumb {
+  font-size: 24rpx;
+  color: var(--brand);
+  max-width: 220rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-crumb:active {
+  opacity: 0.7;
+}
+
+.fp-crumb-current {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.fp-crumb-sep {
+  color: var(--text-3);
+  font-size: 22rpx;
+  margin: 0 8rpx;
+}
+
+.fp-list {
+  max-height: 46vh;
+  min-height: 200rpx;
+  border-top: 1rpx solid var(--divider);
+  border-bottom: 1rpx solid var(--divider);
+}
+
+.fp-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 8rpx;
+  border-bottom: 1rpx solid var(--divider);
+}
+
+.fp-row:last-child {
+  border-bottom: none;
+}
+
+.fp-row:active {
+  background: var(--fill);
+}
+
+.fp-row-icon {
+  flex-shrink: 0;
+}
+
+.fp-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-row-arrow {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  opacity: 0.5;
+}
+
+.fp-empty {
+  padding: 40rpx 0;
+  text-align: center;
+}
+
+.fp-confirm {
+  margin-top: 4rpx;
+}
+
+.fp-hint {
+  font-size: 22rpx;
+  text-align: center;
+}

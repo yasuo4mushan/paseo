@@ -4,6 +4,7 @@
 
 .device-card {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   padding: 32rpx;
 }
@@ -39,4 +40,20 @@
 
 .device-card:active {
   background: var(--fill);
+}
+
+/* t24：已连接设备卡快捷入口（文件/新建项目） */
+.device-quick {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  width: 100%;
+}
+
+.device-quick-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
 }

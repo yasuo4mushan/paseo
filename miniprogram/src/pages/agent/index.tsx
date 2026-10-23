@@ -24,6 +24,7 @@ import { formatFileSize, mimeForFile } from "@/utils/files";
 import { readLocalFileBytes } from "@/utils/file-ops";
 import { STATUS_LABELS, statusPillClass } from "@/constants/status";
 import { iconUrl } from "@/utils/icons";
+import { safeNavigateTo } from "@/utils/navigation";
 import "./index.css";
 
 /** composer 待发送附件（t17）：选图/选文件 → 上传 → 随消息发送。 */
@@ -582,6 +583,17 @@ export default function AgentPage() {
             </View>
           ) : null}
           <View className="composer-actions">
+            {/* t24：工作区文件入口（浏览 + 下载都在 files 页；带会话 cwd 直达） */}
+            {snapshot?.cwd ? (
+              <Button
+                className="btn btn-mini btn-ghost action-btn"
+                onClick={() =>
+                  void safeNavigateTo(`/pages/files/index?cwd=${encodeURIComponent(snapshot.cwd ?? "")}`)
+                }
+              >
+                文件
+              </Button>
+            ) : null}
             {status === "running" && !snapshot?.archivedAt ? (
               <Button
                 className="btn btn-mini btn-ghost action-btn"

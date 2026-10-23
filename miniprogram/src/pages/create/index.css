@@ -217,3 +217,187 @@
   font-size: 26rpx;
   color: var(--text-1);
 }
+
+/* ---------- t24：级联向导 ---------- */
+
+.wiz-crumbs {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16rpx 20rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+.wiz-crumb-item {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.wiz-crumb-sep {
+  color: var(--text-3);
+  margin: 0 12rpx;
+  font-size: 26rpx;
+}
+
+.wiz-crumb {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 88rpx;
+  max-width: 200rpx;
+}
+
+.wiz-crumb:active {
+  opacity: 0.7;
+}
+
+.wiz-crumb-muted {
+  opacity: 0.45;
+}
+
+.wiz-crumb-title {
+  font-size: 20rpx;
+  color: var(--text-3);
+}
+
+.wiz-crumb-current .wiz-crumb-title {
+  color: var(--brand);
+}
+
+.wiz-crumb-value {
+  font-size: 24rpx;
+  color: var(--text-1);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiz-crumb-current .wiz-crumb-value {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.wiz-step-hint {
+  font-size: 22rpx;
+  margin-bottom: 20rpx;
+}
+
+.wiz-device-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.wiz-device {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 8rpx;
+  border-bottom: 1rpx solid var(--divider);
+}
+
+.wiz-device:last-child {
+  border-bottom: none;
+}
+
+.wiz-device:active {
+  background: var(--fill);
+}
+
+.wiz-device-active {
+  background: var(--brand-fade);
+  border-radius: var(--radius);
+  border-bottom-color: transparent;
+}
+
+.wiz-device-offline {
+  opacity: 0.55;
+}
+
+.wiz-device-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wiz-device-name {
+  font-size: 28rpx;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.wiz-device-sub {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+
+.wiz-ws-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.wiz-ws-shortcut:active {
+  opacity: 0.8;
+}
+
+.wiz-ws-shortcut-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wiz-ws-shortcut-name {
+  font-size: 26rpx;
+  color: var(--text-1);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiz-ws-shortcut-path {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiz-open-files {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 24rpx;
+  color: var(--brand);
+  margin-top: 24rpx;
+}
+
+.wiz-open-files:active {
+  opacity: 0.7;
+}
+
+.wiz-mode-hint {
+  font-size: 22rpx;
+  margin-top: 24rpx;
+}
+
+.wiz-nav {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 8rpx;
+}
+
+.wiz-nav-side {
+  flex: 0 0 200rpx;
+}
+
+.wiz-nav-main {
+  flex: 1;
+}

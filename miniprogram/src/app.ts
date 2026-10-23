@@ -109,6 +109,8 @@ function App({ children }: PropsWithChildren) {
             sessionStore: typeof sessionStore;
             /** t20：验收清理用（绕过确认弹窗直删验证 agent）。 */
             deleteAgent?: (agentId: string) => Promise<void>;
+            /** t24：验收清理用（直删向导新建的验证文件夹，绕过长按菜单）。 */
+            deleteFsEntry?: (cwd: string, path: string) => Promise<void>;
             /** t20：navigateTo timeout 回归步（页面栈降级/连点去重在真 runtime 验证）。 */
             safeNavigateTo?: (url: string) => Promise<unknown>;
             /** t20：验收收尾断开连接（devtools 实例常驻，避免污染下一次运行）。 */
@@ -138,6 +140,12 @@ function App({ children }: PropsWithChildren) {
       app.__automation.deleteAgent = async (agentId: string) => {
         const { connectionManager } = await import("./connection/connection-manager");
         await connectionManager.requireConnection().deleteAgent(agentId);
+      };
+    }
+    if (app?.__automation && !app.__automation.deleteFsEntry) {
+      app.__automation.deleteFsEntry = async (cwd: string, path: string) => {
+        const { connectionManager } = await import("./connection/connection-manager");
+        await connectionManager.requireConnection().deleteFsEntry({ cwd, path });
       };
     }
   }, []);
