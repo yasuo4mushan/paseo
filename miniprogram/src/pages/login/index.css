@@ -43,6 +43,33 @@
   border-radius: var(--radius);
   padding: 40rpx 32rpx 32rpx;
   box-shadow: var(--shadow-card);
+  /* t27：页面根是 flex column，键盘弹起/小屏时禁止卡片被纵向压缩压扁输入框 */
+  flex-shrink: 0;
+}
+
+.wx-login-divider {
+  display: flex;
+  align-items: center;
+  margin: 8rpx 0 24rpx;
+}
+
+.wx-login-divider-line {
+  flex: 1;
+  height: 1rpx;
+  background: var(--border);
+}
+
+.wx-login-divider-text {
+  margin: 0 20rpx;
+  font-size: 22rpx;
+  color: var(--text-3);
+}
+
+/* 微信一键登录按钮（品牌绿即 --brand；未启用时整块不渲染） */
+.btn-wx-phone {
+  background: var(--brand);
+  color: var(--text-inverse);
+  margin-top: 0;
 }
 
 .input-placeholder {

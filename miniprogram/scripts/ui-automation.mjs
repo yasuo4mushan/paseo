@@ -31,8 +31,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SHOT_DIR = resolve(here, "../docs/screenshots");
 const WS = "ws://127.0.0.1:9421";
 
-const DEMO_USER = process.env.PROBE_USER ?? "demo";
-const DEMO_PASS = process.env.PROBE_PASS ?? "demo123";
+// t27：手机号登录（mock hub 固定 13800138000 / demo12345；真实 hub 用环境变量）
+const DEMO_USER = process.env.PROBE_USER ?? "13800138000";
+const DEMO_PASS = process.env.PROBE_PASS ?? "demo12345";
 const REAL_HUB = Boolean(process.env.PROBE_USER);
 
 function lanIp() {
@@ -93,26 +94,30 @@ async function main() {
   await sleep(1500);
 
   let page = await mini.currentPage();
-  await waitFor("登录页出现", async () => (await page.$(".login-username")) !== null);
+  await waitFor("登录页出现", async () => (await page.$(".login-phone")) !== null);
   await shot(mini, "01-login");
+  // t27：微信一键按钮门控——hub 未启用（501 auth.wx_disabled）时整块隐藏
+  const wxBtn = await page.$(".btn-wx-phone");
+  if (wxBtn) throw new Error("微信一键登录按钮应处于隐藏态（hub 未启用 wx-phone）");
+  console.log("✓ 微信一键登录按钮隐藏态（探测 501 auth.wx_disabled）");
 
-  // 错误凭据 → 错误文案
-  const userInput = await page.$(".login-username");
+  // 错误凭据 → 错误文案（手机号版文案）
+  const userInput = await page.$(".login-phone");
   const passInput = await page.$(".login-password");
   const loginBtn = await page.$(".btn-login");
-  await userInput.input("demo");
+  await userInput.input("13800138000");
   await passInput.input("wrong-pass");
   await loginBtn.tap();
   await waitFor("invalid_credentials 错误文案", async () => {
     const err = await page.$(".login-error");
-    return err ? (await err.text()).includes("用户名或密码错误") : false;
+    return err ? (await err.text()).includes("手机号或密码错误") : false;
   });
   console.log("✓ 错误码映射为中文文案");
 
   // 正确凭据 → 设备 tab。错误态渲染后旧元素句柄失效，必须重新查询再输入
   // （hub 对 auth.login 限 10 次/IP/分钟，失败后稍候再试）
   await sleep(2000);
-  const userInput2 = await page.$(".login-username");
+  const userInput2 = await page.$(".login-phone");
   const passInput2 = await page.$(".login-password");
   const loginBtn2 = await page.$(".btn-login");
   await userInput2.input(DEMO_USER);
@@ -120,9 +125,12 @@ async function main() {
   await loginBtn2.tap();
   let loginErrorText = "";
   try {
-    await waitFor("登录成功进入设备页", async () => {
+    await waitFor("登录成功进入对话页/设备页", async () => {
       const current = await mini.currentPage();
-      if (current.path !== "pages/devices/index") return false;
+      // t20 起登录直达对话主页（chat tab）；旧路径 devices 仍接受
+      if (current.path !== "pages/chat/index" && current.path !== "pages/devices/index") {
+        return false;
+      }
       page = current;
       return true;
     });
@@ -168,10 +176,14 @@ async function main() {
     return el ?? null;
   });
   await online.tap();
-  await waitFor("连接成功进入 Agent 列表", async () => {
-    const current = await mini.currentPage();
-    return current.path === "pages/agents/index" ? current : false;
-  }, { timeout: 25000 });
+  await waitFor(
+    "连接成功进入 Agent 列表",
+    async () => {
+      const current = await mini.currentPage();
+      return current.path === "pages/agents/index" ? current : false;
+    },
+    { timeout: 25000 },
+  );
   await sleep(2500); // 等 agent 数据渲染
   await shot(mini, "03-agents");
 

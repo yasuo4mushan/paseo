@@ -410,11 +410,16 @@ page {
   margin-bottom: 12rpx;
 }
 
+/* t27：微信原生 input 的高度不随 padding 撑开——竖向 padding 会吃掉内容区，
+   文字被压扁截断（登录页用户反馈）。显式 height + line-height 定高垂直居中，
+   竖向不再依赖 padding。 */
 .field-input {
   width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
   background: var(--fill);
   border-radius: var(--radius);
-  padding: 20rpx 24rpx;
+  padding: 0 24rpx;
   box-sizing: border-box;
   font-size: 30rpx;
   color: var(--text-1);

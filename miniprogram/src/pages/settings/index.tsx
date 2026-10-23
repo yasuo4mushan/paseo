@@ -16,6 +16,7 @@ import {
   getHubBase,
   hasSession,
   hub,
+  hubErrorMessage,
   resetHubBase,
   setHubBase,
 } from "@/hub/hub-client";
@@ -53,11 +54,18 @@ export default function SettingsPage() {
   // t23：设备连接区与设备页同源同语义（deviceStatusStore 综合三态）
   const deviceSnapshot = useDeviceStatuses();
   const [authed, setAuthed] = useState(() => hasSession());
-  const [username, setUsername] = useState(() => getAccount()?.username ?? "");
+  const [phone, setPhone] = useState(() => getAccount()?.phone ?? "");
   const [daemonStatus, setDaemonStatus] = useState<DaemonStatus | null>(null);
   const [hubBase, setHubBaseState] = useState(() => getHubBase());
   const [hubDraft, setHubDraft] = useState("");
   const [hubEditing, setHubEditing] = useState(false);
+  // t27：改密编辑器（passwordSet=false 的微信账号免旧密码，直接设初密）
+  const [pwEditing, setPwEditing] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPassword2, setNewPassword2] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState("");
   // t18：外观三档 + attention 振动
   const [themePref, setThemePref] = useState<ThemePreference>(() => themeStore.getPreference());
   const [vibrate, setVibrate] = useState(() => attentionStore.isVibrationEnabled());
@@ -66,7 +74,7 @@ export default function SettingsPage() {
 
   useDidShow(() => {
     setAuthed(hasSession());
-    setUsername(getAccount()?.username ?? "");
+    setPhone(getAccount()?.phone ?? "");
     setHubBaseState(getHubBase());
     // t23：切回设置页强刷设备综合状态
     if (hasSession()) void deviceStatusStore.refreshNow();
@@ -128,6 +136,38 @@ export default function SettingsPage() {
     });
   };
 
+  /** t27：修改密码。passwordSet=false（微信一键登录且未设密）时免旧密码。 */
+  const submitPasswordChange = async () => {
+    if (pwBusy) return;
+    const needsOld = getAccount()?.passwordSet !== false;
+    if (needsOld && !oldPassword) {
+      setPwError("请输入当前密码");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPwError("新密码至少 8 位");
+      return;
+    }
+    if (newPassword !== newPassword2) {
+      setPwError("两次输入的新密码不一致");
+      return;
+    }
+    setPwBusy(true);
+    setPwError("");
+    try {
+      await hub.changePassword(newPassword, needsOld ? oldPassword : undefined);
+      setPwEditing(false);
+      setOldPassword("");
+      setNewPassword("");
+      setNewPassword2("");
+      Taro.showToast({ title: "密码已修改，其他设备已下线", icon: "none", duration: 2500 });
+    } catch (err) {
+      setPwError(hubErrorMessage(err));
+    } finally {
+      setPwBusy(false);
+    }
+  };
+
   const reconnect = () => {
     connectionManager
       .connect()
@@ -156,9 +196,82 @@ export default function SettingsPage() {
       <View className="section-title">账号</View>
       <View className="cell-group">
         <View className="cell">
-          <View className="cell-grow cell-label">用户名</View>
-          <View className="cell-value">{username || "未登录"}</View>
+          <View className="cell-grow cell-label">手机号</View>
+          <View className="cell-value num">{phone || "未登录"}</View>
         </View>
+        {pwEditing ? (
+          <View className="pw-editor">
+            {getAccount()?.passwordSet === false ? (
+              <View className="field-error pw-editor-hint">
+                你还没有设置过密码，设置后即可用手机号+密码登录
+              </View>
+            ) : null}
+            {getAccount()?.passwordSet !== false ? (
+              <View className="field">
+                <View className="field-label">当前密码</View>
+                <Input
+                  className="field-input pw-input"
+                  value={oldPassword}
+                  onInput={(e) => setOldPassword(e.detail.value)}
+                  placeholder="输入当前密码"
+                  placeholderClass="input-placeholder"
+                  password
+                  maxlength={64}
+                />
+              </View>
+            ) : null}
+            <View className="field">
+              <View className="field-label">新密码</View>
+              <Input
+                className="field-input pw-input"
+                value={newPassword}
+                onInput={(e) => setNewPassword(e.detail.value)}
+                placeholder="至少 8 位"
+                placeholderClass="input-placeholder"
+                password
+                maxlength={64}
+              />
+            </View>
+            <View className="field">
+              <View className="field-label">确认新密码</View>
+              <Input
+                className="field-input pw-input"
+                value={newPassword2}
+                onInput={(e) => setNewPassword2(e.detail.value)}
+                placeholder="再输入一次新密码"
+                placeholderClass="input-placeholder"
+                password
+                maxlength={64}
+                onConfirm={() => void submitPasswordChange()}
+              />
+            </View>
+            {pwError ? <View className="field-error">{pwError}</View> : null}
+            <View className="hub-editor-actions">
+              <Button className="btn btn-ghost btn-mini" onClick={() => setPwEditing(false)}>
+                取消
+              </Button>
+              <Button
+                className="btn btn-mini"
+                disabled={pwBusy}
+                loading={pwBusy}
+                onClick={() => void submitPasswordChange()}
+              >
+                {pwBusy ? "提交中…" : "确认修改"}
+              </Button>
+            </View>
+          </View>
+        ) : (
+          <View
+            className="cell cell-tappable"
+            onClick={() => {
+              setPwError("");
+              setPwEditing(true);
+            }}
+          >
+            <View className="cell-grow cell-label">修改密码</View>
+            <View className="cell-arrow">›</View>
+          </View>
+        )}
         <View className="cell cell-tappable" onClick={logout}>
           <View className="cell-grow cell-label cell-danger">退出登录</View>
         </View>
