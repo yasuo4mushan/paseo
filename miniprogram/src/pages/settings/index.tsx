@@ -2,15 +2,13 @@ import { useEffect, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Button, Input, View } from "@tarojs/components";
 import { connectionManager } from "@/connection/connection-manager";
+import { deviceStatusStore } from "@/connection/device-status-store";
 import type { DaemonStatus } from "@/connection/protocol-types";
 import { PermissionOverlay } from "@/components/permission-overlay";
+import { useDeviceStatuses } from "@/hooks/use-device-statuses";
 import { useThemeClass } from "@/hooks/use-theme";
 import { attentionStore } from "@/stores/attention-store";
-import {
-  THEME_LABELS,
-  themeStore,
-  type ThemePreference,
-} from "@/stores/theme-store";
+import { THEME_LABELS, themeStore, type ThemePreference } from "@/stores/theme-store";
 import {
   DEFAULT_HUB_BASE,
   getAccount,
@@ -50,6 +48,8 @@ function useConnectionState() {
 export default function SettingsPage() {
   const themeClass = useThemeClass();
   const state = useConnectionState();
+  // t23：设备连接区与设备页同源同语义（deviceStatusStore 综合三态）
+  const deviceSnapshot = useDeviceStatuses();
   const [authed, setAuthed] = useState(() => hasSession());
   const [username, setUsername] = useState(() => getAccount()?.username ?? "");
   const [daemonStatus, setDaemonStatus] = useState<DaemonStatus | null>(null);
@@ -66,25 +66,36 @@ export default function SettingsPage() {
     setAuthed(hasSession());
     setUsername(getAccount()?.username ?? "");
     setHubBaseState(getHubBase());
+    // t23：切回设置页强刷设备综合状态
+    if (hasSession()) void deviceStatusStore.refreshNow();
   });
 
   useEffect(() => {
-    if (!authed) {
+    if (!authed || deviceSnapshot.authExpired) {
       connectionManager.disconnect();
       Taro.reLaunch({ url: "/pages/login/index" });
     }
-  }, [authed]);
+  }, [authed, deviceSnapshot.authExpired]);
 
   useEffect(() => {
     if (state.status === "connected") {
-      connectionManager.fetchDaemonStatus().then(setDaemonStatus).catch(() => setDaemonStatus(null));
+      connectionManager
+        .fetchDaemonStatus()
+        .then(setDaemonStatus)
+        .catch(() => setDaemonStatus(null));
     }
   }, [state.status]);
 
   if (!authed) return <View />;
 
-  const activeDevice = connectionManager.getActiveDevice();
+  // t23：与设备页同源的综合状态（active = 本地连接活跃；unreported = hub 未上报）
+  const active = deviceSnapshot.active;
   const info = state.status === "connected" ? state.info : null;
+  const connectionText = active
+    ? active.unreported
+      ? "已连接（未上表）"
+      : "已连接"
+    : (STATUS_TEXT[state.status] ?? state.status);
 
   const setTheme = (pref: ThemePreference) => {
     themeStore.setPreference(pref);
@@ -157,19 +168,26 @@ export default function SettingsPage() {
           <View className="cell-grow cell-label">连接状态</View>
           <View
             className={`cell-value ${
-              state.status === "connected" ? "value-ok" : state.status === "error" ? "value-bad" : ""
+              active ? "value-ok" : state.status === "error" ? "value-bad" : ""
             }`}
           >
-            {STATUS_TEXT[state.status] ?? state.status}
+            {connectionText}
             {state.status === "error" ? `：${state.message}` : ""}
           </View>
         </View>
         <View className="cell">
           <View className="cell-grow cell-label">当前设备</View>
           <View className="cell-value">
-            {activeDevice ? activeDevice.name : endpointLabel()}
+            {active ? (active.device?.name ?? active.identity.label) : endpointLabel()}
           </View>
         </View>
+        {active?.unreported ? (
+          <View className="cell">
+            <View className="cell-grow settings-unreported">
+              桌面端未登录 aaswitch 账号，设备不会出现在其他手机
+            </View>
+          </View>
+        ) : null}
         {info ? (
           <View className="cell">
             <View className="cell-grow cell-label">daemon 版本</View>
@@ -271,11 +289,14 @@ export default function SettingsPage() {
         )}
       </View>
       {hubBase !== DEFAULT_HUB_BASE ? (
-        <View className="faint settings-note" onClick={() => {
-          resetHubBase();
-          setHubBaseState(DEFAULT_HUB_BASE);
-          Taro.showToast({ title: "已恢复默认", icon: "none" });
-        }}>
+        <View
+          className="faint settings-note"
+          onClick={() => {
+            resetHubBase();
+            setHubBaseState(DEFAULT_HUB_BASE);
+            Taro.showToast({ title: "已恢复默认", icon: "none" });
+          }}
+        >
           当前使用自定义地址，点此恢复默认 {DEFAULT_HUB_BASE}
         </View>
       ) : (
