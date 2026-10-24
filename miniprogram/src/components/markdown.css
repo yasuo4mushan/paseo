@@ -6,7 +6,7 @@
 .md-root {
   display: flex;
   flex-direction: column;
-  font-size: 28rpx;
+  font-size: 30rpx;
   line-height: 1.65;
 }
 
@@ -31,7 +31,7 @@
 
 .md-code-inline {
   font-family: Menlo, Consolas, "Roboto Mono", monospace;
-  font-size: 25rpx;
+  font-size: 27rpx;
   background: var(--fill);
   border-radius: 6rpx;
   padding: 2rpx 8rpx;
@@ -51,27 +51,27 @@
 }
 
 .md-h1 {
-  font-size: 36rpx;
+  font-size: 38rpx;
 }
 
 .md-h2 {
-  font-size: 33rpx;
+  font-size: 35rpx;
 }
 
 .md-h3 {
-  font-size: 31rpx;
+  font-size: 33rpx;
 }
 
 .md-h4 {
-  font-size: 29rpx;
+  font-size: 31rpx;
 }
 
 .md-h5 {
-  font-size: 28rpx;
+  font-size: 30rpx;
 }
 
 .md-h6 {
-  font-size: 27rpx;
+  font-size: 29rpx;
   color: var(--text-2);
 }
 
@@ -141,13 +141,13 @@
 }
 
 .md-code-lang {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--text-3);
   text-transform: lowercase;
 }
 
 .md-code-copy {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--brand);
   padding: 4rpx 12rpx;
 }
@@ -160,7 +160,7 @@
 
 .md-code-text {
   font-family: Menlo, Consolas, "Roboto Mono", monospace;
-  font-size: 24rpx;
+  font-size: 26rpx;
   line-height: 1.55;
   color: var(--text-1);
   white-space: pre;
@@ -199,5 +199,5 @@
   min-width: 200rpx;
   max-width: 520rpx;
   padding: 8rpx 12rpx;
-  font-size: 25rpx;
+  font-size: 27rpx;
 }

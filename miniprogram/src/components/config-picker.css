@@ -27,7 +27,7 @@
 }
 
 .cp-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--text-1);
 }
@@ -70,7 +70,7 @@
 }
 
 .cp-label {
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: var(--text-1);
 }
 
@@ -80,7 +80,7 @@
 }
 
 .cp-desc {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--text-2);
   margin-top: 4rpx;
 }
@@ -88,6 +88,6 @@
 .cp-empty {
   text-align: center;
   color: var(--text-3);
-  font-size: 24rpx;
+  font-size: 26rpx;
   padding: 48rpx 0;
 }

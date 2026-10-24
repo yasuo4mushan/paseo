@@ -2,7 +2,7 @@
  * aaswitch 全局设计体系（微信小程序设计规范）。
  *
  * - 品牌主色 #07C160（微信绿），成功/警告/错误沿用微信官方色板。
- * - 字阶：标题 34rpx/600 · 正文 28rpx · 辅助 24rpx；栅格 8pt（16rpx）。
+ * - 字阶：标题 36rpx/600 · 正文 30rpx · 辅助 26rpx（t31 全局 +2rpx：用户反馈手机端字太小）；栅格 8pt（16rpx）。
  * - 深色模式：app.config darkmode + theme.json（导航/tabBar），页面 tokens 走
  *   prefers-color-scheme 媒体查询，token 名不改、页面只引用变量。
  * - t22 纪律：色值字面量只允许出现在本文件（token 定义）和 src/constants/colors.ts
@@ -78,7 +78,7 @@ page {
   --term-closed: #8b949e;
 
   background: var(--bg);
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: var(--text-1);
   font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
   line-height: 1.5;
@@ -193,7 +193,7 @@ page {
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
   color: var(--text-2);
   margin: 24rpx 8rpx 16rpx;
@@ -201,12 +201,12 @@ page {
 
 .muted {
   color: var(--text-2);
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 
 .faint {
   color: var(--text-3);
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 
 .num {
@@ -216,7 +216,7 @@ page {
 .footer-note {
   text-align: center;
   color: var(--text-3);
-  font-size: 22rpx;
+  font-size: 24rpx;
   padding: 32rpx 0 calc(32rpx + env(safe-area-inset-bottom));
 }
 
@@ -238,12 +238,12 @@ page {
 }
 
 .cell-label {
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: var(--text-1);
 }
 
 .cell-value {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--text-2);
   text-align: right;
   overflow: hidden;
@@ -255,7 +255,7 @@ page {
 .cell-arrow {
   color: var(--text-3);
   margin-left: 8rpx;
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 
 .cell-group {
@@ -273,7 +273,7 @@ page {
   background: var(--brand);
   color: var(--text-inverse);
   border-radius: var(--radius);
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   padding: 20rpx 0;
   text-align: center;
@@ -318,7 +318,7 @@ page {
 
 .btn-mini {
   display: inline-block;
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 500;
   padding: 10rpx 32rpx;
   border-radius: var(--radius-round);
@@ -329,7 +329,7 @@ page {
 .pill {
   display: inline-flex;
   align-items: center;
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1;
   padding: 8rpx 16rpx;
   border-radius: var(--radius-round);
@@ -407,7 +407,7 @@ page {
 }
 
 .field-label {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--text-2);
   margin-bottom: 12rpx;
 }
@@ -423,13 +423,13 @@ page {
   border-radius: var(--radius);
   padding: 0 24rpx;
   box-sizing: border-box;
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: var(--text-1);
 }
 
 .field-error {
   color: var(--danger);
-  font-size: 24rpx;
+  font-size: 26rpx;
   margin: -12rpx 0 24rpx;
 }
 
@@ -443,20 +443,20 @@ page {
 }
 
 .empty-icon {
-  font-size: 72rpx;
+  font-size: 74rpx;
   line-height: 1;
   margin-bottom: 24rpx;
 }
 
 .empty-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--text-1);
   margin-bottom: 12rpx;
 }
 
 .empty-desc {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-2);
   text-align: center;
   margin-bottom: 32rpx;
@@ -499,7 +499,7 @@ page {
 .loading-tip {
   text-align: center;
   color: var(--text-3);
-  font-size: 24rpx;
+  font-size: 26rpx;
   padding: 24rpx 0;
 }
 
@@ -507,7 +507,7 @@ page {
   background: var(--danger-fade);
   color: var(--danger);
   border-radius: var(--radius);
-  font-size: 24rpx;
+  font-size: 26rpx;
   padding: 16rpx 24rpx;
   margin-bottom: 24rpx;
 }
@@ -552,7 +552,7 @@ page {
 }
 
 .timeline-clock {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--text-3);
   margin-top: 8rpx;
   padding: 0 8rpx;
@@ -574,7 +574,7 @@ page {
   max-width: 78%;
   border-radius: var(--radius);
   padding: 20rpx 24rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
   word-break: break-all;
 }
 
@@ -595,13 +595,13 @@ page {
   background: transparent;
   color: var(--text-2);
   border: 2rpx dashed var(--text-3);
-  font-size: 26rpx;
+  font-size: 28rpx;
 }
 
 .bubble-tool {
   background: var(--fill);
   color: var(--text-1);
-  font-size: 24rpx;
+  font-size: 26rpx;
   max-width: 86%;
 }
 
@@ -625,7 +625,7 @@ page {
 .bubble-plain {
   background: var(--fill);
   color: var(--text-2);
-  font-size: 24rpx;
+  font-size: 26rpx;
   text-align: center;
   max-width: 100%;
 }
@@ -710,7 +710,7 @@ page {
 .msg-edit-area {
   width: 100%;
   min-height: 120rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
   line-height: 1.5;
   color: var(--text-1);
   background: var(--card);
@@ -722,7 +722,7 @@ page {
 
 .msg-edit-hint {
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1.4;
 }
 
@@ -739,7 +739,7 @@ page {
 }
 
 .msg-edit-btn {
-  font-size: 24rpx;
+  font-size: 26rpx;
   padding: 10rpx 28rpx;
   border-radius: var(--radius-round);
   line-height: 1.4;
@@ -774,7 +774,7 @@ page {
   background: var(--fill);
   border-radius: var(--radius-round);
   padding: 14rpx 28rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: var(--text-1);
 }
 
@@ -836,7 +836,7 @@ page {
 }
 
 .attach-file-name {
-  font-size: 24rpx;
+  font-size: 26rpx;
   max-width: 320rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -844,7 +844,7 @@ page {
 }
 
 .attach-file-size {
-  font-size: 20rpx;
+  font-size: 22rpx;
   opacity: 0.75;
   margin-top: 2rpx;
 }
@@ -878,7 +878,7 @@ page {
 }
 
 .attach-chip-progress {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--brand);
   margin-right: 12rpx;
   font-weight: 600;
@@ -889,7 +889,7 @@ page {
 }
 
 .attach-chip-name {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-1);
   max-width: 240rpx;
   overflow: hidden;
@@ -898,7 +898,7 @@ page {
 }
 
 .attach-chip-size {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--text-2);
   margin-top: 2rpx;
 }
@@ -932,14 +932,14 @@ page {
 }
 
 .slash-name {
-  font-size: 25rpx;
+  font-size: 27rpx;
   color: var(--brand);
   font-family: "SF Mono", Menlo, Consolas, monospace;
   flex-shrink: 0;
 }
 
 .slash-desc {
-  font-size: 23rpx;
+  font-size: 25rpx;
   color: var(--text-2);
   overflow: hidden;
   text-overflow: ellipsis;

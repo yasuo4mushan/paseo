@@ -59,7 +59,7 @@
   margin-left: 16rpx;
   background: var(--fill);
   color: var(--text-3);
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
   padding: 12rpx 32rpx;
   border-radius: var(--radius-round);
@@ -91,7 +91,7 @@
 }
 
 .archived-callout-text {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--warning);
   flex: 1;
 }
@@ -104,7 +104,7 @@
 }
 
 .label-editor-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
   color: var(--text-2);
   margin-bottom: 16rpx;
@@ -123,7 +123,7 @@
   background: var(--info-fade);
   color: var(--info);
   border-radius: var(--radius-round);
-  font-size: 24rpx;
+  font-size: 26rpx;
   padding: 8rpx 12rpx 8rpx 20rpx;
 }
 
@@ -154,7 +154,7 @@
   background: var(--fill);
   border-radius: var(--radius);
   padding: 16rpx 24rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: var(--text-1);
   box-sizing: border-box;
 }
@@ -165,7 +165,7 @@
 
 .label-editor-done {
   text-align: center;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-3);
   padding-top: 20rpx;
 }
@@ -188,13 +188,13 @@
 }
 
 .subagent-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
   color: var(--text-1);
 }
 
 .subagent-close {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-3);
 }
 
@@ -244,7 +244,7 @@
 }
 
 .subagent-name {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -252,14 +252,14 @@
 }
 
 .subagent-desc {
-  font-size: 22rpx;
+  font-size: 24rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .subagent-status {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--text-2);
 }
 
@@ -302,7 +302,7 @@
 }
 
 .ctx-gauge-text {
-  font-size: 20rpx;
+  font-size: 22rpx;
 }
 
 .rename-title {
