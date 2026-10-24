@@ -30,7 +30,7 @@
 }
 
 .chat-device-label {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-1);
   max-width: 130rpx;
   overflow: hidden;
@@ -85,7 +85,7 @@
 }
 
 .chat-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 600;
   color: var(--text-1);
   overflow: hidden;
@@ -112,7 +112,7 @@
 }
 
 .chat-new-text {
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: var(--text-inverse);
 }
@@ -155,7 +155,7 @@
 }
 
 .chat-project-text {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--text-2);
   max-width: 400rpx;
   overflow: hidden;
@@ -185,13 +185,13 @@
 .chat-banner-text {
   flex: 1;
   min-width: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-1);
 }
 
 .chat-banner-btn {
   flex-shrink: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: var(--text-inverse);
   background: var(--brand);
@@ -235,7 +235,7 @@
 }
 
 .chat-welcome-title {
-  font-size: 40rpx;
+  font-size: 42rpx;
   font-weight: 600;
   color: var(--text-1);
   margin-bottom: 16rpx;
@@ -276,7 +276,7 @@
 }
 
 .chat-pill-text {
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: var(--text-1);
   max-width: 320rpx;
   overflow: hidden;

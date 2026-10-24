@@ -32,7 +32,7 @@
   background: var(--fill);
   color: var(--text-2);
   border-radius: var(--radius);
-  font-size: 22rpx;
+  font-size: 24rpx;
   padding: 4rpx 12rpx;
 }
 
@@ -42,7 +42,7 @@
 }
 
 .commit-subject {
-  font-size: 27rpx;
+  font-size: 29rpx;
   color: var(--text-1);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,11 +51,11 @@
 
 .commit-meta {
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .commit-chevron {
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 
 .commit-files {
@@ -87,12 +87,12 @@
 }
 
 .commit-file-name {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: var(--text-1);
 }
 
 .commit-file-path {
-  font-size: 20rpx;
+  font-size: 22rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -107,17 +107,17 @@
 
 .commit-add {
   color: var(--diff-add-strong);
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .commit-del {
   color: var(--diff-del-strong);
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .commit-status {
   color: var(--text-3);
-  font-size: 20rpx;
+  font-size: 22rpx;
   background: var(--fill);
   border-radius: 6rpx;
   padding: 2rpx 10rpx;
@@ -135,7 +135,7 @@
 }
 
 .diff-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
 }
 
 .diff-body {
@@ -160,7 +160,7 @@
 .diff-note {
   background: var(--fill);
   color: var(--text-2);
-  font-size: 24rpx;
+  font-size: 26rpx;
   border-radius: var(--radius);
   padding: 12rpx 16rpx;
   margin-bottom: 12rpx;
@@ -176,7 +176,7 @@
 .diff-hunk-head {
   background: var(--fill);
   color: var(--text-2);
-  font-size: 22rpx;
+  font-size: 24rpx;
   padding: 8rpx 16rpx;
 }
 
@@ -194,7 +194,7 @@
   display: flex;
   flex-direction: row;
   font-family: "SF Mono", Menlo, Consolas, monospace;
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1.5;
 }
 

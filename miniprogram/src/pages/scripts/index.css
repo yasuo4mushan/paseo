@@ -15,7 +15,7 @@
 }
 
 .script-name {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 600;
   color: var(--text-1);
   overflow: hidden;
@@ -25,7 +25,7 @@
 
 .script-pill {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: 24rpx;
   padding: 6rpx 18rpx;
   border-radius: var(--radius-round);
   background: var(--fill);
