@@ -1,7 +1,7 @@
 import { createWriteStream } from "node:fs";
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type pino from "pino";
 
@@ -42,6 +42,41 @@ interface DownloadToFileOptions {
   url: string;
   outputPath: string;
   signal?: AbortSignal;
+  logger: pino.Logger;
+}
+
+// Archives are 100MB+; log progress on a byte cadence so slow links stay visible
+// in the daemon log without spamming it.
+const DOWNLOAD_PROGRESS_LOG_INTERVAL_BYTES = 32 * 1024 * 1024;
+
+function createDownloadProgressTracker(options: {
+  totalBytes: number | null;
+  logger: pino.Logger;
+}): Transform {
+  let receivedBytes = 0;
+  let lastLoggedBytes = 0;
+  const { totalBytes, logger } = options;
+  return new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      receivedBytes += chunk.length;
+      if (
+        receivedBytes - lastLoggedBytes >= DOWNLOAD_PROGRESS_LOG_INTERVAL_BYTES ||
+        (totalBytes !== null && receivedBytes >= totalBytes)
+      ) {
+        lastLoggedBytes = receivedBytes;
+        logger.info(
+          {
+            receivedBytes,
+            ...(totalBytes !== null
+              ? { totalBytes, percent: Math.floor((receivedBytes / totalBytes) * 100) }
+              : {}),
+          },
+          "Model download progress",
+        );
+      }
+      callback(null, chunk);
+    },
+  });
 }
 
 async function downloadToFile(options: DownloadToFileOptions): Promise<void> {
@@ -57,12 +92,20 @@ async function downloadToFile(options: DownloadToFileOptions): Promise<void> {
   const tmpPath = `${outputPath}.tmp-${Date.now()}`;
   await mkdir(path.dirname(outputPath), { recursive: true });
 
+  const contentLength = Number.parseInt(res.headers.get("content-length") ?? "", 10);
+  const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
+
   // The fetch ReadableStream type is slightly different from what Readable.fromWeb expects
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeStream = Readable.fromWeb(res.body as any);
 
   try {
-    await pipeline(nodeStream, createWriteStream(tmpPath), { signal: options.signal });
+    await pipeline(
+      nodeStream,
+      createDownloadProgressTracker({ totalBytes, logger: options.logger }),
+      createWriteStream(tmpPath),
+      { signal: options.signal },
+    );
     await rename(tmpPath, outputPath);
   } catch (error) {
     await rm(tmpPath, { force: true }).catch(() => undefined);
@@ -158,6 +201,7 @@ export async function ensureSherpaOnnxModel(
         url: spec.archiveUrl,
         outputPath: archivePath,
         signal: options.signal,
+        logger,
       });
     }
 

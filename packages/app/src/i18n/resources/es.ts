@@ -373,6 +373,9 @@ export const es: TranslationResources = {
       insertAndSend: "Insertar transcripción y enviar",
       failed: "Fallo en el dictado:{{error}}",
       failedRetry: "El dictado falló. Toca reintentar.",
+      holdHint: "Suelta para insertar, desliza hacia arriba para cancelar",
+      cancelArmedHint: "Suelta para cancelar",
+      processing: "Transcribiendo…",
     },
     question: {
       responseFailed: "No se pudo enviar tu respuesta. Inténtalo de nuevo.",

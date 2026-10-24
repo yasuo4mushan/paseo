@@ -373,6 +373,9 @@ export const ja: TranslationResources = {
       insertAndSend: "文字起こしを挿入して送信",
       failed: "音声入力に失敗しました: {{error}}",
       failedRetry: "音声入力に失敗しました。再試行をタップしてください。",
+      holdHint: "指を離して挿入、上にスワイプでキャンセル",
+      cancelArmedHint: "指を離してキャンセル",
+      processing: "文字起こし中…",
     },
     question: {
       responseFailed: "回答を送信できませんでした。もう一度お試しください。",

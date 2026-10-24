@@ -56,27 +56,62 @@ interface SendActionContext {
 
 interface DictationTranscriptContext {
   value: string;
+  /** Caret/selection at dictation time; the transcript inserts here when provided. */
+  selection?: { start: number; end: number };
   defaultSendBehavior: SendBehavior;
   isAgentRunning: boolean;
   onQueue: ((payload: MessagePayload) => void) | undefined;
   onSubmit: (payload: MessagePayload) => void;
-  replaceText: (text: string) => void;
+  replaceText: (text: string, selection?: { start: number; end: number }) => void;
   attachments: MessagePayload["attachments"];
   cwd: string;
   autoSend: boolean;
 }
 
+// CJK text joins without spaces; only pad when at least one side is non-CJK.
+const CJK_CHARACTER = /[\u3000-\u9fff\uff00-\uffef]/;
+
+function needsJoinSpace(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  if (/\s/.test(a) || /\s/.test(b)) return false;
+  return !(CJK_CHARACTER.test(a) || CJK_CHARACTER.test(b));
+}
+
+export function insertDictationTranscript(
+  value: string,
+  text: string,
+  selection: { start: number; end: number } | undefined,
+): { nextValue: string; nextSelection: { start: number; end: number } } {
+  const caret =
+    selection && selection.start >= 0 && selection.end >= selection.start
+      ? selection
+      : { start: value.length, end: value.length };
+  if (caret.start >= value.length) {
+    const pad = value.length > 0 && needsJoinSpace(value[value.length - 1], text[0]) ? " " : "";
+    const nextValue = `${value}${pad}${text}`;
+    return { nextValue, nextSelection: { start: nextValue.length, end: nextValue.length } };
+  }
+  const start = Math.min(caret.start, value.length);
+  const end = Math.min(caret.end, value.length);
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const lead = before.length > 0 && needsJoinSpace(before[before.length - 1], text[0]) ? " " : "";
+  const tail = after.length > 0 && needsJoinSpace(text[text.length - 1], after[0]) ? " " : "";
+  const nextValue = `${before}${lead}${text}${tail}${after}`;
+  const insertEnd = start + lead.length + text.length;
+  return { nextValue, nextSelection: { start: insertEnd, end: insertEnd } };
+}
+
 export function applyDictationTranscript(text: string, ctx: DictationTranscriptContext): void {
   if (!text) return;
-  const shouldPad = ctx.value.length > 0 && !/\s$/.test(ctx.value);
-  const nextValue = `${ctx.value}${shouldPad ? " " : ""}${text}`;
+  const { nextValue, nextSelection } = insertDictationTranscript(ctx.value, text, ctx.selection);
 
   if (!ctx.autoSend) {
-    ctx.replaceText(nextValue);
+    ctx.replaceText(nextValue, nextSelection);
     return;
   }
 
-  ctx.replaceText(nextValue);
+  ctx.replaceText(nextValue, nextSelection);
 
   if (ctx.defaultSendBehavior === "queue" && ctx.isAgentRunning && ctx.onQueue) {
     ctx.onQueue({ text: nextValue, attachments: ctx.attachments, cwd: ctx.cwd });

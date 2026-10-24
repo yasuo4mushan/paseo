@@ -372,6 +372,9 @@ export const ptBR: TranslationResources = {
       insertAndSend: "Inserir transcrição e enviar",
       failed: "Falha no ditado: {{error}}",
       failedRetry: "Falha no ditado. Toque para tentar novamente.",
+      holdHint: "Solte para inserir, deslize para cima para cancelar",
+      cancelArmedHint: "Solte para cancelar",
+      processing: "Transcrevendo…",
     },
     question: {
       responseFailed: "Não foi possível enviar sua resposta. Tente novamente.",

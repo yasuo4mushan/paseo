@@ -5,6 +5,7 @@ import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { X, ArrowUp, RefreshCcw, Check, Mic, Pencil } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { VolumeMeter } from "./volume-meter";
+import { DictationWaveform } from "./dictation-waveform";
 import { FOOTER_HEIGHT } from "@/constants/layout";
 import type { DictationStatus } from "@/hooks/use-dictation";
 
@@ -28,6 +29,36 @@ function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
+
+function resolveOverlayHintText(input: {
+  t: (key: string, options?: Record<string, unknown>) => string;
+  status: DictationStatus;
+  isFailed: boolean;
+  isProcessing: boolean;
+  cancelArmed: boolean;
+  holdMode: boolean;
+  errorText?: string;
+}): string | null {
+  const { t } = input;
+  if (input.isFailed) {
+    return input.errorText
+      ? t("message.dictation.failed", { error: input.errorText })
+      : t("message.dictation.failedRetry");
+  }
+  if (input.status === "paused") {
+    return t("message.dictation.paused");
+  }
+  if (input.isProcessing) {
+    return t("message.dictation.processing");
+  }
+  if (input.cancelArmed) {
+    return t("message.dictation.cancelArmedHint");
+  }
+  if (input.holdMode) {
+    return t("message.dictation.holdHint");
+  }
+  return null;
 }
 
 export function DictationControls({
@@ -136,9 +167,71 @@ export function DictationControls({
   );
 }
 
+function DictationOverlayActions(input: {
+  isFailed: boolean;
+  isProcessing: boolean;
+  holdMode: boolean;
+  onAccept: () => void | Promise<void>;
+  onAcceptAndSend: () => void | Promise<void>;
+  onRetry?: () => void;
+}): React.ReactElement | null {
+  const { theme } = useUnistyles();
+  const { t } = useTranslation();
+  if (input.isProcessing) {
+    return (
+      <View style={overlayStyles.loadingContainer}>
+        <LoadingSpinner size="small" color={theme.colors.accentForeground} />
+      </View>
+    );
+  }
+  if (input.isFailed) {
+    return (
+      <Pressable
+        onPress={input.onRetry}
+        accessibilityRole="button"
+        accessibilityLabel={t("message.dictation.retry")}
+        testID="dictation-overlay-retry"
+        style={[overlayStyles.actionButton, { backgroundColor: theme.colors.accentForeground }]}
+      >
+        <RefreshCcw size={theme.iconSize.lg} color={theme.colors.accent} strokeWidth={2.5} />
+      </Pressable>
+    );
+  }
+  if (input.holdMode) {
+    return <View style={overlayStyles.holdModeSpacer} />;
+  }
+  return (
+    <>
+      <Pressable
+        onPress={input.onAccept}
+        accessibilityRole="button"
+        accessibilityLabel={t("message.dictation.insert")}
+        testID="dictation-overlay-accept"
+        style={[overlayStyles.actionButton, OVERLAY_ACCEPT_BUTTON_BG]}
+      >
+        <Pencil size={theme.iconSize.lg} color={theme.colors.accentForeground} strokeWidth={2.5} />
+      </Pressable>
+      <Pressable
+        onPress={input.onAcceptAndSend}
+        accessibilityRole="button"
+        accessibilityLabel={t("message.dictation.insertAndSend")}
+        testID="dictation-overlay-accept-send"
+        style={[overlayStyles.actionButton, { backgroundColor: theme.colors.accentForeground }]}
+      >
+        <ArrowUp size={theme.iconSize.lg} color={theme.colors.accent} strokeWidth={2.5} />
+      </Pressable>
+    </>
+  );
+}
+
 /**
  * Full-width overlay variant for the agent input footer.
  * Uses blue background with white icons.
+ *
+ * Doubao-style layout: a big mic orb and loudness waveform sit in the middle,
+ * the live partial transcript renders above them, and the left button cancels.
+ * In hold mode (press-and-hold input) releasing the button confirms, so the
+ * accept buttons only render in toggle mode.
  */
 export function DictationOverlay({
   volume,
@@ -147,12 +240,20 @@ export function DictationOverlay({
   isProcessing,
   status,
   errorText,
+  partialTranscript,
+  holdMode = false,
+  cancelArmed = false,
   onCancel,
   onAccept,
   onAcceptAndSend,
   onRetry,
   onDiscard,
-}: Omit<DictationControlsProps, "onStart" | "disabled" | "transcript"> & { errorText?: string }) {
+}: Omit<DictationControlsProps, "onStart" | "disabled" | "transcript"> & {
+  errorText?: string;
+  partialTranscript?: string;
+  holdMode?: boolean;
+  cancelArmed?: boolean;
+}) {
   const { theme } = useUnistyles();
   const { t } = useTranslation();
   const isFailed = status === "failed";
@@ -161,8 +262,11 @@ export function DictationOverlay({
   const handleCancel = isFailed && onDiscard ? onDiscard : onCancel;
 
   const containerStyle = useMemo(
-    () => [overlayStyles.container, { backgroundColor: theme.colors.accent }],
-    [theme.colors.accent],
+    () => [
+      overlayStyles.container,
+      { backgroundColor: cancelArmed ? theme.colors.destructive : theme.colors.accent },
+    ],
+    [cancelArmed, theme.colors.accent, theme.colors.destructive],
   );
   const overlayCancelButtonStyle = useMemo(
     () => [
@@ -176,18 +280,34 @@ export function DictationOverlay({
     [theme.colors.accentForeground],
   );
   const overlayTranscriptTextStyle = useMemo(
-    () => [overlayStyles.transcriptText, { color: theme.colors.accentForeground, opacity: 0.95 }],
+    () => [overlayStyles.transcriptText, { color: theme.colors.accentForeground }],
     [theme.colors.accentForeground],
   );
-  const overlayRetryButtonStyle = useMemo(
-    () => [overlayStyles.actionButton, { backgroundColor: theme.colors.accentForeground }],
-    [theme.colors.accentForeground],
+  const overlayHintTextStyle = useMemo(
+    () => [
+      overlayStyles.hintText,
+      { color: cancelArmed ? theme.colors.accentForeground : theme.colors.accentForeground },
+    ],
+    [cancelArmed, theme.colors.accentForeground],
   );
-  const overlayConfirmButtonStyle = overlayRetryButtonStyle;
+  const orbStyle = useMemo(
+    () => [overlayStyles.micOrb, cancelArmed && overlayStyles.micOrbArmed],
+    [cancelArmed],
+  );
 
   if (!showActiveState) {
     return null;
   }
+
+  const hintText = resolveOverlayHintText({
+    t,
+    status,
+    isFailed,
+    isProcessing,
+    cancelArmed,
+    holdMode,
+    errorText,
+  });
 
   return (
     <View style={containerStyle}>
@@ -196,76 +316,49 @@ export function DictationOverlay({
         disabled={actionsDisabled && !isFailed}
         accessibilityRole="button"
         accessibilityLabel={t("message.dictation.cancel")}
+        testID="dictation-overlay-cancel"
         style={overlayCancelButtonStyle}
       >
         <X size={theme.iconSize.lg} color={theme.colors.accentForeground} strokeWidth={2.5} />
       </Pressable>
 
       <View style={overlayStyles.centerContainer}>
+        {!isFailed && partialTranscript && partialTranscript.length > 0 ? (
+          <Text
+            numberOfLines={2}
+            style={overlayTranscriptTextStyle}
+            testID="dictation-overlay-partial"
+          >
+            {partialTranscript}
+          </Text>
+        ) : null}
         <View style={overlayStyles.meterRow}>
-          <VolumeMeter
-            volume={volume}
-            isMuted={false}
-            isSpeaking={false}
-            orientation="horizontal"
-            color={theme.colors.accentForeground}
-          />
-          <Text style={overlayTimerTextStyle}>{formatDuration(duration)}</Text>
+          <View style={orbStyle} pointerEvents="none">
+            <Mic size={theme.iconSize.lg + 4} color={theme.colors.accentForeground} />
+          </View>
+          <View style={overlayStyles.waveformColumn}>
+            <DictationWaveform volume={volume} color={theme.colors.accentForeground} />
+            <View style={overlayStyles.statusRow}>
+              <Text style={overlayTimerTextStyle}>{formatDuration(duration)}</Text>
+              {hintText ? (
+                <Text numberOfLines={1} style={overlayHintTextStyle}>
+                  {hintText}
+                </Text>
+              ) : null}
+            </View>
+          </View>
         </View>
-        {status === "paused" ? (
-          <Text numberOfLines={2} style={overlayTranscriptTextStyle}>
-            {t("message.dictation.paused")}
-          </Text>
-        ) : null}
-        {isFailed ? (
-          <Text numberOfLines={2} style={overlayTranscriptTextStyle}>
-            {errorText
-              ? t("message.dictation.failed", { error: errorText })
-              : t("message.dictation.failedRetry")}
-          </Text>
-        ) : null}
       </View>
 
       <View style={overlayStyles.actionButtonsContainer}>
-        {actionsDisabled ? (
-          <View style={overlayStyles.loadingContainer}>
-            <LoadingSpinner size="small" color={theme.colors.accentForeground} />
-          </View>
-        ) : null}
-        {!actionsDisabled && isFailed ? (
-          <Pressable
-            onPress={onRetry}
-            accessibilityRole="button"
-            accessibilityLabel={t("message.dictation.retry")}
-            style={overlayRetryButtonStyle}
-          >
-            <RefreshCcw size={theme.iconSize.lg} color={theme.colors.accent} strokeWidth={2.5} />
-          </Pressable>
-        ) : null}
-        {!actionsDisabled && !isFailed ? (
-          <>
-            <Pressable
-              onPress={onAccept}
-              accessibilityRole="button"
-              accessibilityLabel={t("message.dictation.insert")}
-              style={[overlayStyles.actionButton, OVERLAY_ACCEPT_BUTTON_BG]}
-            >
-              <Pencil
-                size={theme.iconSize.lg}
-                color={theme.colors.accentForeground}
-                strokeWidth={2.5}
-              />
-            </Pressable>
-            <Pressable
-              onPress={onAcceptAndSend}
-              accessibilityRole="button"
-              accessibilityLabel={t("message.dictation.insertAndSend")}
-              style={overlayConfirmButtonStyle}
-            >
-              <ArrowUp size={theme.iconSize.lg} color={theme.colors.accent} strokeWidth={2.5} />
-            </Pressable>
-          </>
-        ) : null}
+        <DictationOverlayActions
+          isFailed={isFailed}
+          isProcessing={actionsDisabled}
+          holdMode={holdMode}
+          onAccept={onAccept}
+          onAcceptAndSend={onAcceptAndSend}
+          onRetry={onRetry}
+        />
       </View>
     </View>
   );
@@ -339,7 +432,11 @@ const styles = StyleSheet.create((theme) => ({
 }));
 
 const OVERLAY_BUTTON_SIZE = 44;
-const OVERLAY_VERTICAL_PADDING = (FOOTER_HEIGHT - OVERLAY_BUTTON_SIZE) / 2;
+const OVERLAY_MIC_ORB_SIZE = 46;
+const OVERLAY_VERTICAL_PADDING = Math.max(
+  4,
+  (FOOTER_HEIGHT - Math.max(OVERLAY_BUTTON_SIZE, OVERLAY_MIC_ORB_SIZE)) / 2,
+);
 
 const overlayStyles = StyleSheet.create((theme) => ({
   container: {
@@ -350,7 +447,7 @@ const overlayStyles = StyleSheet.create((theme) => ({
     justifyContent: "space-between",
     paddingHorizontal: theme.spacing[4],
     paddingVertical: OVERLAY_VERTICAL_PADDING,
-    height: FOOTER_HEIGHT,
+    minHeight: FOOTER_HEIGHT,
   },
   cancelButton: {
     width: OVERLAY_BUTTON_SIZE,
@@ -365,7 +462,8 @@ const overlayStyles = StyleSheet.create((theme) => ({
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: theme.spacing[2],
+    gap: theme.spacing[1],
+    paddingHorizontal: theme.spacing[3],
   },
   meterRow: {
     flexDirection: "row",
@@ -373,21 +471,49 @@ const overlayStyles = StyleSheet.create((theme) => ({
     justifyContent: "center",
     gap: theme.spacing[4],
   },
+  micOrb: {
+    width: OVERLAY_MIC_ORB_SIZE,
+    height: OVERLAY_MIC_ORB_SIZE,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  micOrbArmed: {
+    backgroundColor: "rgba(0, 0, 0, 0.28)",
+  },
+  waveformColumn: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: theme.spacing[1],
+  },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing[2],
+  },
   timerText: {
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.semibold,
     fontVariant: ["tabular-nums"],
   },
+  hintText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.normal,
+    opacity: 0.85,
+  },
   transcriptText: {
     fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.normal,
+    fontWeight: theme.fontWeight.medium,
     textAlign: "center",
     paddingHorizontal: theme.spacing[2],
-    opacity: 0.9,
+    opacity: 0.95,
   },
   actionButtonsContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: theme.spacing[2],
   },
   actionButton: {
@@ -405,6 +531,10 @@ const overlayStyles = StyleSheet.create((theme) => ({
     height: OVERLAY_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
+  },
+  holdModeSpacer: {
+    width: OVERLAY_BUTTON_SIZE,
+    height: OVERLAY_BUTTON_SIZE,
   },
 }));
 

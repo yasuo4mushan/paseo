@@ -2,35 +2,53 @@ import { z } from "zod";
 
 export type SherpaOnnxModelKind = "stt-offline" | "tts";
 
+export type SherpaOnnxSttEngineKind = "nemo_transducer" | "sense_voice";
+
 type DefaultModelRole = "stt" | "tts";
 
 interface SherpaOnnxCatalogEntry {
   kind: SherpaOnnxModelKind;
+  engine?: SherpaOnnxSttEngineKind;
   archiveUrl: string;
   extractedDir: string;
   requiredFiles: string[];
   description: string;
   defaultFor?: DefaultModelRole;
+  /** STT languages this model understands. Used to pick a model for a requested language. */
+  sttLanguages?: readonly string[];
 }
 
 export const SHERPA_ONNX_MODEL_CATALOG = {
   "parakeet-tdt-0.6b-v2-int8": {
     kind: "stt-offline",
+    engine: "nemo_transducer",
     archiveUrl:
       "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2",
     extractedDir: "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8",
     requiredFiles: ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"],
     description: "NVIDIA Parakeet TDT v2 (offline NeMo transducer, English).",
     defaultFor: "stt",
+    sttLanguages: ["en"],
   },
   "parakeet-tdt-0.6b-v3-int8": {
     kind: "stt-offline",
+    engine: "nemo_transducer",
     archiveUrl:
       "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2",
     extractedDir: "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8",
     requiredFiles: ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"],
     description:
       "NVIDIA Parakeet TDT v3 (offline NeMo transducer, 25 European languages, auto-detected).",
+  },
+  "sense-voice-zh-en-int8": {
+    kind: "stt-offline",
+    engine: "sense_voice",
+    archiveUrl:
+      "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17.tar.bz2",
+    extractedDir: "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17",
+    requiredFiles: ["model.int8.onnx", "tokens.txt"],
+    description: "SenseVoice small int8 (offline, zh/en/ja/ko/yue with auto language detection).",
+    sttLanguages: ["auto", "zh", "ja", "ko", "yue"],
   },
   "kokoro-en-v0_19": {
     kind: "tts",
@@ -117,4 +135,21 @@ export function getSherpaOnnxModelSpec(id: SherpaOnnxModelId): SherpaOnnxModelSp
     id,
     ...spec,
   };
+}
+
+/**
+ * Picks the STT model for a requested dictation language. "en" (and unknown
+ * languages) keep the default English model; every language another catalog
+ * entry declares (zh/ja/ko/yue/auto for SenseVoice) selects that entry.
+ */
+export function findSttModelIdForLanguage(language: string): LocalSttModelId {
+  const normalized = language.trim().toLowerCase().split(/[-_]/)[0];
+  if (!normalized || normalized === "en") {
+    return DEFAULT_LOCAL_STT_MODEL;
+  }
+  const match = ALL_MODEL_IDS.find((id) => {
+    const spec = SHERPA_ONNX_MODEL_CATALOG[id] as SherpaOnnxCatalogEntry;
+    return spec.kind !== "tts" && (spec.sttLanguages ?? []).includes(normalized);
+  });
+  return (match as LocalSttModelId | undefined) ?? DEFAULT_LOCAL_STT_MODEL;
 }

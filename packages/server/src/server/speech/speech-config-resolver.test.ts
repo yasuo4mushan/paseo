@@ -41,20 +41,51 @@ describe("resolveSpeechConfig", () => {
     expect(result.speech.local).toEqual({
       modelsDir: path.join(paseoHome, "models", "local-speech"),
       models: {
-        dictationStt: "parakeet-tdt-0.6b-v2-int8",
+        dictationStt: "sense-voice-zh-en-int8",
         voiceStt: "parakeet-tdt-0.6b-v2-int8",
         voiceTts: "kokoro-en-v0_19",
         voiceTtsSpeakerId: 0,
       },
     });
-    expect(result.speech.local?.models.dictationStt).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(result.speech.local?.models.dictationStt).toBe("sense-voice-zh-en-int8");
     expect(result.speech.local?.models.voiceStt).toBe("parakeet-tdt-0.6b-v2-int8");
     expect(result.speech.local?.models.voiceTts).toBe("kokoro-en-v0_19");
     expect(result.speech.local?.models.voiceTtsSpeakerId).toBe(0);
     expect(result.speech.sttLanguages).toEqual({
-      dictation: "en",
+      dictation: "zh",
       voice: "en",
     });
+  });
+
+  test("maps dictation language to a matching local STT model", () => {
+    const resolveFor = (language: string) =>
+      resolveSpeechConfig({
+        paseoHome: "/tmp/paseo-home",
+        env: { PASEO_DICTATION_LANGUAGE: language } as NodeJS.ProcessEnv,
+        persisted: PersistedConfigSchema.parse({}),
+      });
+
+    expect(resolveFor("en").speech.local?.models.dictationStt).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(resolveFor("zh-CN").speech.local?.models.dictationStt).toBe("sense-voice-zh-en-int8");
+    expect(resolveFor("auto").speech.local?.models.dictationStt).toBe("sense-voice-zh-en-int8");
+    expect(resolveFor("es").speech.local?.models.dictationStt).toBe("parakeet-tdt-0.6b-v2-int8");
+  });
+
+  test("keeps an explicitly configured dictation model over the language mapping", () => {
+    const result = resolveSpeechConfig({
+      paseoHome: "/tmp/paseo-home",
+      env: {} as NodeJS.ProcessEnv,
+      persisted: PersistedConfigSchema.parse({
+        features: {
+          dictation: {
+            stt: { provider: "local", model: "parakeet-tdt-0.6b-v2-int8" },
+          },
+        },
+      }),
+    });
+
+    expect(result.speech.local?.models.dictationStt).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(result.speech.sttLanguages.dictation).toBe("zh");
   });
 
   test("resolves feature-scoped local speech settings", () => {

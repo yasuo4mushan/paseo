@@ -373,6 +373,9 @@ export const fr: TranslationResources = {
       insertAndSend: "Insérer la transcription et envoyer",
       failed: "Échec de la dictée : {{error}}",
       failedRetry: "La dictée a échoué. Appuyez sur Réessayer.",
+      holdHint: "Relâchez pour insérer, glissez vers le haut pour annuler",
+      cancelArmedHint: "Relâchez pour annuler",
+      processing: "Transcription…",
     },
     question: {
       responseFailed: "Impossible d’envoyer votre réponse. Réessayez.",
