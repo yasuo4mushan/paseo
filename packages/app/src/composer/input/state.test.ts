@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applyDictationTranscript,
+  insertDictationTranscript,
   computeCanStartDictation,
   resolveActiveSendBehavior,
   resolveComposerSurfacePresentation,
@@ -188,6 +189,30 @@ describe("dictation transcript behavior", () => {
       "replace:typed context spoken prompt",
       "submit:typed context spoken prompt",
     ]);
+  });
+
+  it("inserts a transcript at the caret with CJK-aware spacing", () => {
+    // Mid-text insertion pads only when a side is non-CJK.
+    expect(insertDictationTranscript("hello world", "\u4f60\u597d", { start: 5, end: 5 })).toEqual({
+      nextValue: "hello\u4f60\u597d world",
+      nextSelection: { start: 7, end: 7 },
+    });
+    // Non-CJK on both sides gets one joining space before the transcript.
+    expect(insertDictationTranscript("hello world", "there", { start: 5, end: 5 })).toEqual({
+      nextValue: "hello there world",
+      nextSelection: { start: 11, end: 11 },
+    });
+    // No selection falls back to appending at the end.
+    expect(
+      insertDictationTranscript("\u5df2\u5b8c\u6210", "\u521b\u5efa\u5206\u652f", undefined),
+    ).toEqual({
+      nextValue: "\u5df2\u5b8c\u6210\u521b\u5efa\u5206\u652f",
+      nextSelection: { start: 7, end: 7 },
+    });
+    expect(insertDictationTranscript("typed", "words", undefined)).toEqual({
+      nextValue: "typed words",
+      nextSelection: { start: 11, end: 11 },
+    });
   });
 });
 

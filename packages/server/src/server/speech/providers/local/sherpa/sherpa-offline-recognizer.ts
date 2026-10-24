@@ -9,13 +9,25 @@ function assertFileExists(filePath: string, label: string): void {
   }
 }
 
-export interface SherpaOfflineRecognizerModel {
+export interface SherpaOfflineNemoTransducerModel {
   kind: "nemo_transducer";
   encoder: string;
   decoder: string;
   joiner: string;
   tokens: string;
 }
+
+export interface SherpaOfflineSenseVoiceModel {
+  kind: "sense_voice";
+  model: string;
+  tokens: string;
+  language?: "auto" | "zh" | "en" | "ja" | "ko" | "yue";
+  useInverseTextNormalization?: boolean;
+}
+
+export type SherpaOfflineRecognizerModel =
+  | SherpaOfflineNemoTransducerModel
+  | SherpaOfflineSenseVoiceModel;
 
 export interface SherpaOfflineRecognizerConfig {
   model: SherpaOfflineRecognizerModel;
@@ -42,6 +54,67 @@ interface SherpaOfflineStreamNative {
   free?: () => void;
 }
 
+function assertModelFilesPresent(model: SherpaOfflineRecognizerModel): void {
+  if (model.kind === "sense_voice") {
+    assertFileExists(model.model, "sense voice model");
+    assertFileExists(model.tokens, "tokens");
+    return;
+  }
+  assertFileExists(model.encoder, "offline encoder");
+  assertFileExists(model.decoder, "offline decoder");
+  assertFileExists(model.joiner, "offline joiner");
+  assertFileExists(model.tokens, "tokens");
+}
+
+function buildRecognizerConfig(config: SherpaOfflineRecognizerConfig): {
+  featConfig: { sampleRate: number; featureDim: number };
+  modelConfig: Record<string, unknown>;
+  decodingMethod: "greedy_search";
+  maxActivePaths?: number;
+} {
+  const commonModelConfig = {
+    tokens: config.model.tokens,
+    numThreads: config.numThreads ?? 1,
+    provider: config.provider ?? "cpu",
+    debug: config.debug ?? 0,
+  };
+  const featConfig = {
+    sampleRate: config.sampleRate ?? 16000,
+    featureDim: config.featureDim ?? 80,
+  };
+
+  if (config.model.kind === "sense_voice") {
+    return {
+      featConfig,
+      modelConfig: {
+        ...commonModelConfig,
+        senseVoice: {
+          model: config.model.model,
+          language: config.model.language ?? "auto",
+          useInverseTextNormalization: config.model.useInverseTextNormalization ?? true,
+        },
+        modelType: "sense_voice",
+      },
+      decodingMethod: config.decodingMethod ?? "greedy_search",
+    };
+  }
+
+  return {
+    featConfig,
+    modelConfig: {
+      ...commonModelConfig,
+      transducer: {
+        encoder: config.model.encoder,
+        decoder: config.model.decoder,
+        joiner: config.model.joiner,
+      },
+      modelType: "nemo_transducer",
+    },
+    decodingMethod: config.decodingMethod ?? "greedy_search",
+    maxActivePaths: config.maxActivePaths ?? 4,
+  };
+}
+
 export class SherpaOfflineRecognizerEngine {
   public readonly recognizer: SherpaOfflineRecognizerNative;
   public readonly sampleRate: number;
@@ -54,33 +127,10 @@ export class SherpaOfflineRecognizerEngine {
       component: "offline-recognizer",
     });
 
-    assertFileExists(config.model.encoder, "offline encoder");
-    assertFileExists(config.model.decoder, "offline decoder");
-    assertFileExists(config.model.joiner, "offline joiner");
-    assertFileExists(config.model.tokens, "tokens");
+    assertModelFilesPresent(config.model);
 
     const sherpa = loadSherpaOnnxNode();
-
-    const recognizerConfig = {
-      featConfig: {
-        sampleRate: config.sampleRate ?? 16000,
-        featureDim: config.featureDim ?? 80,
-      },
-      modelConfig: {
-        transducer: {
-          encoder: config.model.encoder,
-          decoder: config.model.decoder,
-          joiner: config.model.joiner,
-        },
-        tokens: config.model.tokens,
-        modelType: "nemo_transducer",
-        numThreads: config.numThreads ?? 1,
-        provider: config.provider ?? "cpu",
-        debug: config.debug ?? 0,
-      },
-      decodingMethod: config.decodingMethod ?? "greedy_search",
-      maxActivePaths: config.maxActivePaths ?? 4,
-    };
+    const recognizerConfig = buildRecognizerConfig(config);
 
     this.recognizer = new (
       sherpa as unknown as {
@@ -94,7 +144,11 @@ export class SherpaOfflineRecognizerEngine {
         : recognizerConfig.featConfig.sampleRate;
 
     this.logger.info(
-      { sampleRate: this.sampleRate, numThreads: recognizerConfig.modelConfig.numThreads },
+      {
+        engine: config.model.kind,
+        sampleRate: this.sampleRate,
+        numThreads: recognizerConfig.modelConfig.numThreads,
+      },
       "Sherpa offline recognizer initialized",
     );
   }

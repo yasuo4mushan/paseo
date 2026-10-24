@@ -365,6 +365,9 @@ export const en = {
       insertAndSend: "Insert transcription and send",
       failed: "Dictation failed: {{error}}",
       failedRetry: "Dictation failed. Tap retry.",
+      holdHint: "Release to insert, slide up to cancel",
+      cancelArmedHint: "Release to cancel",
+      processing: "Transcribing…",
     },
     question: {
       responseFailed: "Could not send your response. Try again.",

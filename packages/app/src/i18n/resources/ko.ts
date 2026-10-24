@@ -369,6 +369,9 @@ export const ko: TranslationResources = {
       insertAndSend: "전사 삽입 후 보내기",
       failed: "받아쓰기 실패: {{error}}",
       failedRetry: "받아쓰기에 실패했습니다. 다시 시도하려면 누르세요.",
+      holdHint: "손을 떼면 삽입, 위로 밀면 취소",
+      cancelArmedHint: "손을 떼면 취소됩니다",
+      processing: "변환 중…",
     },
     question: {
       responseFailed: "응답을 보내지 못했습니다. 다시 시도해 주세요.",

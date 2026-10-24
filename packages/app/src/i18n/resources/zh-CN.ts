@@ -368,6 +368,9 @@ export const zhCN: TranslationResources = {
       insertAndSend: "插入转写并发送",
       failed: "听写失败：{{error}}",
       failedRetry: "听写失败。点按重试。",
+      holdHint: "松开插入文字，上滑取消",
+      cancelArmedHint: "松开手指，取消输入",
+      processing: "正在转写…",
     },
     question: {
       responseFailed: "未能发送你的回复，请重试。",

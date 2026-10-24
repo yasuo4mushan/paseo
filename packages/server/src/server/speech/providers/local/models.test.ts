@@ -15,6 +15,7 @@ import { describe, expect, onTestFinished, test } from "vitest";
 
 import {
   ensureLocalSpeechModels,
+  findSttModelIdForLanguage,
   getLocalSpeechModelDir,
   listLocalSpeechModels,
   listMissingLocalSpeechModels,
@@ -66,5 +67,27 @@ describe("local speech models", () => {
     );
     expect(existsSync(archive)).toBe(false);
     expect(await listMissingLocalSpeechModels({ modelsDir, modelIds: [modelId] })).toEqual([]);
+  });
+
+  test("maps languages to a catalog STT model", () => {
+    expect(findSttModelIdForLanguage("")).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(findSttModelIdForLanguage("en")).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(findSttModelIdForLanguage("en-US")).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(findSttModelIdForLanguage("unknown-lang")).toBe("parakeet-tdt-0.6b-v2-int8");
+    expect(findSttModelIdForLanguage("zh")).toBe("sense-voice-zh-en-int8");
+    expect(findSttModelIdForLanguage("zh_CN")).toBe("sense-voice-zh-en-int8");
+    expect(findSttModelIdForLanguage("auto")).toBe("sense-voice-zh-en-int8");
+    expect(findSttModelIdForLanguage("yue")).toBe("sense-voice-zh-en-int8");
+  });
+
+  test("exposes the sense voice model files in its spec", () => {
+    const senseVoice = listLocalSpeechModels().find(
+      (model) => model.id === "sense-voice-zh-en-int8",
+    )!;
+    expect(senseVoice.engine).toBe("sense_voice");
+    expect(senseVoice.requiredFiles).toEqual(["model.int8.onnx", "tokens.txt"]);
+    expect(getLocalSpeechModelDir("/models", "sense-voice-zh-en-int8")).toBe(
+      "/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17",
+    );
   });
 });

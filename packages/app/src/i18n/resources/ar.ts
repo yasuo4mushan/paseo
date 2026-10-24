@@ -368,6 +368,9 @@ export const ar: TranslationResources = {
       insertAndSend: "أدخل النسخ وأرسل",
       failed: "فشل الإملاء:{{error}}",
       failedRetry: "فشل الإملاء. اضغط على إعادة المحاولة.",
+      holdHint: "حرّر للإدراج، اسحب لأعلى للإلغاء",
+      cancelArmedHint: "حرّر للإلغاء",
+      processing: "جارٍ التحويل…",
     },
     question: {
       responseFailed: "تعذر إرسال ردك. حاول مرة أخرى.",

@@ -372,6 +372,9 @@ export const ru: TranslationResources = {
       insertAndSend: "Вставить транскрипцию и отправить",
       failed: "Диктовка не удалась: {{error}}",
       failedRetry: "Диктовка не удалась. Нажмите «Повторить».",
+      holdHint: "Отпустите, чтобы вставить; проведите вверх, чтобы отменить",
+      cancelArmedHint: "Отпустите, чтобы отменить",
+      processing: "Распознавание…",
     },
     question: {
       responseFailed: "Не удалось отправить ответ. Попробуйте ещё раз.",

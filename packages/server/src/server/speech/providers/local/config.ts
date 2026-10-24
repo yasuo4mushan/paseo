@@ -9,6 +9,7 @@ import {
   DEFAULT_LOCAL_TTS_MODEL,
   LocalSttModelIdSchema,
   LocalTtsModelIdSchema,
+  findSttModelIdForLanguage,
   type LocalSpeechModelId,
   type LocalSttModelId,
   type LocalTtsModelId,
@@ -36,6 +37,9 @@ export type { LocalSpeechModelId, LocalSttModelId, LocalTtsModelId };
 
 const DEFAULT_LOCAL_MODELS_SUBDIR = path.join("models", "local-speech");
 const DEFAULT_STT_LANGUAGE = "en";
+// Chinese dictation ships by default: SenseVoice covers zh (and en) out of the box.
+// "en" keeps the Parakeet path; see findSttModelIdForLanguage.
+const DEFAULT_DICTATION_STT_LANGUAGE = "zh";
 
 export interface LocalSpeechSttLanguageConfig {
   dictation: string;
@@ -114,16 +118,21 @@ function firstNonEmptyString(values: Array<string | null | undefined>): string |
   return undefined;
 }
 
+interface ResolvedLocalSpeechLanguages {
+  dictationLanguage: string | undefined;
+  voiceLanguage: string | undefined;
+}
+
 function buildLocalSpeechLanguageResolutionInput(params: {
   env: NodeJS.ProcessEnv;
   persisted: PersistedConfig;
-}): Record<string, unknown> {
+}): ResolvedLocalSpeechLanguages {
   const { env, persisted } = params;
   return {
     dictationLanguage: firstNonEmptyString([
       env.PASEO_DICTATION_LANGUAGE,
       persisted.features?.dictation?.stt?.language,
-      DEFAULT_STT_LANGUAGE,
+      DEFAULT_DICTATION_STT_LANGUAGE,
     ]),
     voiceLanguage: firstNonEmptyString([
       env.PASEO_VOICE_LANGUAGE,
@@ -143,6 +152,7 @@ function buildLocalSpeechResolutionInput(params: {
   includeProviderConfig: boolean;
 }): Record<string, unknown> {
   const { paseoHome, env, persisted, providers, includeProviderConfig } = params;
+  const languageInput = buildLocalSpeechLanguageResolutionInput({ env, persisted });
   return {
     includeProviderConfig,
     modelsDir: firstDefinedValue<string>([
@@ -157,7 +167,7 @@ function buildLocalSpeechResolutionInput(params: {
         providers.dictationStt.enabled,
         persisted.features?.dictation?.stt?.model,
       ),
-      DEFAULT_LOCAL_STT_MODEL,
+      findSttModelIdForLanguage(languageInput.dictationLanguage ?? ""),
     ]),
     voiceLocalSttModel: firstDefinedValue<string>([
       env.PASEO_VOICE_LOCAL_STT_MODEL,
@@ -177,7 +187,7 @@ function buildLocalSpeechResolutionInput(params: {
       ),
       DEFAULT_LOCAL_TTS_MODEL,
     ]),
-    ...buildLocalSpeechLanguageResolutionInput({ env, persisted }),
+    ...languageInput,
     voiceLocalTtsSpeakerId: firstDefinedValue<string | number>([
       env.PASEO_VOICE_LOCAL_TTS_SPEAKER_ID,
       persisted.features?.voiceMode?.tts?.speakerId,

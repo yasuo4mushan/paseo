@@ -30,6 +30,8 @@ import { ArrowUp, Mic, MicOff, CornerDownLeft, Plus, Square } from "lucide-react
 import { useDictation } from "@/hooks/use-dictation";
 import { hasFinePointer } from "@/hooks/use-fine-pointer";
 import { DictationOverlay } from "@/components/dictation-controls";
+import { DictationHoldButton } from "@/composer/input/dictation-hold/dictation-hold-button";
+import type { DictationHoldButtonProps } from "@/composer/input/dictation-hold/types";
 import { RealtimeVoiceOverlay } from "@/components/realtime-voice-overlay";
 import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
 import { useSessionStore } from "@/stores/session-store";
@@ -94,6 +96,10 @@ import {
 
 const DEFAULT_SEND_KEYS: ShortcutKey[][] = [["Enter"]];
 const COMPOSER_INPUT_DATASET = { composerInput: "" } as const;
+// Releasing a hold shorter than this cancels instead of confirming, so an
+// accidental click never produces an empty dictation round trip.
+const MIN_DICTATION_HOLD_MS = 250;
+const DICTATION_MAX_DURATION_SECONDS = 60;
 
 export interface AttachmentMenuItem {
   id: string;
@@ -540,6 +546,9 @@ function MessageInputOverlay({
   isDictationProcessing,
   dictationStatus,
   dictationError,
+  dictationPartialTranscript,
+  dictationHoldSession,
+  dictationCancelArmed,
   onCancelRecording,
   onAcceptRecording,
   onAcceptAndSendRecording,
@@ -563,6 +572,9 @@ function MessageInputOverlay({
   isDictationProcessing: boolean;
   dictationStatus: React.ComponentProps<typeof DictationOverlay>["status"];
   dictationError: string | null;
+  dictationPartialTranscript: string;
+  dictationHoldSession: boolean;
+  dictationCancelArmed: boolean;
   onCancelRecording: () => Promise<void>;
   onAcceptRecording: () => Promise<void>;
   onAcceptAndSendRecording: () => Promise<void>;
@@ -579,6 +591,9 @@ function MessageInputOverlay({
         isProcessing={isDictationProcessing}
         status={dictationStatus}
         errorText={dictationStatus === "failed" ? (dictationError ?? undefined) : undefined}
+        partialTranscript={dictationPartialTranscript}
+        holdMode={dictationHoldSession}
+        cancelArmed={dictationCancelArmed}
         onCancel={onCancelRecording}
         onAccept={onAcceptRecording}
         onAcceptAndSend={onAcceptAndSendRecording}
@@ -728,6 +743,7 @@ function VoiceButtonTooltip({
   isRealtimeVoiceForCurrentAgent,
   voiceMuteToggleKeys,
   dictationToggleKeys,
+  holdButtonProps,
 }: {
   visible: boolean;
   onVoicePress: () => void;
@@ -739,19 +755,33 @@ function VoiceButtonTooltip({
   isRealtimeVoiceForCurrentAgent: boolean;
   voiceMuteToggleKeys: ShortcutChord | null | undefined;
   dictationToggleKeys: ShortcutChord | null | undefined;
+  /** Web only: swap the tap trigger for the press-and-hold dictation gesture. */
+  holdButtonProps?: DictationHoldButtonProps;
 }) {
   const shortcut = isRealtimeVoiceForCurrentAgent ? voiceMuteToggleKeys : dictationToggleKeys;
   if (!visible) return null;
   return (
     <Tooltip delayDuration={0} enabledOnDesktop enabledOnMobile={false}>
       <TooltipTrigger
-        onPress={onVoicePress}
+        asChild={Boolean(holdButtonProps)}
+        onPress={holdButtonProps ? undefined : onVoicePress}
         disabled={!isDictationStartEnabled}
         accessibilityRole="button"
         accessibilityLabel={voiceButtonAccessibilityLabel}
         style={voiceButtonStyle}
+        testID="message-input-voice-button"
       >
-        {renderVoiceButtonIcon}
+        {holdButtonProps ? (
+          <DictationHoldButton
+            disabled={!isDictationStartEnabled}
+            accessibilityLabel={voiceButtonAccessibilityLabel}
+            {...holdButtonProps}
+          >
+            {renderVoiceButtonIcon({ hovered: false })}
+          </DictationHoldButton>
+        ) : (
+          renderVoiceButtonIcon
+        )}
       </TooltipTrigger>
       <TooltipContent side="top" align="center" offset={8}>
         <VoiceTooltipBody voiceTooltipText={voiceTooltipText} shortcut={shortcut} />
@@ -1443,6 +1473,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         sendAfterTranscriptRef.current = false;
         applyDictationTranscript(text, {
           value: valueRef.current,
+          selection: selectionRef.current,
           defaultSendBehavior,
           isAgentRunning,
           onQueue,
@@ -1492,7 +1523,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       isRecording: isDictating,
       isRecordingActive: isDictationActive,
       isProcessing: isDictationProcessing,
-      partialTranscript: _dictationPartialTranscript,
+      partialTranscript: dictationPartialTranscript,
       volume: dictationVolume,
       duration: dictationDuration,
       error: dictationError,
@@ -1510,6 +1541,14 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       canConfirm: canConfirmDictation,
       enableDuration: true,
     });
+
+    // Hold-to-talk session state: the current recording was started by holding
+    // the mic button (web), so the overlay hides its accept buttons and shows
+    // the release/slide hint instead.
+    const [dictationHoldSession, setDictationHoldSession] = useState(false);
+    const [dictationCancelArmed, setDictationCancelArmed] = useState(false);
+    const dictationHoldStartedAtRef = useRef(0);
+    const dictationHoldCancelPendingRef = useRef(false);
 
     const isRealtimeVoiceForCurrentAgent = computeIsRealtimeVoiceForAgent(
       voice,
@@ -1530,6 +1569,8 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         return;
       }
       sendAfterTranscriptRef.current = false;
+      setDictationHoldSession(false);
+      setDictationCancelArmed(false);
     }, [dictationStatus, isDictating, isDictationProcessing]);
 
     const startDictationIfAvailable = useCallback(
@@ -1575,6 +1616,65 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
       sendAfterTranscriptRef.current = true;
       await confirmDictation();
     }, [confirmDictation]);
+
+    const handleDictationHoldStart = useCallback(() => {
+      dictationHoldStartedAtRef.current = Date.now();
+      dictationHoldCancelPendingRef.current = false;
+      setDictationHoldSession(true);
+      void startDictationIfAvailable();
+    }, [startDictationIfAvailable]);
+
+    const handleDictationHoldEnd = useCallback(
+      (cancelled: boolean) => {
+        const heldMs = Date.now() - dictationHoldStartedAtRef.current;
+        const discard = cancelled || heldMs < MIN_DICTATION_HOLD_MS;
+        if (discard || !isDictationActive()) {
+          // A release before the recorder finished starting cannot confirm;
+          // cancel now and let the pending effect stop it once it lands.
+          dictationHoldCancelPendingRef.current = true;
+          void cancelDictation();
+          return;
+        }
+        void handleAcceptRecording();
+      },
+      [cancelDictation, handleAcceptRecording, isDictationActive],
+    );
+
+    // A hold that ended mid-start leaves the recorder running once it connects.
+    useEffect(() => {
+      if (!dictationHoldCancelPendingRef.current || !isDictating) {
+        return;
+      }
+      dictationHoldCancelPendingRef.current = false;
+      void cancelDictation();
+    }, [isDictating, cancelDictation]);
+
+    // The 60-second cap closes the dictation automatically so an unattended
+    // hold cannot stream audio forever.
+    useEffect(() => {
+      if (!isDictating || isDictationProcessing) {
+        return;
+      }
+      if (dictationDuration >= DICTATION_MAX_DURATION_SECONDS) {
+        void confirmDictation();
+      }
+    }, [dictationDuration, isDictating, isDictationProcessing, confirmDictation]);
+
+    const dictationHoldButtonProps = useMemo<DictationHoldButtonProps>(
+      () => ({
+        holdEnabled: !isRealtimeVoiceForCurrentAgent,
+        onTap: handleVoicePress,
+        onHoldStart: handleDictationHoldStart,
+        onHoldEnd: handleDictationHoldEnd,
+        onCancelArmedChange: setDictationCancelArmed,
+      }),
+      [
+        handleDictationHoldEnd,
+        handleDictationHoldStart,
+        handleVoicePress,
+        isRealtimeVoiceForCurrentAgent,
+      ],
+    );
 
     const handleRetryFailedRecording = useCallback(() => {
       void retryFailedDictation();
@@ -2073,6 +2173,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
               isRealtimeVoiceForCurrentAgent={isRealtimeVoiceForCurrentAgent}
               voiceMuteToggleKeys={voiceMuteToggleKeys}
               dictationToggleKeys={dictationToggleKeys}
+              holdButtonProps={dictationHoldButtonProps}
             />
             {rightContent}
             {sendButton}
@@ -2099,6 +2200,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         isRealtimeVoiceForCurrentAgent,
         voiceMuteToggleKeys,
         dictationToggleKeys,
+        dictationHoldButtonProps,
         rightContent,
         sendButton,
       ],
@@ -2119,6 +2221,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
             isDictationProcessing={isDictationProcessing}
             dictationStatus={dictationStatus}
             dictationError={dictationError}
+            dictationPartialTranscript={dictationPartialTranscript}
+            dictationHoldSession={dictationHoldSession}
+            dictationCancelArmed={dictationCancelArmed}
             onCancelRecording={handleCancelRecording}
             onAcceptRecording={handleAcceptRecording}
             onAcceptAndSendRecording={handleAcceptAndSendRecording}
@@ -2140,6 +2245,9 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(
         isDictationProcessing,
         dictationStatus,
         dictationError,
+        dictationPartialTranscript,
+        dictationHoldSession,
+        dictationCancelArmed,
         handleCancelRecording,
         handleAcceptRecording,
         handleAcceptAndSendRecording,
