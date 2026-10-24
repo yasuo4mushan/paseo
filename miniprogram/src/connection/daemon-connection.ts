@@ -39,7 +39,7 @@ import {
   parseOpenProjectResponse,
   parsePermissionRequestPush,
   parsePermissionResolvedPush,
-  parseProviderModelsResponse,
+  parseProviderModelsResult,
   parseProviderModesResponse,
   parseRecentProviderSessionsResponse,
   parseScheduleDeleteResponse,
@@ -77,7 +77,7 @@ import {
   type PermissionResponseMessage,
   type PermissionResponsePayload,
   type ProviderAvailability,
-  type ProviderModelDefinition,
+  type ProviderModelsResult,
   type ProviderMode,
   type ProviderSubagentSummary,
   type RecentProviderSession,
@@ -109,6 +109,14 @@ import {
 import { base64ToArrayBuffer } from "./nacl-box";
 import { encodeUtf8 } from "./utf8";
 import type { PlaintextPort, PlaintextPortFactory, SocketEventHandler } from "./websocket-port";
+
+/**
+ * provider 目录（模型/模式）RPC 专用超时。冷快照时 daemon 要先拉起 provider CLI
+ * 探测目录（t31-d 实测：zcode app-server session/create ~30s、qoder daemon 侧上限
+ * 120s），默认 15s 必然超时并把错误吞成空目录。60s 覆盖常见冷启动；超时由调用方
+ * 以错误态展示并可重试（daemon 按 cwd 去重 warmup，重试不会重复探测）。
+ */
+const PROVIDER_CATALOG_TIMEOUT_MS = 60_000;
 
 export interface DaemonConnectionOptions {
   clientId: string;
@@ -658,23 +666,45 @@ export class DaemonConnection {
     return parseListAvailableProvidersResponse(response.payload) ?? [];
   }
 
-  /** provider 的模型目录（list_provider_models_request；daemon 不含目录时返回空）。 */
-  async listProviderModels(provider: string, cwd?: string): Promise<ProviderModelDefinition[]> {
-    const response = await this.request<{ type: string; payload: unknown }>({
-      type: "list_provider_models_request",
-      provider,
-      ...(cwd ? { cwd } : {}),
-    });
-    return parseProviderModelsResponse(response.payload) ?? [];
+  /**
+   * provider 的模型目录（list_provider_models_request）。
+   * t31-d：daemon 失败时只回 {provider, error}——错误必须透出（result.error），
+   * 不能静默折叠成空列表（否则「模型/thinking 为空」无从解释）。
+   * 目录请求用专用超时：daemon 冷快照要先拉起 provider CLI 探测
+   * （codex 走 app-server session/create；实测 zcode ~30s、qoder 上限 120s），
+   * 默认 15s 会在冷启动时必然超时。
+   */
+  async listProviderModels(provider: string, cwd?: string): Promise<ProviderModelsResult> {
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "list_provider_models_request",
+        provider,
+        ...(cwd ? { cwd } : {}),
+      },
+      PROVIDER_CATALOG_TIMEOUT_MS,
+    );
+    if (response.type === "rpc_error") {
+      const error = (response.payload as { error?: unknown })?.error;
+      return {
+        models: [],
+        error: typeof error === "string" && error ? error : "daemon 不支持该请求",
+      };
+    }
+    return (
+      parseProviderModelsResult(response.payload) ?? { models: [], error: "模型目录响应解析失败" }
+    );
   }
 
-  /** provider 的模式列表（list_provider_modes_request）。 */
+  /** provider 的模式列表（list_provider_modes_request；冷快照同理用目录超时）。 */
   async listProviderModes(provider: string, cwd?: string): Promise<ProviderMode[]> {
-    const response = await this.request<{ type: string; payload: unknown }>({
-      type: "list_provider_modes_request",
-      provider,
-      ...(cwd ? { cwd } : {}),
-    });
+    const response = await this.request<{ type: string; payload: unknown }>(
+      {
+        type: "list_provider_modes_request",
+        provider,
+        ...(cwd ? { cwd } : {}),
+      },
+      PROVIDER_CATALOG_TIMEOUT_MS,
+    );
     return parseProviderModesResponse(response.payload) ?? [];
   }
 

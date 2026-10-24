@@ -384,13 +384,22 @@ export default function ChatPage() {
     setModels([]);
     setModes([]);
     void (async () => {
-      const [modelList, modeList] = await Promise.all([
-        conn.listProviderModels(catalogTarget, cwd || undefined).catch(() => []),
+      // t31-d：listProviderModels 返回 {models, error}——错误透出到输入区错误条，
+      // 不再静默折叠成空目录（模型/thinking pill 空白的真实原因可见）。
+      const [modelsResult, modeList] = await Promise.all([
+        conn
+          .listProviderModels(catalogTarget, cwd || undefined)
+          .catch((err): { models: ProviderModelDefinition[]; error: string | null } => ({
+            models: [],
+            error: err instanceof Error ? err.message : String(err),
+          })),
         conn.listProviderModes(catalogTarget, cwd || undefined).catch(() => []),
       ]);
       if (disposed) return;
+      const modelList = modelsResult.models;
       setModels(modelList);
       setModes(modeList);
+      setConfigError(modelsResult.error ? `模型目录拉取失败：${modelsResult.error}` : "");
       // 草稿态：目录就绪后保持草稿取默认值（provider 不变时也重取默认模型/档位/模式）
       setDraft((prev) =>
         seedDraft(

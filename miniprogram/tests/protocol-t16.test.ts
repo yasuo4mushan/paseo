@@ -72,9 +72,7 @@ async function captureRequest(
   server: MockDaemonSide,
   type: string,
 ): Promise<{ type: string; requestId: string } & Record<string, unknown>> {
-  await waitUntil(() =>
-    server.sentFrames.some((frame) => frame.includes(`"${type}"`)),
-  );
+  await waitUntil(() => server.sentFrames.some((frame) => frame.includes(`"${type}"`)));
   for (let i = server.sentFrames.length - 1; i >= 0; i -= 1) {
     const parsed = JSON.parse(server.sentFrames[i]) as {
       type?: string;
@@ -155,15 +153,25 @@ describe("t16 protocol methods", () => {
         requestId: modelsRequest.requestId,
         provider: "zcode",
         models: [
-          { id: "glm-5", label: "GLM-5", isDefault: true },
+          {
+            id: "glm-5",
+            label: "GLM-5",
+            isDefault: true,
+            thinkingOptions: [{ id: "high", label: "高" }],
+            defaultThinkingOptionId: "high",
+          },
           { id: "glm-5-air", label: "GLM-5 Air" },
         ],
+        error: null,
         fetchedAt: "2026-10-01T00:00:00Z",
       },
     });
-    const models = await modelsPromise;
-    expect(models).toHaveLength(2);
-    expect(models[0]).toMatchObject({ id: "glm-5", isDefault: true });
+    const result = await modelsPromise;
+    // t31-d：返回 {models, error}——模型与 thinking 档位都要能解出
+    expect(result.error).toBeNull();
+    expect(result.models).toHaveLength(2);
+    expect(result.models[0]).toMatchObject({ id: "glm-5", isDefault: true });
+    expect(result.models[0]?.thinkingOptions?.map((o) => o.id)).toEqual(["high"]);
 
     const modesPromise = conn.listProviderModes("zcode");
     const modesRequest = await captureRequest(server, "list_provider_modes_request");
@@ -174,12 +182,52 @@ describe("t16 protocol methods", () => {
       payload: {
         requestId: modesRequest.requestId,
         provider: "zcode",
-        modes: [{ id: "code", label: "编码" }, { id: "ask", label: "问答" }],
+        modes: [
+          { id: "code", label: "编码" },
+          { id: "ask", label: "问答" },
+        ],
         fetchedAt: "2026-10-01T00:00:00Z",
       },
     });
     const modes = await modesPromise;
     expect(modes.map((m) => m.id)).toEqual(["code", "ask"]);
+  });
+
+  it("listProviderModels：daemon error payload 透出为 error，不再静默空列表（t31-d 根因）", async () => {
+    const { conn, server } = await connectedHarness();
+    const promise = conn.listProviderModels("kimi", "/tmp/project");
+    const request = await captureRequest(server, "list_provider_models_request");
+    // daemon 失败形状：{provider, error}——没有 models 字段
+    server.pushSession({
+      type: "list_provider_models_response",
+      payload: {
+        requestId: request.requestId,
+        provider: "kimi",
+        error: "Authentication required",
+        fetchedAt: "2026-10-01T00:00:00Z",
+      },
+    });
+    const result = await promise;
+    expect(result.models).toEqual([]);
+    expect(result.error).toBe("Authentication required");
+  });
+
+  it("listProviderModels：rpc_error（如旧 daemon 不识别请求）透出为 error", async () => {
+    const { conn, server } = await connectedHarness();
+    const promise = conn.listProviderModels("codex");
+    const request = await captureRequest(server, "list_provider_models_request");
+    server.pushSession({
+      type: "rpc_error",
+      payload: {
+        requestId: request.requestId,
+        requestType: "list_provider_models_request",
+        error: "Unknown request, try upgrading the daemon (currently v0.12.0)",
+        code: "unknown_schema",
+      },
+    });
+    const result = await promise;
+    expect(result.models).toEqual([]);
+    expect(result.error).toContain("Unknown request");
   });
 
   it("createAgent：请求形状正确，agent_created status 推送解析", async () => {
@@ -203,7 +251,12 @@ describe("t16 protocol methods", () => {
     expect(request.initialPrompt).toBe("只回复 ok");
     server.pushSession({
       type: "status",
-      payload: { status: "agent_created", agentId: AGENT.id, requestId: request.requestId, agent: AGENT },
+      payload: {
+        status: "agent_created",
+        agentId: AGENT.id,
+        requestId: request.requestId,
+        agent: AGENT,
+      },
     });
     const agent = await promise;
     expect(agent).toMatchObject({ id: AGENT.id, provider: "zcode" });
@@ -215,7 +268,11 @@ describe("t16 protocol methods", () => {
     const request = await captureRequest(server, "create_agent_request");
     server.pushSession({
       type: "status",
-      payload: { status: "agent_create_failed", requestId: request.requestId, error: "provider 不可用" },
+      payload: {
+        status: "agent_create_failed",
+        requestId: request.requestId,
+        error: "provider 不可用",
+      },
     });
     await expect(promise).rejects.toThrow("provider 不可用");
   });
