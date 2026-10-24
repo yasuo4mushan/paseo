@@ -230,7 +230,10 @@ export function FolderPicker({
         <ScrollView className="fp-crumbs" scrollX enhanced showScrollbar={false}>
           {crumbs.map((crumb, index) => (
             <View key={`${crumb.depth}-${crumb.label}`} className="fp-crumb-row">
-              {index > 0 ? <View className="fp-crumb-sep">/</View> : null}
+              {/* 根标签 "/" 已是斜杠形态，其后不再加 "/" 分隔符（否则出现 "//"） */}
+              {index > 0 && crumbs[index - 1].depth > 0 ? (
+                <View className="fp-crumb-sep">/</View>
+              ) : null}
               <View
                 className={`fp-crumb ${index === crumbs.length - 1 ? "fp-crumb-current" : ""}`}
                 onClick={() => jumpToDepth(crumb.depth)}

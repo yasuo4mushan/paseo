@@ -25,3 +25,99 @@
 .ws-note {
   margin: 16rpx 0 28rpx;
 }
+
+/* ---------- t31-b：点选结果摘要 + 高级手输折叠 ---------- */
+
+/* 选中目录高亮摘要（品牌色淡底 + 左侧图标 + 完整路径） */
+.nws-picked {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  background: var(--brand-fade);
+  border-radius: var(--radius);
+  padding: 20rpx;
+}
+
+.nws-picked-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.nws-picked-icon {
+  flex-shrink: 0;
+}
+
+.nws-picked-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.nws-picked-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nws-picked-path {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+  word-break: break-all;
+}
+
+.nws-picked-change {
+  flex-shrink: 0;
+}
+
+/* 高级折叠行（手动输入路径） */
+.nws-adv {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 4rpx;
+  margin-top: 8rpx;
+}
+
+.nws-adv-label {
+  font-size: 24rpx;
+  color: var(--text-2);
+}
+
+.nws-adv-arrow {
+  transform: rotate(-90deg);
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.nws-adv-arrow-open {
+  transform: rotate(0deg);
+}
+
+.nws-adv:active {
+  opacity: 0.7;
+}
+
+.nws-adv-hint {
+  font-size: 22rpx;
+  margin: 8rpx 0 16rpx;
+}
+
+/* 生效路径回显（点选或手输后统一显示） */
+.nws-effective {
+  font-size: 22rpx;
+  margin: 8rpx 0 16rpx;
+  word-break: break-all;
+}
+
+/* github 模式：目标父目录与上方 repo 输入的间距 */
+.nws-target-label {
+  margin-top: 24rpx;
+}
