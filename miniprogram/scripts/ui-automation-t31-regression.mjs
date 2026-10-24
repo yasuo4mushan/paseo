@@ -29,14 +29,20 @@ const PROBE_USER = `t31rprobe-${Date.now().toString(36)}`;
 const PROBE_PASS = "t31rprobe-pass-1";
 const PROBE_PHONE = `17326${Date.now().toString().slice(-6)}`;
 
-const PROVIDERS = [
+const ALL_PROVIDERS = [
   { id: "codex", labels: ["codex"] },
   { id: "zcode", labels: ["zcode"] },
   { id: "kimi", labels: ["kimi"] },
   { id: "codebuddy-code", labels: ["codebuddy-code", "codebuddy"] },
   { id: "qoder", labels: ["qoder"] },
   { id: "qwen-code", labels: ["qwen-code", "qwen"] },
+  { id: "claude", labels: ["claude"] },
 ];
+// 用法：node ui-automation-t31-regression.mjs [provider ...]（缺省全量）
+const argv = process.argv.slice(2);
+const PROVIDERS = argv.length
+  ? ALL_PROVIDERS.filter((p) => argv.includes(p.id))
+  : ALL_PROVIDERS;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -57,8 +63,12 @@ async function waitFor(desc, fn, { timeout = 25000, interval = 500 } = {}) {
 
 async function shot(mini, name) {
   const path = resolve(SHOT_DIR, `${name}.png`);
-  await mini.screenshot({ path });
-  console.log(`shot ${name}.png`);
+  try {
+    await mini.screenshot({ path });
+    console.log(`shot ${name}.png`);
+  } catch (e) {
+    console.log(`shot ${name}.png skipped: ${String(e.message).slice(0, 60)}`);
+  }
 }
 
 function parseRelayUri(uri) {
