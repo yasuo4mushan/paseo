@@ -103,3 +103,26 @@ tokens，`prefers-color-scheme: dark` 自动适配）。
 
 错误码中文映射 / 手机号归一化（+86/86/分隔符）/ wx 探测门控 / passwordSet 防御式解析
 见 `tests/hub-client.test.ts`。
+
+## t31a 批次：对话页三入口显性化（新建按钮 / 文件侧滑面板 / 导入入口）
+
+由 `scripts/ui-automation-t31a.mjs`（端口 9420）对**隔离 daemon + mock hub** 驱动生成：
+mock hub 6794（`MOCK_STATIC_DEVICES=0`，动态 devices.register 收纳隔离 daemon 注册）、
+隔离 daemon 6796（`PASEO_HOME=/tmp/t31a-home`，hub 指向 mock，relay 走公网
+remoteagent.agentsworkforyou.cn——模拟器屏蔽 ws://127.0.0.1 回环的既定 workaround），
+演示工作区 `/tmp/t31a-workspace`（open_project 预注册）+ 无 prompt idle 会话（不耗配额）。
+不触碰 6767/6799 主 daemon。
+
+| 文件                             | 页面         | 说明                                                                                                                  |
+| -------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `t31a-01-chat-header.png`        | 对话主页     | 顶栏显式 [＋ 新建]（品牌绿）与圆形文件按钮（t31 新增），会话标题/项目标签正常                                         |
+| `t31a-02-files-panel-root.png`   | 文件侧滑面板 | 右侧滑入（左缘圆角 + 遮罩）：标题/工作区路径/上一级/面包屑「根」/目录优先文件列表                                     |
+| `t31a-03-files-panel-subdir.png` | 文件侧滑面板 | 进入 src 子目录：面包屑「根 / src」当前段高亮，greet.ts 带图标与大小                                                  |
+| `t31a-04-file-preview.png`       | 文件预览     | 面板点 README.md → files 页带 path/open 参数直达所在目录并自动打开文本预览（内容 + 编辑/下载保存）                    |
+| `t31a-05-session-sheet.png`      | 会话弹窗     | 底部 [新建会话][导入已有会话] 并排（t31 显性化）；筛选标签与预建 idle 会话在列                                        |
+| `t31a-06-import-tab.png`         | 创建页       | 会话弹窗「导入已有会话」→ `create?tab=import` 直达导入 tab（Provider 侧历史会话空态——隔离 home 无历史会话，符合预期） |
+| `t31a-07-new-chat-welcome.png`   | 对话主页     | 从活跃会话点顶栏「新建」→ 快捷新对话欢迎态（标题「新对话」+「有什么要做的？」）                                       |
+| `t31a-08-files-panel-dark.png`   | 文件侧滑面板 | 手动深色档（theme-dark）：面板/顶栏/列表全暗色 token，无浅色残留                                                      |
+
+复现：`<cli> auto --project <miniprogram> --auto-port 9420` + 前置 mock hub/隔离 daemon
+（见脚本头注释），`HUB_BASE=http://<LAN-IP>:6794/api node scripts/ui-automation-t31a.mjs`。

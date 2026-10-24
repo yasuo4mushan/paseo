@@ -31,12 +31,13 @@ t21 对话页设备选择重构：设备选择前移到对话页——进入自�
 | 顶栏设备按钮 + 顶部设备弹窗      | `hosts/` 列表                 | ✅t21                 | 顶栏常显设备名 + 在线状态点，点击弹顶部半屏弹窗（TopSheet）：设备列表（在线点/心跳时间/当前高亮"已连接"/离线置灰）、点按切换连接（断旧连新 + 会话目录刷新）、底部快捷（添加设备/管理设备/刷新）；对话页期间 20s 轮询 devices.list 刷新状态（切后台暂停） |
 | 掉线横幅（一键恢复）             | connection banner             | ✅t21                 | 当前设备 hub 心跳掉线或连接断开 → 顶部横幅（区分"已离线"/"已断开"）+ 一键重连（设备在线直连）/切换设备（弹设备弹窗）；状态机 `utils/chat-device-state` 单测覆盖                                                                                          |
 | 豆包式直达（进入即上次活跃会话） | startup restore               | ✅t20                 | sessionStore 持久化活跃会话（storage 按连接），失效（归档/删除）回退最新未归档会话；无会话时空态 + 快捷输入框                                                                                                                                            |
-| 会话选择（顶部下拉弹窗）         | session rail                  | ✅t21（t20 抽屉迁移） | t20 右侧抽屉改为顶部弹窗（SessionPickerSheet，数据/筛选沿用 sessionStore）：进行中/需注意/归档筛选、当前高亮、长按归档/恢复/删除/详情管理、新建（点按快捷新对话；长按高级表单）；右滑手势保留                                                            |
+| 会话选择（顶部下拉弹窗）         | session rail                  | ✅t21（t20 抽屉迁移） | t20 右侧抽屉改为顶部弹窗（SessionPickerSheet，数据/筛选沿用 sessionStore）：进行中/需注意/归档筛选、当前高亮、长按归档/恢复/删除/详情管理；t31 底部 [新建会话][导入已有会话] 并排（新建点按快捷新对话/长按高级表单；导入跳创建页导入 tab）；右滑手势保留 |
 | composer 四选择 pill             | `composer/agent-controls`     | ✅t20（移动简化版）   | Agent 框架（list_available_providers）/ 模型（list_provider_models，含 thinkingOptions）/ thinking effort（所选模型档位；无档位隐藏）/ 审批模式（list_provider_modes）；状态机 `utils/composer-config` 单测覆盖                                          |
 | 会话中配置切换                   | set_agent_mode/model/thinking | ✅t20                 | 会话态下 model/mode/thinking 改动即发 set_agent_model / set_agent_mode / set_agent_thinking（AgentActionResponsePayload accepted）；provider 会话中锁定（协议无 per-agent 切换）                                                                         |
 | 发送即创建                       | composer draft                | ✅t20                 | 无活跃会话时发送 = create_agent（config 带 model/modeId/thinkingOptionId + workspace cwd）；需要已选工作区，未选时拉起选择器                                                                                                                             |
 | composer 草稿暂存                | composer draft                | ✅t21                 | 未发送文本按「设备×会话」键暂存（LRU 上限 24），切换设备/会话回来还原，发送成功即清；单测覆盖                                                                                                                                                            |
-| 线条图标体系                     | design tokens                 | ✅t20                 | 30 图标 1.5px 线条风（scripts/gen-icons.mjs 纯 Node 生成，81x81@3x 抗锯齿）+ tabBar 三图标重制；中性灰单档适配深浅主题；emoji 图标归零（icon-assets 测试含回归门）；t21 增 refresh                                                                       |
+| 新建对话显式按钮（顶栏）         | new chat button               | ✅t31                 | 顶栏品牌绿 [＋ 新建]（点按 = 快捷新对话回欢迎态；长按 = 高级创建向导）+ 圆形文件入口（见 §5 侧滑面板）；新建不再藏于会话标题按钮                                                                                                                         |
+| 线条图标体系                     | design tokens                 | ✅t20                 | 33 图标 1.5px 线条风（scripts/gen-icons.mjs 纯 Node 生成，81x81@3x 抗锯齿）+ tabBar 三图标重制；中性灰单档适配深浅主题；emoji 图标归零（icon-assets 测试含回归门）；t21 增 refresh；t31 增 import、plus-inverse                                          |
 | 导航健壮性                       | -                             | ✅t20                 | utils/navigation：串行队列 + 连点去重 + 深栈（>=9）自动 redirectTo 降级；自动化回归步覆盖双击连接与 8 层深栈                                                                                                                                             |
 
 ## 1. 账号与设备（Hub）
@@ -74,7 +75,7 @@ t21 对话页设备选择重构：设备选择前移到对话页——进入自�
 | Subagents 轨道                                     | `subagents/`                             | ✅t19         | provider_subagents.list + update 推送（upsert/remove 实时维护）；标题/描述/副题/状态四态点。子代理时间线详情（timeline.get + 独立视图）未做 → 低频，🔄t20 备注                                                                                                                       |
 | Agent 标签/重命名/资料卡                           | `agent-profiles` `agent-labels`          | ✅t18/t19     | 标签（t18）；重命名（t19：update_agent name，导航栏同步）。资料卡（profile 详情页）未做 → 列表态信息已覆盖，价值低                                                                                                                                                                   |
 | 命令面板 / 斜杠命令                                | `client-slash-commands` `command-center` | ✅t19         | composer 输入 "/" 触发 list_commands 目录（前缀过滤 + 点按填充）；真实 daemon 现网该 agent 目录为空（RPC 闭环已验证，空目录面板不弹属预期）。全局命令面板（command-center 搜索/最近）未做 → 🔄t20                                                                                    |
-| 会话导入                                           | chat settings                            | ✅t18         | fetch_recent_provider_sessions + import_agent（创建页"导入"tab）                                                                                                                                                                                                                     |
+| 会话导入                                           | chat settings                            | ✅t18/t31     | fetch_recent_provider_sessions + import_agent（创建页"导入"tab）；t31 入口外露：会话弹窗底部「导入已有会话」直达 `create?tab=import`                                                                                                                                                 |
 | 会话导出                                           | chat settings                            | ✅t19         | 时间线 → markdown → 剪贴板（与官方 app 的剪贴板导出同路径；小程序无文件系统落盘诉求）                                                                                                                                                                                                |
 | 上下文窗口/压缩指示                                | `context-window-*`                       | ✅t19         | lastUsage（contextWindowUsed/MaxTokens）百分比计量条（≥80% 变红），agent_update 全量推送驱动；todo/compaction 气泡 t15 已有                                                                                                                                                          |
 
@@ -88,21 +89,22 @@ t21 对话页设备选择重构：设备选择前移到对话页——进入自�
 
 ## 5. 文件体系（t17 建立，t19 补写回/条目/订阅/diff）
 
-| 功能要素                                     | app 参照                                | 小程序状态 | 说明                                                                                                                    |
-| -------------------------------------------- | --------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 文件浏览器（目录树/返回/图标/大小/时间）     | `file-explorer/` + `panels/files-panel` | ✅t17      | file_explorer_request mode:list，目录优先排序                                                                           |
-| 文本/代码预览（大文件截断提示）              | file panel preview                      | ✅t17      | maxBytes 512KB + 64K 字符渲染上限                                                                                       |
-| 图片预览（缩略 + 全屏）                      | attachment lightbox                     | ✅t17      | 二进制帧读取 → 本地落地 → wx.previewImage                                                                               |
-| PDF/Office 预览                              | 下载后系统打开                          | ✅t17      | 下载 → wx.openDocument（pdf/doc(x)/xls(x)/ppt(x)）                                                                      |
-| 下载保存到手机                               | 下载管理                                | ✅t17      | USER_DATA_PATH/paseo-files + 进度条 + 转发另存（wx.shareFileMessage）                                                   |
-| 文件订阅变更（fs.file.subscribe）            | file watch                              | ✅t19      | 编辑器打开期间订阅 → fs.file.update 推送 → "远端已修改"横幅（保存冲突检测兜底）                                         |
-| 文件编辑/写回（fs.file.write）               | file editor                             | ✅t19      | 预览进编辑器（textarea）；expectedModifiedAt/revision 冲突协议 + 三选处理（重新加载/覆盖远端/继续编辑），状态机单测覆盖 |
-| 新建/重命名/删除条目（fs.entry.\*）          | explorer 操作                           | ✅t19      | 头部"＋"新建文件/文件夹（可输入弹窗）；长按重命名/下载/删除（删除带确认）                                               |
-| 附件上传（选图/选文件 → uploaded_file）      | `attachments/` + composer               | ✅t17      | file.upload.request + FileBegin/Chunk/End 二进制帧                                                                      |
-| 附件随消息发送                               | composer submit                         | ✅t17      | send_agent_message attachments + messageId 幂等                                                                         |
-| 时间线附件卡片（图片缩略/文件名+大小）       | `components/message` attachment pill    | ✅t17      | 本地台账 clientMessageId 回配对 + 同文本兜底                                                                            |
-| 工作区文件拖入对话                           | `attachments/workspace-file-drag`       | ➖         | 小程序无拖拽；以"文件页下载后转发/上传"替代                                                                             |
-| 文件 diff 浏览（checkout.commits.file_diff） | diff panel                              | ✅t19      | "改动"页：commits 列表（短 sha/作者/已推送徽标）→ 展开文件（+−统计/状态）→ 逐行着色只读 diff（横向滚动，hunk 头）       |
+| 功能要素                                     | app 参照                                | 小程序状态 | 说明                                                                                                                                                                             |
+| -------------------------------------------- | --------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 文件浏览器（目录树/返回/图标/大小/时间）     | `file-explorer/` + `panels/files-panel` | ✅t17      | file_explorer_request mode:list，目录优先排序                                                                                                                                    |
+| 项目文件侧滑面板（对话页）                   | `panels/files-panel` 侧栏               | ✅t31      | 顶栏文件按钮 → 右侧滑入 WorkspaceFilesSheet：会话 cwd/已选工作区为根，目录逐级进出 + 面包屑回点；点文件带 path/open 跳 files 页自动打开预览（预览/编辑/下载归 files 页，不复制） |
+| 文本/代码预览（大文件截断提示）              | file panel preview                      | ✅t17      | maxBytes 512KB + 64K 字符渲染上限                                                                                                                                                |
+| 图片预览（缩略 + 全屏）                      | attachment lightbox                     | ✅t17      | 二进制帧读取 → 本地落地 → wx.previewImage                                                                                                                                        |
+| PDF/Office 预览                              | 下载后系统打开                          | ✅t17      | 下载 → wx.openDocument（pdf/doc(x)/xls(x)/ppt(x)）                                                                                                                               |
+| 下载保存到手机                               | 下载管理                                | ✅t17      | USER_DATA_PATH/paseo-files + 进度条 + 转发另存（wx.shareFileMessage）                                                                                                            |
+| 文件订阅变更（fs.file.subscribe）            | file watch                              | ✅t19      | 编辑器打开期间订阅 → fs.file.update 推送 → "远端已修改"横幅（保存冲突检测兜底）                                                                                                  |
+| 文件编辑/写回（fs.file.write）               | file editor                             | ✅t19      | 预览进编辑器（textarea）；expectedModifiedAt/revision 冲突协议 + 三选处理（重新加载/覆盖远端/继续编辑），状态机单测覆盖                                                          |
+| 新建/重命名/删除条目（fs.entry.\*）          | explorer 操作                           | ✅t19      | 头部"＋"新建文件/文件夹（可输入弹窗）；长按重命名/下载/删除（删除带确认）                                                                                                        |
+| 附件上传（选图/选文件 → uploaded_file）      | `attachments/` + composer               | ✅t17      | file.upload.request + FileBegin/Chunk/End 二进制帧                                                                                                                               |
+| 附件随消息发送                               | composer submit                         | ✅t17      | send_agent_message attachments + messageId 幂等                                                                                                                                  |
+| 时间线附件卡片（图片缩略/文件名+大小）       | `components/message` attachment pill    | ✅t17      | 本地台账 clientMessageId 回配对 + 同文本兜底                                                                                                                                     |
+| 工作区文件拖入对话                           | `attachments/workspace-file-drag`       | ➖         | 小程序无拖拽；以"文件页下载后转发/上传"替代                                                                                                                                      |
+| 文件 diff 浏览（checkout.commits.file_diff） | diff panel                              | ✅t19      | "改动"页：commits 列表（短 sha/作者/已推送徽标）→ 展开文件（+−统计/状态）→ 逐行着色只读 diff（横向滚动，hunk 头）                                                                |
 
 ## 6. 终端与浏览器面板
 
@@ -153,7 +155,7 @@ t21 对话页设备选择重构：设备选择前移到对话页——进入自�
 
 按上表逐行计（共 73 行）：
 
-- ✅ 已覆盖 **63** 项（t21 新增 4 项：自动默认设备、顶栏设备按钮+顶部设备弹窗、掉线横幅、composer 草稿暂存；会话抽屉行迁移为顶部弹窗并入 t21，多设备切换行并入 t21；t20 新增 8 项：三 tab 对话导航、豆包式直达、会话抽屉、composer 四 pill、会话中配置切换（set*agent*\*）、发送即创建、线条图标体系、导航健壮性）
+- ✅ 已覆盖 **65** 项（t31 新增 2 项：新建对话显式按钮（顶栏）、项目文件侧滑面板；t21 新增 4 项：自动默认设备、顶栏设备按钮+顶部设备弹窗、掉线横幅、composer 草稿暂存；会话抽屉行迁移为顶部弹窗并入 t21，多设备切换行并入 t21；t20 新增 8 项：三 tab 对话导航、豆包式直达、会话抽屉、composer 四 pill、会话中配置切换（set*agent*\*）、发送即创建、线条图标体系、导航健壮性）
 - 🔄t20 待做 **3** 项（管理面批次顺延）：项目设置/工作区归档、集成设置+诊断导出（RPC 族整组考古）、MCP 服务器管理（同前）；另 t19 遗留备注：子代理时间线详情、全局命令面板
 - ⏸ 适配评估 **2** 项：后台推送订阅消息（微信模板审批门槛）、语音听写（转写链路）
 - ➖ 不适用 **4** 项：daemon 侧设备注册（桌面承担）、工作区文件拖拽（无拖拽能力）、浏览器面板（Electron 专属）、插件原生面（桌面专属）

@@ -1,10 +1,12 @@
 /**
  * 会话选择顶部弹窗（t21，t20 会话抽屉的交互语言迁移）：全部会话列表
- * （筛选：进行中/需注意/归档）、当前会话高亮、新建会话入口。
+ * （筛选：进行中/需注意/归档）、当前会话高亮、新建/导入会话入口（t31 显性化）。
  * 数据/筛选逻辑沿用 session-store（与主页同一份），不再有独立的列表页逻辑。
  *
  * 交互：遮罩/收起按钮关闭；条目点击切换活跃会话；长按弹动作面板
- * （详情管理 / 归档|恢复 / 删除）。
+ * （详情管理 / 归档|恢复 / 删除）；底部 [新建会话][导入已有会话] 并排——
+ * 新建点按 = 豆包式快捷新对话（清活跃会话回欢迎态），长按 = 高级创建表单
+ * （worktree 等）；导入 = 跳创建页导入 tab（provider 历史会话发现，t18）。
  */
 
 import { useState } from "react";
@@ -71,17 +73,31 @@ export function SessionPickerSheet({
       title="全部会话"
       onClose={onClose}
       footer={
-        <View
-          className="sp-new"
-          onClick={() => {
-            onNewChat();
-            onClose();
-          }}
-          onLongPress={() => void safeNavigateTo("/pages/create/index")}
-        >
-          <Image className="icon icon-sm" src={iconUrl("plus", "-active")} />
-          <View className="sp-new-text">新建会话</View>
-          <View className="sp-new-sub">点按快捷新对话 · 长按高级表单</View>
+        <View className="sp-footer-row">
+          <View
+            className="sp-new"
+            onClick={() => {
+              onNewChat();
+              onClose();
+            }}
+            onLongPress={() => {
+              onClose();
+              void safeNavigateTo("/pages/create/index");
+            }}
+          >
+            <Image className="icon icon-sm" src={iconUrl("plus", "-active")} />
+            <View className="sp-new-text">新建会话</View>
+          </View>
+          <View
+            className="sp-import"
+            onClick={() => {
+              onClose();
+              void safeNavigateTo("/pages/create/index?tab=import");
+            }}
+          >
+            <Image className="icon icon-sm" src={iconUrl("import")} />
+            <View className="sp-import-text">导入已有会话</View>
+          </View>
         </View>
       }
     >

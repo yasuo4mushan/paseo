@@ -109,16 +109,27 @@
   margin-top: 16rpx;
 }
 
-/* 底部新建会话快捷入口 */
+/* 底部新建/导入会话快捷入口（t31 并排显性化） */
+
+.sp-footer-row {
+  display: flex;
+  gap: 16rpx;
+  width: 100%;
+}
 
 .sp-new {
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10rpx;
   background: var(--brand-fade);
   border-radius: var(--radius);
-  padding: 16rpx 24rpx;
+  padding: 16rpx 20rpx;
+}
+
+.sp-new:active {
+  background: var(--fill);
 }
 
 .sp-new-text {
@@ -127,12 +138,23 @@
   color: var(--brand);
 }
 
-.sp-new-sub {
+.sp-import {
   flex: 1;
-  font-size: 20rpx;
-  color: var(--text-3);
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  background: var(--fill);
+  border-radius: var(--radius);
+  padding: 16rpx 20rpx;
+}
+
+.sp-import:active {
+  background: var(--divider);
+}
+
+.sp-import-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-1);
 }

@@ -73,3 +73,25 @@ export function validateFolderName(name: string): string | null {
   if (trimmed.length > 60) return "名称过长（≤60 字符）";
   return null;
 }
+
+/**
+ * 相对路径 → 目录栈（t31 文件面板/files 页共用）。
+ * daemon file_explorer 的子目录 path 是相对 cwd 的归一化路径（"src/lib"）；
+ * 目录栈每层存"到该层的累计路径"（["src", "src/lib"]），面包屑/返回上级直接
+ * pop 一步即回上层，不必重算累计前缀。根（""/"."/"/"）→ 空栈。
+ */
+export function dirStackFromPath(path: string): string[] {
+  const segments = path.split("/").filter((segment) => segment.length > 0 && segment !== ".");
+  const stack: string[] = [];
+  for (const segment of segments) {
+    stack.push(stack.length > 0 ? `${stack[stack.length - 1]}/${segment}` : segment);
+  }
+  return stack;
+}
+
+/** 相对路径的父目录（根 → "."）：文件条目跳预览时定位其所在目录用。 */
+export function parentDirPath(path: string): string {
+  const segments = path.split("/").filter((segment) => segment.length > 0 && segment !== ".");
+  if (segments.length <= 1) return ".";
+  return segments.slice(0, -1).join("/");
+}

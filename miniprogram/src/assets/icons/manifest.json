@@ -41,7 +41,7 @@
   },
   "plus": {
     "description": "加号（新建/附件）",
-    "files": ["plus.png"]
+    "files": ["plus.png", "plus-inverse.png"]
   },
   "send": {
     "description": "发送（纸飞机）",
@@ -98,6 +98,10 @@
   "refresh": {
     "description": "刷新（循环箭头）",
     "files": ["refresh.png"]
+  },
+  "import": {
+    "description": "导入（下载入托盘）",
+    "files": ["import.png"]
   },
   "brand-claude": {
     "description": "Claude 品牌标（星芒）",

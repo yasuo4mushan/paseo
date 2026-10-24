@@ -7,7 +7,7 @@
   background: var(--bg);
 }
 
-/* ---------- 顶栏：[设备按钮] [会话标题/会话列表]（t21） ---------- */
+/* ---------- 顶栏：[设备按钮] [会话标题/会话列表] [新建][文件]（t21；t31 动作区） ---------- */
 
 .chat-header {
   display: flex;
@@ -21,17 +21,18 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  max-width: 320rpx;
+  max-width: 260rpx;
+  min-width: 0;
   background: var(--fill);
   border-radius: var(--radius-round);
   padding: 10rpx 18rpx;
-  margin-right: 20rpx;
+  margin-right: 16rpx;
 }
 
 .chat-device-label {
   font-size: 24rpx;
   color: var(--text-1);
-  max-width: 220rpx;
+  max-width: 130rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -90,7 +91,53 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 380rpx;
+  max-width: 300rpx;
+}
+
+/* ---------- t31：顶栏动作区（新建对话 / 项目文件） ---------- */
+
+.chat-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+  background: var(--brand);
+  border-radius: var(--radius-round);
+  padding: 10rpx 22rpx;
+}
+
+.chat-new-btn:active {
+  background: var(--brand-pressed);
+}
+
+.chat-new-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-inverse);
+}
+
+.chat-files-btn {
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  background: var(--fill);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.chat-files-btn:active {
+  background: var(--divider);
+}
+
+/* 未连接态：文件按钮降透明度（点击给连接引导 toast） */
+.chat-files-btn-off {
+  opacity: 0.5;
 }
 
 .chat-title-chevron {
