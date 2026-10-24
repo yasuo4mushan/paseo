@@ -308,3 +308,212 @@
 .send-btn .icon {
   margin: 0;
 }
+
+/* ---------- t32：按住说话（豆包式听写浮层） ---------- */
+
+/* 麦克风按钮（composer 行，输入框与发送之间） */
+.mic-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: var(--fill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0 16rpx;
+}
+
+.mic-btn:active {
+  background: var(--brand);
+}
+
+/* 权限拒绝态：置灰 + 禁用按压反馈（点击走设置引导） */
+.mic-btn-denied {
+  opacity: 0.4;
+}
+
+.mic-btn-denied:active {
+  background: var(--fill);
+}
+
+/* 全屏浮层：半透明黑遮罩（--mask 为跨主题恒色 token） */
+.dictation-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1100;
+  background: var(--mask);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 110rpx 48rpx calc(150rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 实时中间文本：主视觉区（partial 上屏；未识别显示「正在聆听…」） */
+.dictation-text {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.dictation-text-inner {
+  font-size: 34rpx;
+  line-height: 1.6;
+  color: var(--text-inverse);
+  word-break: break-all;
+  text-align: center;
+  padding-top: 24rpx;
+}
+
+/* 「正在聆听…」占位态：降透明不换色（遮罩上是反白文字体系） */
+.dictation-text-empty {
+  opacity: 0.65;
+}
+
+/* 大麦克风：品牌绿圆底 + 呼吸扩散环 */
+.dictation-mic {
+  position: relative;
+  width: 168rpx;
+  height: 168rpx;
+  border-radius: 50%;
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32rpx 0 40rpx;
+  flex-shrink: 0;
+}
+
+.dictation-mic-icon {
+  width: 76rpx;
+  height: 76rpx;
+  margin: 0;
+}
+
+.dictation-mic-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  border: 3rpx solid var(--brand);
+  animation: dictation-breathe 1.6s ease-out infinite;
+}
+
+@keyframes dictation-breathe {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* 上滑取消态：红环 + 红底 + 关闭图标（松手不落字） */
+.dictation-mic-cancel {
+  background: var(--danger);
+}
+
+.dictation-mic-cancel .dictation-mic-ring {
+  border-color: var(--danger);
+  animation: none;
+  opacity: 0;
+}
+
+/* 声波条：品牌绿五条错峰伸缩 */
+.dictation-wave {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  height: 96rpx;
+  margin-bottom: 36rpx;
+  flex-shrink: 0;
+}
+
+.dictation-wave-bar {
+  width: 10rpx;
+  height: 92rpx;
+  border-radius: 5rpx;
+  background: var(--brand);
+  transform-origin: center;
+  animation: dictation-wave 0.9s ease-in-out infinite;
+}
+
+.dictation-wave-bar:nth-child(1) {
+  height: 40rpx;
+  animation-delay: 0s;
+}
+
+.dictation-wave-bar:nth-child(2) {
+  height: 68rpx;
+  animation-delay: 0.15s;
+}
+
+.dictation-wave-bar:nth-child(3) {
+  height: 92rpx;
+  animation-delay: 0.3s;
+}
+
+.dictation-wave-bar:nth-child(4) {
+  height: 62rpx;
+  animation-delay: 0.45s;
+}
+
+.dictation-wave-bar:nth-child(5) {
+  height: 34rpx;
+  animation-delay: 0.6s;
+}
+
+@keyframes dictation-wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* 取消态：声波静止降透明（不再激励“正在录音”） */
+.dictation-wave-cancel {
+  opacity: 0.45;
+}
+
+.dictation-wave-cancel .dictation-wave-bar {
+  animation: none;
+  transform: scaleY(0.5);
+}
+
+/* 识别中（finishing）状态文案 */
+.dictation-status {
+  font-size: 28rpx;
+  color: var(--text-inverse);
+  margin-bottom: 32rpx;
+  flex-shrink: 0;
+}
+
+/* 底部提示：正常态白字；取消态红底胶囊 */
+.dictation-hint {
+  font-size: 28rpx;
+  color: var(--text-inverse);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.dictation-hint-cancel {
+  color: var(--text-inverse);
+  background: var(--danger);
+  opacity: 1;
+  border-radius: var(--radius-round);
+  padding: 10rpx 32rpx;
+  font-weight: 600;
+}

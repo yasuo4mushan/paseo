@@ -53,7 +53,11 @@
   },
   "close": {
     "description": "关闭（×）",
-    "files": ["close.png"]
+    "files": ["close.png", "close-inverse.png"]
+  },
+  "mic": {
+    "description": "麦克风（语音输入）",
+    "files": ["mic.png", "mic-inverse.png"]
   },
   "back": {
     "description": "返回（左箭头）",

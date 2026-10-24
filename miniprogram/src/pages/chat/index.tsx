@@ -37,6 +37,8 @@ import { WorkspaceFilesSheet } from "@/components/workspace-files-sheet";
 import { TimelineView } from "@/components/timeline";
 import { useAgentSession } from "@/hooks/use-agent-session";
 import { useMessageActions } from "@/hooks/use-message-actions";
+import { openRecordPermissionSettings, useDictation } from "@/hooks/use-dictation";
+import { dictationStore } from "@/stores/dictation-store";
 import { sessionStore } from "@/stores/session-store";
 import {
   devicePreferenceStore,
@@ -76,6 +78,9 @@ const PILL_TITLES: Record<ComposerPill, string> = {
 
 /** 设备在线状态轮询间隔（与 daemon 心跳节奏对齐；切后台暂停）。 */
 const DEVICE_POLL_INTERVAL_MS = 20_000;
+
+/** t32：上滑取消阈值（px；clientY 位移，向上为负）。 */
+const DICTATION_SLIDE_CANCEL_PX = -80;
 
 interface PendingAttachment {
   key: string;
@@ -462,6 +467,49 @@ export default function ChatPage() {
 
   const [draftText, setDraftText] = useState("");
   draftTextRef.current = draftText;
+
+  // ---- t32：按住说话（豆包式听写；状态机在 dictation-store） ----
+
+  const dictation = useDictation();
+  // final 文本追加进草稿（不覆盖已有内容）；解绑防止页面卸载后落字
+  useEffect(
+    () =>
+      dictationStore.bindInsertText((text) => {
+        setDraftText((prev) => (prev ? prev + text : text));
+      }),
+    [],
+  );
+  // store 错误（未识别/权限/启动失败）转 toast
+  useEffect(() => {
+    if (!dictation.error) return;
+    Taro.showToast({ title: dictation.error, icon: "none" });
+    dictationStore.dismissError();
+  }, [dictation.error]);
+
+  const micTouchStartY = useRef<number | null>(null);
+  // 小程序无 pointer 事件，按住说话用 touch 三件套（与页面根手势同款防御式读取）
+  const onMicTouchStart = (e: unknown) => {
+    const ev = e as { touches?: Array<{ clientY: number }> };
+    micTouchStartY.current = ev.touches?.[0]?.clientY ?? null;
+    if (dictation.permissionDenied) {
+      openRecordPermissionSettings();
+      return;
+    }
+    dictationStore.begin();
+  };
+  const onMicTouchMove = (e: unknown) => {
+    const startY = micTouchStartY.current;
+    if (startY == null) return;
+    const ev = e as { touches?: Array<{ clientY: number }> };
+    const y = ev.touches?.[0]?.clientY;
+    if (y == null) return;
+    dictationStore.setSlideUp(y - startY < DICTATION_SLIDE_CANCEL_PX);
+  };
+  const onMicTouchEnd = () => {
+    micTouchStartY.current = null;
+    dictationStore.release();
+  };
+
   const [sending, setSending] = useState(false);
   const [interruptOnSend, setInterruptOnSend] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
@@ -1130,11 +1178,61 @@ export default function ChatPage() {
             confirmHold
             disabled={!connected}
           />
+          {/* t32：按住说话（拒绝态置灰点击引导设置；未连接态按下走 store 错误提示） */}
+          <View
+            className={`mic-btn ${dictation.permissionDenied ? "mic-btn-denied" : ""}`}
+            onTouchStart={onMicTouchStart}
+            onTouchMove={onMicTouchMove}
+            onTouchEnd={onMicTouchEnd}
+            onTouchCancel={onMicTouchEnd}
+          >
+            <Image className="icon" src={iconUrl("mic")} />
+          </View>
           <View className={`send-btn ${sendable ? "send-ready" : ""}`} onClick={() => void send()}>
             <Image className="icon" src={iconUrl("send", "-inverse")} />
           </View>
         </View>
       </View>
+
+      {/* t32：按住说话全屏浮层（豆包式：大麦克风呼吸环 + 声波 + 实时 partial + 上滑取消） */}
+      {dictation.phase !== "idle" ? (
+        <View className="dictation-mask">
+          <ScrollView
+            className="dictation-text"
+            scrollY
+            enhanced
+            showScrollbar={false}
+            scrollTop={9999}
+          >
+            <View
+              className={`dictation-text-inner ${dictation.partialText ? "" : "dictation-text-empty"}`}
+            >
+              {dictation.partialText || "正在聆听…"}
+            </View>
+          </ScrollView>
+          <View className={`dictation-mic ${dictation.slideUp ? "dictation-mic-cancel" : ""}`}>
+            <View className="dictation-mic-ring" />
+            <Image
+              className="icon dictation-mic-icon"
+              src={iconUrl(dictation.slideUp ? "close" : "mic", "-inverse")}
+            />
+          </View>
+          {dictation.phase === "finishing" ? (
+            <View className="dictation-status">识别中…</View>
+          ) : (
+            <View className={`dictation-wave ${dictation.slideUp ? "dictation-wave-cancel" : ""}`}>
+              <View className="dictation-wave-bar" />
+              <View className="dictation-wave-bar" />
+              <View className="dictation-wave-bar" />
+              <View className="dictation-wave-bar" />
+              <View className="dictation-wave-bar" />
+            </View>
+          )}
+          <View className={`dictation-hint ${dictation.slideUp ? "dictation-hint-cancel" : ""}`}>
+            {dictation.slideUp ? "松开取消" : "松开 结束 · 上滑 取消"}
+          </View>
+        </View>
+      ) : null}
 
       <DevicePickerSheet
         visible={deviceSheetOpen}

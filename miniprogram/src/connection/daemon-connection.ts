@@ -57,6 +57,7 @@ import {
   parseAgentRewindResponse,
   parseKillTerminalResponse,
   parseWorkspaceScriptResponse,
+  parseDictationEvent,
   type AgentSnapshot,
   type AgentStreamPayload,
   type AgentTimelineEntry,
@@ -91,6 +92,8 @@ import {
   type SubagentUpdate,
   type TerminalInfo,
   type TerminalInputMessage,
+  type DictationStreamEvent,
+  type DictationStreamMessage,
   type UploadedFileAttachment,
   type WorkspaceScriptInfo,
   type WsClientType,
@@ -152,8 +155,33 @@ export interface DaemonConnectionEvents {
   onSubagentUpdate?: (update: SubagentUpdate) => void;
   /** t19：终端观察流结束（daemon 侧 detach；error 为观察失败，非进程退出）。 */
   onTerminalExit?: (payload: { terminalId: string; error?: string }) => void;
+  /**
+   * t32：听写流推送（ack/partial/final/error/finish_accepted，按 dictationId
+   * 关联，无 requestId）。等待者（start/finish）在连接内部先消费，再回调这里。
+   */
+  onDictationEvent?: (event: DictationStreamEvent) => void;
   onDisconnect?: (code: number, reason: string) => void;
 }
+
+/**
+ * t32：听写流等待者。dictation 消息没有 requestId，start/finish 的应答
+ * （ack / final / error）按 dictationId + 事件 kind 匹配（对齐官方客户端
+ * waitForWithCancel(select) 的做法）。
+ */
+interface DictationWaiter {
+  /** 等待者关心的流 id（cancel 时按 id 清场）。 */
+  dictationId: string;
+  match: (event: DictationStreamEvent) => boolean;
+  settle: (event: DictationStreamEvent) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+/**
+ * t32：听写 RPC 超时。start 等 ack 时 daemon 可能要加载 STT 模型（首次
+ * 冷启动数秒），finish 等 final 同理；30s 与官方 DEFAULT_DICTATION_* 对齐。
+ */
+const DICTATION_START_TIMEOUT_MS = 30_000;
+const DICTATION_FINISH_TIMEOUT_MS = 30_000;
 
 interface PendingRequest {
   resolve: (message: Record<string, unknown> & { requestId?: string }) => void;
@@ -248,6 +276,8 @@ export class DaemonConnection {
     number,
     { terminalId: string; receive: (frame: TerminalStreamFrame) => void }
   >();
+  /** t32：听写流 start/finish 等待者（按 dictationId+事件匹配）。 */
+  private dictationWaiters: DictationWaiter[] = [];
 
   constructor(
     portFactory: PlaintextPortFactory,
@@ -393,6 +423,11 @@ export class DaemonConnection {
       waiter.reject(error);
     }
     this.binaryReads.clear();
+    // t32：听写 start/finish 等待者一并失败（录音中断由上层 hook 收尾）。
+    for (const waiter of this.dictationWaiters.splice(0)) {
+      clearTimeout(waiter.timer);
+      waiter.settle({ kind: "error", dictationId: "", error: error.message, retryable: false });
+    }
   }
 
   private handleMessage(data: string | ArrayBuffer): void {
@@ -509,6 +544,13 @@ export class DaemonConnection {
           ...(typeof payload?.error === "string" ? { error: payload.error } : {}),
         });
       }
+      return;
+    }
+
+    // t32：听写流推送（ack/partial/final/error/finish_accepted，按 dictationId 关联）。
+    if (typeof message.type === "string" && message.type.startsWith("dictation_stream_")) {
+      const event = parseDictationEvent(message.type, message.payload);
+      if (event) this.dispatchDictationEvent(event);
       return;
     }
 
@@ -1255,6 +1297,118 @@ export class DaemonConnection {
   sendTerminalInput(terminalId: string, message: TerminalInputMessage["message"]): void {
     const input: TerminalInputMessage = { type: "terminal_input", terminalId, message };
     this.sendEnvelope({ type: "session", message: input });
+  }
+
+  // ---- t32：流式听写（dictation_stream_*；结果按 dictationId 经事件关联） ----
+
+  /** 事件分发：先喂等待者（start 等 ack / finish 等 final），再广播回调。 */
+  private dispatchDictationEvent(event: DictationStreamEvent): void {
+    for (let i = this.dictationWaiters.length - 1; i >= 0; i -= 1) {
+      const waiter = this.dictationWaiters[i];
+      if (waiter.match(event)) {
+        this.dictationWaiters.splice(i, 1);
+        clearTimeout(waiter.timer);
+        waiter.settle(event);
+      }
+    }
+    this.events.onDictationEvent?.(event);
+  }
+
+  /** 注册一个听写事件等待者；超时以 error 事件（retryable true）落袋。 */
+  private waitDictationEvent(
+    dictationId: string,
+    match: (event: DictationStreamEvent) => boolean,
+    timeoutMs: number,
+    timeoutError: string,
+  ): Promise<DictationStreamEvent> {
+    return new Promise<DictationStreamEvent>((resolve) => {
+      const waiter: DictationWaiter = {
+        dictationId,
+        match,
+        settle: resolve,
+        timer: setTimeout(() => {
+          const index = this.dictationWaiters.indexOf(waiter);
+          if (index >= 0) this.dictationWaiters.splice(index, 1);
+          resolve({ kind: "error", dictationId, error: timeoutError, retryable: true });
+        }, timeoutMs),
+      };
+      this.dictationWaiters.push(waiter);
+    });
+  }
+
+  /** 发送听写流消息（无 requestId，fire-and-forget）。 */
+  private sendDictationMessage(message: DictationStreamMessage): void {
+    this.sendEnvelope({ type: "session", message });
+  }
+
+  /**
+   * 开始听写流：等 dictation_stream_ack（ackSeq=-1 的启动确认）或同 id 的
+   * error（模型缺失/STT 未就绪会在这里落袋）。录音帧在 ack 前由上层缓冲。
+   */
+  async startDictationStream(
+    dictationId: string,
+    format: string,
+    timeoutMs = DICTATION_START_TIMEOUT_MS,
+  ): Promise<void> {
+    if (this.state !== "connected" || !this.socket) {
+      throw new Error("未连接 daemon");
+    }
+    const done = this.waitDictationEvent(
+      dictationId,
+      (event) =>
+        event.dictationId === dictationId && (event.kind === "ack" || event.kind === "error"),
+      timeoutMs,
+      "听写启动超时",
+    );
+    this.sendDictationMessage({ type: "dictation_stream_start", dictationId, format });
+    const event = await done;
+    if (event.kind === "error") throw new Error(event.error);
+  }
+
+  /** 发送一帧录音（base64 PCM；seq 从 0 递增，调用方保证顺序）。 */
+  sendDictationStreamChunk(dictationId: string, seq: number, audio: string, format: string): void {
+    this.sendDictationMessage({ type: "dictation_stream_chunk", dictationId, seq, audio, format });
+  }
+
+  /**
+   * 结束听写流：发 finish + finalSeq，等 dictation_stream_final（最终文本）。
+   * finish_accepted 只表示 daemon 收尾中（final 由解码线程随后推出），不作为
+   * 完成信号；error / 超时都抛异常，上层按取消处理。
+   */
+  async finishDictationStream(
+    dictationId: string,
+    finalSeq: number,
+    timeoutMs = DICTATION_FINISH_TIMEOUT_MS,
+  ): Promise<{ text: string }> {
+    if (this.state !== "connected" || !this.socket) {
+      throw new Error("未连接 daemon");
+    }
+    const done = this.waitDictationEvent(
+      dictationId,
+      (event) =>
+        event.dictationId === dictationId && (event.kind === "final" || event.kind === "error"),
+      timeoutMs,
+      "听写识别超时",
+    );
+    this.sendDictationMessage({ type: "dictation_stream_finish", dictationId, finalSeq });
+    const event = await done;
+    if (event.kind === "error") throw new Error(event.error);
+    if (event.kind !== "final") throw new Error("听写收尾异常");
+    return { text: event.text };
+  }
+
+  /** 取消听写流（上滑取消/异常中断；daemon 弃流不回 final）。 */
+  cancelDictationStream(dictationId: string): void {
+    // 清掉同 id 的挂起等待者，避免 cancel 后又收到事件二次落袋。
+    for (let i = this.dictationWaiters.length - 1; i >= 0; i -= 1) {
+      const waiter = this.dictationWaiters[i];
+      if (waiter.dictationId === dictationId) {
+        this.dictationWaiters.splice(i, 1);
+        clearTimeout(waiter.timer);
+        waiter.settle({ kind: "error", dictationId, error: "已取消", retryable: false });
+      }
+    }
+    this.sendDictationMessage({ type: "dictation_stream_cancel", dictationId });
   }
 
   /** 打开新终端（工作区终端入口；返回 terminalId 供 subscribeTerminal）。 */
