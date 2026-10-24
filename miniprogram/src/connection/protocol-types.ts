@@ -951,6 +951,46 @@ export interface TerminalInputMessage {
     | { type: "resize"; rows: number; cols: number; intent?: "claim" | "update" };
 }
 
+// --- t32：流式听写（vendor 自 messages.ts Dictation Streaming 族） ---
+
+/**
+ * 听写流请求（messages.ts DictationStream*MessageSchema；fire-and-forget，
+ * 不带 requestId——结果与中间态都由 dictation_stream_* 推送按 dictationId 关联）。
+ */
+export type DictationStreamMessage =
+  | { type: "dictation_stream_start"; dictationId: string; format: string }
+  | {
+      type: "dictation_stream_chunk";
+      dictationId: string;
+      seq: number;
+      audio: string;
+      format: string;
+    }
+  | { type: "dictation_stream_finish"; dictationId: string; finalSeq: number }
+  | { type: "dictation_stream_cancel"; dictationId: string };
+
+/**
+ * 听写流推送事件（messages.ts dictation_stream_ack / partial / final / error /
+ * finish_accepted 五种，payload 均带 dictationId）。归一为带 kind 的联合，
+ * 错误事件保留 missingModelIds（模型缺失引导下载）。
+ */
+export type DictationStreamEvent =
+  | { kind: "ack"; dictationId: string; ackSeq: number }
+  | { kind: "finish_accepted"; dictationId: string; timeoutMs: number }
+  | { kind: "partial"; dictationId: string; text: string }
+  | { kind: "final"; dictationId: string; text: string }
+  | {
+      kind: "error";
+      dictationId: string;
+      error: string;
+      retryable: boolean;
+      reasonCode?: string;
+      missingModelIds?: string[];
+    };
+
+/** 小程序听写音频格式（daemon sherpa 本地 STT 输入：16kHz 16bit 单声道 PCM）。 */
+export const DICTATION_AUDIO_FORMAT = "audio/pcm;rate=16000;bits=16";
+
 /** MVP 关心的 daemon 主动推送 / 响应消息 */
 export type SessionNotificationMessage =
   | { type: "status"; payload: { status: "server_info" } & Record<string, unknown> }
@@ -2218,4 +2258,49 @@ export function parseSubscribeTerminalResponse(payload: unknown): SubscribeTermi
     };
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// t32：流式听写事件容错解析
+// ---------------------------------------------------------------------------
+
+/**
+ * dictation_stream_* 推送 → DictationStreamEvent。type 是 daemon 消息名，
+ * payload 归一为带 kind 的事件；未知/畸形载荷返回 null（上层忽略）。
+ */
+export function parseDictationEvent(type: string, payload: unknown): DictationStreamEvent | null {
+  if (!isRecord(payload)) return null;
+  const dictationId = str(payload.dictationId);
+  if (!dictationId) return null;
+  switch (type) {
+    case "dictation_stream_ack":
+      if (typeof payload.ackSeq !== "number") return null;
+      return { kind: "ack", dictationId, ackSeq: payload.ackSeq };
+    case "dictation_stream_finish_accepted":
+      return {
+        kind: "finish_accepted",
+        dictationId,
+        timeoutMs: typeof payload.timeoutMs === "number" ? payload.timeoutMs : 0,
+      };
+    case "dictation_stream_partial":
+      return { kind: "partial", dictationId, text: str(payload.text) ?? "" };
+    case "dictation_stream_final":
+      return { kind: "final", dictationId, text: str(payload.text) ?? "" };
+    case "dictation_stream_error": {
+      const missingRaw = Array.isArray(payload.missingModelIds) ? payload.missingModelIds : [];
+      const missingModelIds = missingRaw.filter(
+        (id): id is string => typeof id === "string" && id.length > 0,
+      );
+      return {
+        kind: "error",
+        dictationId,
+        error: str(payload.error) ?? "听写失败",
+        retryable: payload.retryable === true,
+        ...(str(payload.reasonCode) ? { reasonCode: str(payload.reasonCode) ?? "" } : {}),
+        ...(missingModelIds.length > 0 ? { missingModelIds } : {}),
+      };
+    }
+    default:
+      return null;
+  }
 }

@@ -192,6 +192,13 @@ const shapes = {
       LINE,
     );
   },
+  mic: (cov, c) => {
+    // 麦克风（t32 语音输入）：胶囊 + 下颌弧 + 立柱底座
+    c.covRoundRect(cov, 30, 13, 21, 34, 10.5, LINE);
+    c.covArc(cov, 40.5, 43, 14.5, LINE, 20, 160);
+    c.covLine(cov, 40.5, 57.5, 40.5, 66, LINE);
+    c.covLine(cov, 31, 66, 50, 66, LINE);
+  },
   expand: (cov, c) => {
     c.covRoundRect(cov, 12, 18, 57, 45, 7, LINE);
     c.covLine(cov, 49, 18, 49, 63, LINE);
@@ -412,7 +419,8 @@ const MANIFEST_ENTRIES = [
   ["plus", "加号（新建/附件）", ["inverse"]],
   ["send", "发送（纸飞机）", ["active", "inverse"]],
   ["paperclip", "附件（回形针）", []],
-  ["close", "关闭（×）", []],
+  ["close", "关闭（×）", ["inverse"]],
+  ["mic", "麦克风（语音输入）", ["inverse"]],
   ["back", "返回（左箭头）", []],
   ["chevron-down", "下箭头（选择器）", []],
   ["expand", "展开栏（右侧轨道）", []],

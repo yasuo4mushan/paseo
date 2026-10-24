@@ -22,6 +22,7 @@ import type {
   AgentSnapshot,
   AgentStreamPayload,
   DaemonStatus,
+  DictationStreamEvent,
   FileUpdatePush,
   ServerInfo,
   SubagentUpdate,
@@ -83,6 +84,8 @@ class ConnectionManager {
   private terminalExitListeners = new Set<
     (payload: { terminalId: string; error?: string }) => void
   >();
+  /** t32：听写流推送（partial 上屏 / final 插入由 use-dictation 消费）。 */
+  private dictationListeners = new Set<(event: DictationStreamEvent) => void>();
   private disconnectListeners = new Set<() => void>();
 
   constructor() {
@@ -206,6 +209,12 @@ class ConnectionManager {
     return () => this.terminalExitListeners.delete(listener);
   }
 
+  /** t32：听写流事件（ack/partial/final/error；按 dictationId 过滤在订阅侧做）。 */
+  onDictationEvent(listener: (event: DictationStreamEvent) => void): () => void {
+    this.dictationListeners.add(listener);
+    return () => this.dictationListeners.delete(listener);
+  }
+
   private notify(): void {
     for (const listener of this.listeners) listener();
   }
@@ -321,6 +330,9 @@ class ConnectionManager {
         },
         onTerminalExit: (payload) => {
           for (const listener of this.terminalExitListeners) listener(payload);
+        },
+        onDictationEvent: (event) => {
+          for (const listener of this.dictationListeners) listener(event);
         },
         onDisconnect: () => {
           this.setState({ status: "disconnected" });

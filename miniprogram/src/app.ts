@@ -5,12 +5,9 @@ import { permissionStore } from "./permission/permission-store";
 import { attentionStore } from "./stores/attention-store";
 import { workspaceStore } from "./stores/workspace-store";
 import { sessionStore } from "./stores/session-store";
+import { dictationStore } from "./stores/dictation-store";
 import { safeNavigateTo } from "./utils/navigation";
-import {
-  normalizeThemePreference,
-  themeStore,
-  type ThemeChromeColors,
-} from "./stores/theme-store";
+import { normalizeThemePreference, themeStore, type ThemeChromeColors } from "./stores/theme-store";
 // 全局设计 tokens 与共享样式（app.wxss）：Taro 的 app 入口不会自动收集
 // src/app.css，必须在入口显式 import，否则全局样式静默丢失（t10 踩坑）。
 import "./app.css";
@@ -71,8 +68,7 @@ function installTheme(): void {
     // t22：窗口底色（下拉/回弹露出区域）与 --bg 同步，避免手动深色档边缘闪白。
     Taro.setBackgroundColor({ backgroundColor: colors.pageBackgroundColor }).catch(() => {});
   };
-  const systemTheme =
-    (Taro.getSystemInfoSync().theme as string | undefined) ?? "light";
+  const systemTheme = (Taro.getSystemInfoSync().theme as string | undefined) ?? "light";
   themeStore.install(
     {
       get: () => {
@@ -85,8 +81,9 @@ function installTheme(): void {
     systemTheme,
   );
   // wx.onThemeChange(callback)：Taro 类型把它标成了 option 对象，这里按实际 API 断言。
-  const onThemeChange = (Taro as unknown as { onThemeChange?: (cb: (res: { theme: string }) => void) => void })
-    .onThemeChange;
+  const onThemeChange = (
+    Taro as unknown as { onThemeChange?: (cb: (res: { theme: string }) => void) => void }
+  ).onThemeChange;
   onThemeChange?.((res) => {
     themeStore.setSystemTheme(res.theme);
   });
@@ -115,12 +112,35 @@ function App({ children }: PropsWithChildren) {
             safeNavigateTo?: (url: string) => Promise<unknown>;
             /** t20：验收收尾断开连接（devtools 实例常驻，避免污染下一次运行）。 */
             disconnect?: () => Promise<void>;
+            /**
+             * t32：听写 UI 验收桥（devtools 模拟器无声卡）：begin 走 noAudio
+             * 注入路径（不起录音器/不发 WS，仅驱动状态机），partial/final 由
+             * 脚本注入；权限拒绝态可强制置位截「按钮置灰」截图。
+             */
+            dictation?: {
+              begin: () => boolean;
+              slideUp: (active: boolean) => void;
+              release: () => void;
+              injectPartial: (text: string) => void;
+              injectFinal: (text: string) => void;
+              setPermissionDenied: (denied: boolean) => void;
+              /** 换入静音音频源（start/stop 空转、stop 同步回报 onStop）：真实
+               *  touch 手势可走完整 store→transport→daemon 路径而不依赖模拟器声卡。 */
+              installSilentAudio: () => void;
+              snapshot: () => { phase: string; partialText: string; slideUp: boolean };
+            };
             downloadLog?: Array<Record<string, unknown>>;
           };
         }
       | undefined;
     if (app && !app.__automation) {
-      app.__automation = { permissionStore, attentionStore, workspaceStore, sessionStore, downloadLog: [] };
+      app.__automation = {
+        permissionStore,
+        attentionStore,
+        workspaceStore,
+        sessionStore,
+        downloadLog: [],
+      };
     } else if (app?.__automation && !app.__automation.downloadLog) {
       app.__automation.downloadLog = [];
     }
@@ -134,6 +154,33 @@ function App({ children }: PropsWithChildren) {
       app.__automation.disconnect = async () => {
         const { connectionManager } = await import("./connection/connection-manager");
         connectionManager.disconnect();
+      };
+    }
+    if (app?.__automation && !app.__automation.dictation) {
+      app.__automation.dictation = {
+        begin: () => dictationStore.begin({ noAudio: true }),
+        slideUp: (active) => dictationStore.setSlideUp(active),
+        release: () => dictationStore.release(),
+        injectPartial: (text) => dictationStore.debugInjectPartial(text),
+        injectFinal: (text) => dictationStore.debugInjectFinal(text),
+        setPermissionDenied: (denied) => dictationStore.setPermissionDenied(denied),
+        installSilentAudio: () =>
+          dictationStore.installAudioSource((handlers) => ({
+            start() {},
+            stop() {
+              handlers.onStop();
+            },
+          })),
+        snapshot: () => {
+          const snap = dictationStore.getSnapshot();
+          return {
+            phase: snap.phase,
+            partialText: snap.partialText,
+            slideUp: snap.slideUp,
+            permissionDenied: snap.permissionDenied,
+            error: snap.error,
+          };
+        },
       };
     }
     if (app?.__automation && !app.__automation.deleteAgent) {
