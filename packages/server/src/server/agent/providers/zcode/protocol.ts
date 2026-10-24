@@ -23,6 +23,13 @@ import { JsonlFrameDecoder } from "../jsonl-frame-decoder.js";
 import { terminateWithTreeKill } from "../../../../utils/tree-kill.js";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+/**
+ * session/create on a freshly spawned app-server includes process start and
+ * init; on slower machines (first catalog probe after boot) it can exceed 30s
+ * by a wide margin — observed 30s+ timeouts on a Mac mini cold start. Warm
+ * session/create returns in milliseconds, so the generous ceiling is safe.
+ */
+export const ZCODE_COLD_START_TIMEOUT_MS = 120_000;
 const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 2_000;
 const FORCE_SHUTDOWN_TIMEOUT_MS = 1_000;
 const STDERR_BUFFER_LIMIT = 8192;

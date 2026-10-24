@@ -26,6 +26,7 @@ import {
   extractZcodeSessionId,
   formatZcodeTurnError,
   parseZcodeStreamEvent,
+  ZCODE_COLD_START_TIMEOUT_MS,
   ZCODE_RUNTIME_PREFERENCES,
   ZCodeAppServerClient,
   type ZcodeStreamEvent,
@@ -926,9 +927,13 @@ export class ZcodeAgentSession implements AgentSession {
       }
     } else {
       const cwd = this.config.cwd || process.cwd();
-      const createResult = await client.request("session/create", {
-        workspace: { workspacePath: cwd, workspaceKey: cwd },
-      });
+      const createResult = await client.request(
+        "session/create",
+        {
+          workspace: { workspacePath: cwd, workspaceKey: cwd },
+        },
+        ZCODE_COLD_START_TIMEOUT_MS,
+      );
       const sessionId = extractZcodeSessionId(createResult);
       if (!sessionId) {
         throw new Error("zcode session/create did not return a sessionId");
@@ -1212,9 +1217,13 @@ export class ZcodeAgentClient implements AgentClient {
     const dispose = (): Promise<void> => client.dispose().catch(() => undefined);
     context?.signal.addEventListener("abort", dispose, { once: true });
     try {
-      const created = await client.request("session/create", {
-        workspace: { workspacePath: cwd, workspaceKey: cwd },
-      });
+      const created = await client.request(
+        "session/create",
+        {
+          workspace: { workspacePath: cwd, workspaceKey: cwd },
+        },
+        ZCODE_COLD_START_TIMEOUT_MS,
+      );
       const sessionId = extractZcodeSessionId(created);
       if (!sessionId) throw new Error("zcode session/create did not return a sessionId");
       const snapshot = await client.request("session/read", {
