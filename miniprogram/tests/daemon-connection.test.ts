@@ -94,6 +94,14 @@ describe("DaemonConnection", () => {
     expect(hello.auth).toEqual({ kind: "password", password: "secret" });
   });
 
+  // t31：不声明 all_providers 时 daemon 只下发 claude/codex/opencode（LEGACY_PROVIDER_IDS），
+  // zcode/kimi/qwen 等 provider 的 agent 与目录会被整体过滤。
+  it("hello 声明 all_providers 能力，且不声明 owned_subscriptions（保留 legacy 推送）", async () => {
+    const { server } = await connectedHarness();
+    const hello = lastHelloFrame(server);
+    expect(hello.capabilities).toEqual({ all_providers: true });
+  });
+
   it("fetchAgents：请求形状正确并解析响应", async () => {
     const { conn, server } = await connectedHarness();
     const promise = conn.fetchAgents();

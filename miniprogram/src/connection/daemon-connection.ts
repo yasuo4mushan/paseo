@@ -343,9 +343,14 @@ export class DaemonConnection {
         ? { auth: { kind: "password", password: this.options.password } }
         : {}),
       ...(this.options.appVersion ? { appVersion: this.options.appVersion } : {}),
-      // 不声明 capabilities：走 legacy 路径即可拿到隐式 agent_stream 推送
+      // t31：必须声明 all_providers——daemon 对未声明该能力且 appVersion < 0.1.45 的
+      // 客户端只下发 LEGACY_PROVIDER_IDS（claude/codex/opencode），zcode/kimi/qwen 等
+      // provider 的 agent 与 provider 目录会被整体过滤（session.ts isProviderVisibleToClient）。
+      // 本端解析器（parseAgentSnapshot 等）接受任意 provider 字符串，可以安全声明。
+      // 仍不声明 owned_subscriptions：保留 legacy 隐式 agent_stream 推送路径
       // （server session.ts 的 COMPAT(ownedSubscriptions) 分支），同时
-      // agent.timeline.set_subscription.request 仍然生效。
+      // agent.timeline.set_subscription.request 依然生效。
+      capabilities: { all_providers: true },
     };
     this.sendEnvelope(hello);
   }
