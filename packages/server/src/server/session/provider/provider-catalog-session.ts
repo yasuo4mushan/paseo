@@ -70,6 +70,14 @@ export class ProviderCatalogSession {
   private readonly providerSnapshotManager: ProviderSnapshotManager;
   private readonly logger: pino.Logger;
   private unsubscribeSnapshotEvents: (() => void) | null = null;
+  /**
+   * t31: an error snapshot entry (CLI not logged in, probe timeout) is served
+   * stale forever without this — the read path only warmed missing/loading
+   * entries, so logging the CLI in didn't clear the error until a daemon
+   * restart. Re-probe errored entries at most once per window.
+   */
+  private static readonly ERROR_REPROBE_MS = 30_000;
+  private readonly errorProbeAt = new Map<string, number>();
 
   constructor(options: ProviderCatalogSessionOptions) {
     this.host = options.host;
@@ -324,11 +332,22 @@ export class ProviderCatalogSession {
     if (entry && !entry.enabled) {
       return entry;
     }
-    if (!entry || entry.status === "loading") {
+    const reprobeKey = `${cwd ?? "*"}\u0000${provider}`;
+    const shouldReprobeError =
+      entry?.status === "error" &&
+      Date.now() - (this.errorProbeAt.get(reprobeKey) ?? 0) >
+        ProviderCatalogSession.ERROR_REPROBE_MS;
+    if (!entry || entry.status === "loading" || shouldReprobeError) {
+      if (shouldReprobeError) {
+        this.errorProbeAt.set(reprobeKey, Date.now());
+      }
       // Awaits the in-flight warmup (deduped per-cwd) so old clients still get
       // a resolved answer rather than a loading placeholder.
       await manager.warmUpSnapshotForCwd({ cwd, providers: [provider] });
       entry = findEntry();
+      if (entry?.status !== "error") {
+        this.errorProbeAt.delete(reprobeKey);
+      }
     }
     return entry;
   }
