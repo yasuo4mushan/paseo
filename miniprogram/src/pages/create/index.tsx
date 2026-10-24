@@ -109,6 +109,10 @@ export default function CreateAgentPage() {
   const [providers, setProviders] = useState<ProviderAvailability[] | null>(null);
   const [models, setModels] = useState<ProviderModelDefinition[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
+  // t31-d：目录拉取失败原因（daemon error / 超时），空 = 成功或未拉取
+  const [catalogError, setCatalogError] = useState("");
+  // 重试计数：仅作为 effect 重触发键
+  const [catalogAttempt, setCatalogAttempt] = useState(0);
 
   // 提交
   const [prompt, setPrompt] = useState("");
@@ -183,7 +187,7 @@ export default function CreateAgentPage() {
   }, [connected, tab]);
 
   // ---- provider + 文件夹 → 模型目录（级联：换任一即重拉） ----
-  const catalogKey = `${wizard.provider}\u0000${wizard.folder?.path ?? ""}`;
+  const catalogKey = `${wizard.provider}\u0000${wizard.folder?.path ?? ""}\u0000${catalogAttempt}`;
   useEffect(() => {
     const provider = wizard.provider;
     const folderPath = wizard.folder?.path;
@@ -193,33 +197,43 @@ export default function CreateAgentPage() {
     let disposed = false;
     setCatalogLoading(true);
     setModels([]);
+    setCatalogError("");
     void (async () => {
+      // t31-d：错误必须透出（超时/daemon error payload）——静默空列表会表现成
+      // 「模型与 thinking 无解释地为空」。daemon 冷快照探测 CLI 可能要几十秒。
+      let result: { models: ProviderModelDefinition[]; error: string | null };
       try {
-        const modelList = await conn.listProviderModels(provider, folderPath).catch(() => []);
-        if (disposed) return;
-        setModels(modelList);
-        // 便利预选：默认模型 + 其默认 thinking 档（不移动步骤）
-        setWizard((prev) => {
-          if (prev.provider !== provider || prev.folder?.path !== folderPath) {
-            return prev;
-          }
-          const fallbackIndex = modelList.findIndex((m) => m.isDefault);
-          const index = fallbackIndex >= 0 ? fallbackIndex : 0;
-          const model = modelList[index];
-          return {
-            ...prev,
-            modelId: model?.id ?? "",
-            thinkingOptionId: defaultThinkingFor(model),
-          };
-        });
-      } finally {
-        if (!disposed) setCatalogLoading(false);
+        result = await conn.listProviderModels(provider, folderPath);
+      } catch (err) {
+        result = {
+          models: [],
+          error: err instanceof Error ? err.message : String(err),
+        };
       }
+      if (disposed) return;
+      setModels(result.models);
+      setCatalogError(result.error ?? "");
+      // 便利预选：默认模型 + 其默认 thinking 档（不移动步骤）
+      setWizard((prev) => {
+        if (prev.provider !== provider || prev.folder?.path !== folderPath) {
+          return prev;
+        }
+        const modelList = result.models;
+        const fallbackIndex = modelList.findIndex((m) => m.isDefault);
+        const index = fallbackIndex >= 0 ? fallbackIndex : 0;
+        const model = modelList[index];
+        return {
+          ...prev,
+          modelId: model?.id ?? "",
+          thinkingOptionId: defaultThinkingFor(model),
+        };
+      });
+      if (!disposed) setCatalogLoading(false);
     })();
     return () => {
       disposed = true;
     };
-    // catalogKey 拆开依赖会重复触发；字符串键精确对齐"provider+文件夹"组合
+    // catalogKey 拆开依赖会重复触发；字符串键精确对齐"provider+文件夹+重试"组合
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogKey]);
 
@@ -566,7 +580,9 @@ export default function CreateAgentPage() {
             <View className="card">
               <View className="field-label">模型</View>
               {catalogLoading ? (
-                <View className="loading-tip">读取模型目录…</View>
+                <View className="loading-tip">
+                  读取模型目录…（首次探测需在设备上运行该框架的 CLI，可能要几十秒）
+                </View>
               ) : models.length > 0 ? (
                 <Picker
                   mode="selector"
@@ -588,6 +604,21 @@ export default function CreateAgentPage() {
                     <Image className="icon icon-sm ws-bar-arrow" src={iconUrl("chevron-down")} />
                   </View>
                 </Picker>
+              ) : catalogError ? (
+                <View>
+                  <View className="field-error">模型目录拉取失败：{catalogError}</View>
+                  <View className="faint wiz-step-hint">
+                    常见原因：该框架未登录/授权、CLI 冷启动探测超时。可重试；也可直接下一步
+                    使用默认模型创建。
+                  </View>
+                  <Button
+                    className="btn btn-mini btn-ghost"
+                    loading={catalogLoading}
+                    onClick={() => setCatalogAttempt((n) => n + 1)}
+                  >
+                    重试
+                  </Button>
+                </View>
               ) : (
                 <View className="muted">该 provider 无模型目录，将使用默认模型</View>
               )}
@@ -625,6 +656,14 @@ export default function CreateAgentPage() {
                         {option.label}
                       </View>
                     ))}
+                  </View>
+                ) : models.length === 0 && catalogError ? (
+                  <View>
+                    <View className="field-error">模型目录拉取失败：{catalogError}</View>
+                    <View className="faint wiz-step-hint">
+                      thinking 档位来自模型目录；模型目录未取到时这里为空。回到「模型」步重试
+                      或直接使用 provider 默认创建。
+                    </View>
                   </View>
                 ) : (
                   <View className="muted">所选模型无 thinking 档位，使用 provider 默认</View>

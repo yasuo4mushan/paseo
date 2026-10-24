@@ -86,4 +86,28 @@ describe.skipIf(!reachable)("集成：直连真实 daemon", () => {
     expect(subscriptionId!.length).toBeGreaterThan(0);
     conn.close();
   });
+
+  // t31-d：provider 目录回归——codex 在真实 daemon 上有模型目录与 thinking 档位，
+  // 且解析器不把 error 静默折叠成空列表（「模型/thinking 为空」缺陷的线上路径）。
+  it("listProviderModels：codex 目录非空且含 thinking 档位", { timeout: 90_000 }, async () => {
+    const conn = new DaemonConnection(() => createNodeSocket(DAEMON_URL), {
+      clientId: "mp-integration-direct",
+    });
+    await conn.connect();
+    const providers = await conn.listAvailableProviders();
+    const codex = providers.find((p) => p.provider === "codex");
+    if (!codex?.available) {
+      // 本机 daemon 未装 codex 时不做断言（目录探测本身仍应不抛错）
+      const result = await conn.listProviderModels("codex");
+      expect(result.error).toBeTruthy();
+      conn.close();
+      return;
+    }
+    const result = await conn.listProviderModels("codex");
+    expect(result.error).toBeNull();
+    expect(result.models.length).toBeGreaterThan(0);
+    const withThinking = result.models.find((m) => (m.thinkingOptions ?? []).length > 0);
+    expect(withThinking).toBeTruthy();
+    conn.close();
+  });
 });

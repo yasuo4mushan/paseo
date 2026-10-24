@@ -296,6 +296,18 @@ export interface ProviderMode {
   description?: string;
 }
 
+/**
+ * list_provider_models 的完整结果（t31-d）。
+ * daemon 失败时（provider 认证失败/CLI 探测超时/不可用）只回 {provider, error}，
+ * models 缺席——错误必须透出给 UI，静默映射成空列表会让「模型/thinking 为空」
+ * 变成无解释的空白（见 t31-d 根因）。
+ */
+export interface ProviderModelsResult {
+  models: ProviderModelDefinition[];
+  /** daemon 侧错误原文；null = 成功（models 可能为空 = provider 确实无目录）。 */
+  error: string | null;
+}
+
 /** messages.ts: AgentPermissionActionSchema */
 export interface PermissionAction {
   id: string;
@@ -1435,6 +1447,15 @@ export function parseProviderModelsResponse(payload: unknown): ProviderModelDefi
       };
     })
     .filter((m): m is ProviderModelDefinition => m !== null);
+}
+
+/** t31-d：模型目录 + daemon 错误透出（错误 payload 的 models 缺席 ≠ 空目录）。 */
+export function parseProviderModelsResult(payload: unknown): ProviderModelsResult | null {
+  if (!isRecord(payload)) return null;
+  return {
+    models: parseProviderModelsResponse(payload) ?? [],
+    error: nullableStr(payload.error),
+  };
 }
 
 export function parseProviderModesResponse(payload: unknown): ProviderMode[] | null {
