@@ -1,6 +1,6 @@
 {
   "name": "@aaswitch/desktop",
-  "version": "0.12.0-beta.2",
+  "version": "1.0.0",
   "private": true,
   "description": "aaswitch desktop app (Electron wrapper, based on Paseo)",
   "homepage": "https://paseo.sh",
