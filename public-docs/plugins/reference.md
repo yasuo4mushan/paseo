@@ -32,7 +32,7 @@ Plugin code is trusted and unsandboxed. Client surfaces run in the Paseo app. Ba
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  aaswitch-plugin.json Pre-rebrand sources that still ship a `paseo-plugin.json` manifest keep installing; both filenames are accepted during the compatibility window.
   index.client.tsx
   index.server.ts
   client/greeting.tsx
@@ -42,7 +42,7 @@ my-plugin/
   tsconfig.json
 ```
 
-The required root manifest is `paseo-plugin.json`:
+The required root manifest is `aaswitch-plugin.json`:
 
 ```json
 {
@@ -62,7 +62,7 @@ The required root manifest is `paseo-plugin.json`:
 | `requirements` | No       | Supported Paseo versions, described below.                                                |
 | `build`        | No       | Preparation commands, described in the CLI reference.                                     |
 
-Paths are relative to `paseo-plugin.json`, use forward slashes, and cannot contain `..`
+Paths are relative to `aaswitch-plugin.json`, use forward slashes, and cannot contain `..`
 segments. Registry listings for visual plugins require an interface image even though `media` is
 optional in the runtime manifest. See [icons and screenshots](/docs/plugins/publishing#icons-and-screenshots)
 for accepted formats and listing requirements.
@@ -821,7 +821,7 @@ Creation request
   → resolve defaults and validate provider configuration
   → derive launch configuration with Paseo runtime tools and daemon prompt
   → agent.session_open hooks (same ordering; env only)
-  → set PASEO_AGENT_ID and PASEO_AGENT_CWD
+  → set AASWITCH_AGENT_ID and AASWITCH_AGENT_CWD
   → open provider session and save agent configuration
 ```
 
@@ -2182,7 +2182,7 @@ sequence, and message.
 Paseo retains up to 500 entries and 256 KiB per plugin in memory. Individual lines are capped at
 16 KiB. Reload, disable, compilation failure, initialization failure, and process failure retain the
 tail. Removing the plugin clears it, and a daemon restart starts a new tail. Structured copies are
-also written to the daemon log at `$PASEO_HOME/daemon.log`.
+also written to the daemon log at `$AASWITCH_HOME/daemon.log`.
 
 Only daemon-side output is captured. Logs from client surfaces remain in the app runtime. Do not log
 credentials, access tokens, or other secrets: connected users can read the retained tail, and the
@@ -2331,13 +2331,13 @@ Paseo resolves an identifier in this order:
 The default registry is `https://plugins.paseo.sh`. Browse [published plugins](https://paseo.sh/plugins)
 and install with `aaswitch plugin add owner/slug`. Registry records own the revision and plugin path.
 Use `git:owner/repository` for explicit GitHub shorthand or a full Git URL.
-Set `PASEO_PLUGIN_REGISTRY` to use a self-hosted default URL, including a path prefix.
+Set `AASWITCH_PLUGIN_REGISTRY` to use a self-hosted default URL, including a path prefix.
 Private registry credentials use `pluginRegistries: { "host": { "authorization": "Bearer token" } }`
 in daemon config. Restart the daemon after changing these startup settings. Credentials go only
 to that registry, never to artifact hosts or redirects. Installed plugins retain their recorded
 source and registry URL when defaults change.
 
-Directory lookup happens on the daemon host. The app uses the `paseo-plugin.json` ID; the CLI
+Directory lookup happens on the daemon host. The app uses the `aaswitch-plugin.json` ID; the CLI
 accepts `--id <runtime-id>` to override it. An existing installation ID is rejected without changing
 its enabled state or files.
 

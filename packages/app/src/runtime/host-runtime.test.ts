@@ -277,7 +277,7 @@ class FakeDaemonClient {
 
 afterEach(() => {
   vi.useRealTimers();
-  delete (globalThis as Record<string, unknown>).__PASEO_INITIAL_DAEMON_CONNECTION__;
+  delete (globalThis as Record<string, unknown>).__AASWITCH_INITIAL_DAEMON_CONNECTION__;
   delete (globalThis as { window?: unknown }).window;
 });
 
@@ -4019,7 +4019,7 @@ describe("readInitialDaemonConnectionHint", () => {
   });
 
   it("parses a valid listen-only hint", () => {
-    (globalThis as Record<string, unknown>).__PASEO_INITIAL_DAEMON_CONNECTION__ = {
+    (globalThis as Record<string, unknown>).__AASWITCH_INITIAL_DAEMON_CONNECTION__ = {
       listen: "localhost:6767",
     };
     expect(readInitialDaemonConnectionHint({ isWebRuntime: true })).toEqual({
@@ -4029,7 +4029,7 @@ describe("readInitialDaemonConnectionHint", () => {
   });
 
   it("preserves useTls when explicitly true", () => {
-    (globalThis as Record<string, unknown>).__PASEO_INITIAL_DAEMON_CONNECTION__ = {
+    (globalThis as Record<string, unknown>).__AASWITCH_INITIAL_DAEMON_CONNECTION__ = {
       listen: "paseo.example.com:443",
       useTls: true,
     };
@@ -4040,10 +4040,11 @@ describe("readInitialDaemonConnectionHint", () => {
   });
 
   it("ignores invalid shapes", () => {
-    (globalThis as Record<string, unknown>).__PASEO_INITIAL_DAEMON_CONNECTION__ = "localhost:6767";
+    (globalThis as Record<string, unknown>).__AASWITCH_INITIAL_DAEMON_CONNECTION__ =
+      "localhost:6767";
     expect(readInitialDaemonConnectionHint({ isWebRuntime: true })).toBeNull();
 
-    (globalThis as Record<string, unknown>).__PASEO_INITIAL_DAEMON_CONNECTION__ = {
+    (globalThis as Record<string, unknown>).__AASWITCH_INITIAL_DAEMON_CONNECTION__ = {
       useTls: true,
     };
     expect(readInitialDaemonConnectionHint({ isWebRuntime: true })).toBeNull();

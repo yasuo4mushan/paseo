@@ -236,7 +236,7 @@ export function createPluginCommand(): Command {
         "<source>",
         "Registry owner/slug or host/owner/slug, host directory, explicit git:owner/repo or Git URL, or npm: source",
       )
-      .option("--id <id>", "Runtime plugin ID (defaults to paseo-plugin.json id)")
+      .option("--id <id>", "Runtime plugin ID (defaults to aaswitch-plugin.json id)")
       .option("--ref <ref>", "Git branch, tag, or commit")
       .option("--path <path>", "Legacy form of the :plugin/path source suffix"),
   ).action(withOutput(runPluginInstallCommand));

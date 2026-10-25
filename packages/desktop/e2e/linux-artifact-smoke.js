@@ -9,7 +9,7 @@ async function main() {
   if (process.getuid() === 0) throw new Error("Launch the smoke as an unprivileged user");
   const release = path.resolve(process.argv[2]);
   const portableSandbox = process.argv[3] === "enabled";
-  const artifactRoot = process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR;
+  const artifactRoot = process.env.AASWITCH_DESKTOP_SMOKE_ARTIFACT_DIR;
   const installedOnly = process.argv.includes("--installed-only");
   const extracted = fs.mkdtempSync(path.join(os.tmpdir(), "paseo-linux-artifacts-"));
   const findArtifact = (suffix) => {
@@ -18,7 +18,7 @@ async function main() {
     return path.join(release, matches[0]);
   };
   try {
-    process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "installed");
+    process.env.AASWITCH_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "installed");
     const helper = fs.statSync("/opt/aaswitch/chrome-sandbox");
     if (helper.uid !== 0 || (helper.mode & 0o7777) !== 0o4755) {
       throw new Error("Installed native package did not provide a root-owned 4755 helper");
@@ -34,7 +34,7 @@ async function main() {
     if (/^Exec=.*--no-sandbox/m.test(desktopEntry)) {
       throw new Error("AppImage desktop entry bypasses runtime sandbox policy");
     }
-    process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "appimage");
+    process.env.AASWITCH_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "appimage");
     await smokePackagedDesktopApp({
       appPath: appDir,
       executablePath: appImage,
@@ -48,7 +48,7 @@ async function main() {
     const appPath = fs.existsSync(path.join(tarDir, "aaswitch"))
       ? tarDir
       : path.join(tarDir, fs.readdirSync(tarDir)[0]);
-    process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "tar");
+    process.env.AASWITCH_DESKTOP_SMOKE_ARTIFACT_DIR = path.join(artifactRoot, "tar");
     await smokePackagedDesktopApp({ appPath, expectedSandbox: portableSandbox });
   } finally {
     fs.rmSync(extracted, { recursive: true, force: true });

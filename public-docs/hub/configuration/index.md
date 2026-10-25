@@ -98,14 +98,14 @@ Dry-run validates each document against Hub without storing a revision. Deployme
 Origin precedence:
 
 1. `--hub`
-2. `PASEO_HUB_URL`
+2. `AASWITCH_HUB_URL`
 3. Active stored login
 4. `https://hub.paseo.sh`
 
 Credential precedence:
 
 1. `--api-key`
-2. `PASEO_HUB_API_KEY`
+2. `AASWITCH_HUB_API_KEY`
 3. Stored login for the exact resolved origin
 
 Flags and environment keys are not stored. Endpoint and credential behavior is unchanged between deploy and dry-run.

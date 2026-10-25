@@ -32,7 +32,7 @@ export const OPENCODE_PLUGIN_SOURCE = [
   "let pendingHook = Promise.resolve();",
   "",
   "function runPaseoHook(event) {",
-  "  if (!process.env.PASEO_TERMINAL_ID) return;",
+  "  if (!process.env.AASWITCH_TERMINAL_ID && !process.env.PASEO_TERMINAL_ID) return;",
   "  pendingHook = pendingHook.then(async () => {",
   "    try {",
   '      const child = Bun.spawn(["paseo", "hooks", "opencode", event], {',

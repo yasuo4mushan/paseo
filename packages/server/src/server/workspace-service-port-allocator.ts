@@ -60,6 +60,12 @@ async function allocatePortFromScript(options: {
       {
         cwd: options.cwd,
         envOverlay: {
+          // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+          // Port scripts are user-authored; both spellings stay exported.
+          AASWITCH_SCRIPTNAME: options.scriptName,
+          AASWITCH_WORKSPACE_ID: options.workspaceId,
+          AASWITCH_BRANCH_NAME: options.branchName ?? "",
+          AASWITCH_WORKTREE_PATH: options.cwd,
           PASEO_SCRIPTNAME: options.scriptName,
           PASEO_WORKSPACE_ID: options.workspaceId,
           PASEO_BRANCH_NAME: options.branchName ?? "",

@@ -38,7 +38,7 @@ fill "id=\"direct-password-input\"" "${PASSWORD}"
 wait stable
 press "id=\"direct-host-submit\""
 wait stable
-open "${APP_ID}" "paseo://settings"
+open "${APP_ID}" "aaswitch://settings"
 wait "label=\"Connections\"" 10000
 press "label=\"Connections\""
 wait stable

@@ -104,7 +104,7 @@ npm run format                       # Auto-format with Biome
 npm run format:check                 # Check formatting without writing
 ```
 
-Repo dev commands use checkout-local state by default. In this checkout, `PASEO_HOME` resolves to `.dev/paseo-home`, and `npm run cli -- ...` targets that same dev home automatically. The packaged desktop app and production-style daemon keep using `~/.paseo` on port `6767`.
+Repo dev commands use checkout-local state by default. In this checkout, `AASWITCH_HOME` resolves to `.dev/aaswitch-home`, and `npm run cli -- ...` targets that same dev home automatically. The packaged desktop app and production-style daemon keep using `~/.aaswitch` on port `6767`. The pre-rebrand `PASEO_*` env names and `~/.paseo` home still resolve for one compatibility window (COMPAT(paseoNames)).
 
 See [docs/development.md](docs/development.md) for full setup, build sync requirements, and debugging.
 
@@ -193,4 +193,4 @@ The app runs on iOS, Android, web (browser), and web (Electron desktop). Code is
 
 ## Debugging
 
-Find the complete daemon logs and traces in the $PASEO_HOME/daemon.log
+Find the complete daemon logs and traces in the $AASWITCH_HOME/daemon.log

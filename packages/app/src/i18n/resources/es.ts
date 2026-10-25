@@ -1460,7 +1460,7 @@ export const es: TranslationResources = {
       fullStatus: {
         title: "Estado completo",
         modalTitle: "EstadoDaemon",
-        hint: "Ejecuta`paseo daemon status`y muestra la salida.",
+        hint: "Ejecuta`aaswitch daemon status`y muestra la salida.",
         view: "Ver estado",
         copied: "Estado copiado al portapapeles.",
         fetchFailed: "No se pudo recuperar el estado del demonio:{{message}}",
@@ -2963,7 +2963,7 @@ export const es: TranslationResources = {
         newScript: "Nuevo guión",
         editScript: "Editar{{name}}",
         runAsService: "Ejecutar como servicio",
-        serviceHint: "aaswitchsupervisa el proceso y asigna un puerto vía $PASEO_PORT",
+        serviceHint: "aaswitch supervisa el proceso y asigna un puerto vía $AASWITCH_PORT",
         actions: {
           add: "Agregar guión",
           edit: "Editar",

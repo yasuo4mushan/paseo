@@ -1,7 +1,12 @@
 import { Command } from "commander";
 import { resolveHookActivity, type AgentHookActivityState } from "@aaswitch/server/agent-hooks";
 
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Terminals export both spellings; read the AASWITCH_* one first.
 interface HookEnvironment {
+  AASWITCH_TERMINAL_ID?: string;
+  AASWITCH_ACTIVITY_TOKEN?: string;
+  AASWITCH_TERMINAL_ACTIVITY_URL?: string;
   PASEO_TERMINAL_ID?: string;
   PASEO_ACTIVITY_TOKEN?: string;
   PASEO_TERMINAL_ACTIVITY_URL?: string;
@@ -52,9 +57,9 @@ export async function runHooksCommand(
 }
 
 function resolveTarget(env: HookEnvironment) {
-  const terminalId = env.PASEO_TERMINAL_ID;
-  const token = env.PASEO_ACTIVITY_TOKEN;
-  const url = env.PASEO_TERMINAL_ACTIVITY_URL;
+  const terminalId = env.AASWITCH_TERMINAL_ID ?? env.PASEO_TERMINAL_ID;
+  const token = env.AASWITCH_ACTIVITY_TOKEN ?? env.PASEO_ACTIVITY_TOKEN;
+  const url = env.AASWITCH_TERMINAL_ACTIVITY_URL ?? env.PASEO_TERMINAL_ACTIVITY_URL;
 
   if (!terminalId || !token || !url) return null;
   return { terminalId, token, url };

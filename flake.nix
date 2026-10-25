@@ -1,5 +1,5 @@
 {
-  description = "Paseo - self-hosted daemon for AI coding agents";
+  description = "aaswitch - self-hosted daemon for AI coding agents";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -25,8 +25,8 @@
         system:
         let
           pkgs = pkgsFor system;
-          paseo = pkgs.callPackage ./nix/package.nix { };
-          versionParts = pkgs.lib.splitString "." paseo.version;
+          aaswitch = pkgs.callPackage ./nix/package.nix { };
+          versionParts = pkgs.lib.splitString "." aaswitch.version;
           sourceRevision = if self ? revCount && self.revCount != null then self.revCount else 0;
           buildRevision = sourceRevision - (sourceRevision / 10000) * 10000;
           desktopBuildVersion = pkgs.lib.concatStringsSep "." [
@@ -36,21 +36,21 @@
           ];
         in
         {
-          default = paseo;
-          paseo = paseo;
+          default = aaswitch;
+          aaswitch = aaswitch;
           desktop = pkgs.callPackage ./nix/desktop-package.nix {
-            inherit paseo;
+            aaswitch = aaswitch;
             buildVersion = desktopBuildVersion;
           };
         }
       );
 
-      nixosModules.default = self.nixosModules.paseo;
-      nixosModules.paseo =
+      nixosModules.default = self.nixosModules.aaswitch;
+      nixosModules.aaswitch =
         { pkgs, lib, ... }:
         {
           imports = [ ./nix/module.nix ];
-          services.paseo.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+          services.aaswitch.package = lib.mkDefault self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         };
 
       devShells = forAllSystems (

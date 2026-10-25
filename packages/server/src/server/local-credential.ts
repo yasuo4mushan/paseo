@@ -67,7 +67,10 @@ function normalizeTarget(target: string): string | null {
 
 export function readLocalCredentialForTarget(home: string, target: string): string | null {
   try {
-    const lock = JSON.parse(readFileSync(join(home, "paseo.pid"), "utf8")) as {
+    // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+    // Reads aaswitch.pid, falling back to a paseo.pid written by a
+    // pre-rebrand daemon still running against the same home.
+    const lock = JSON.parse(readPidLockFileSync(home)) as {
       listen?: unknown;
     };
     if (typeof lock.listen !== "string") return null;
@@ -78,4 +81,15 @@ export function readLocalCredentialForTarget(home: string, target: string): stri
   } catch {
     return null;
   }
+}
+
+function readPidLockFileSync(home: string): string {
+  for (const filename of ["aaswitch.pid", "paseo.pid"]) {
+    try {
+      return readFileSync(join(home, filename), "utf8");
+    } catch {
+      // try the next candidate
+    }
+  }
+  throw new Error(`No daemon lock file found under ${home}`);
 }

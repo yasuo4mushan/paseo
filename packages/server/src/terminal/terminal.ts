@@ -15,6 +15,7 @@ import { basename, delimiter, dirname, extname, join, resolve as resolvePath } f
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { createExternalProcessEnv } from "../server/paseo-env.js";
+import { legacyPaseoEnvMirror } from "../server/env-compat.js";
 import { writePrivateFileAtomicSync } from "../server/private-files.js";
 import {
   findExecutable,
@@ -27,7 +28,7 @@ import type { TerminalActivity, TerminalActivityState } from "@aaswitch/protocol
 
 const { Terminal } = xterm;
 const require = createRequire(import.meta.url);
-const PASEO_CLI_BIN_ENTRY = "aaswitch/bin/aaswitch";
+const AASWITCH_CLI_BIN_ENTRY = "aaswitch/bin/aaswitch";
 let nodePtySpawnHelperChecked = false;
 const TERMINAL_TITLE_DEBOUNCE_MS = 150;
 const TERMINAL_EXIT_OUTPUT_LINE_LIMIT = 12;
@@ -424,7 +425,7 @@ export function resolvePaseoCliBinDir(): string | null {
 }
 
 export function resolvePaseoCliExecutablePath(): string | null {
-  const configuredCli = process.env.PASEO_CLI?.trim();
+  const configuredCli = process.env.AASWITCH_CLI?.trim();
   if (configuredCli) {
     return resolvePath(configuredCli);
   }
@@ -448,7 +449,7 @@ export function resolvePaseoCliExecutablePath(): string | null {
 
 function resolvePaseoCliBinEntrypoint(): string | null {
   try {
-    return require.resolve(PASEO_CLI_BIN_ENTRY);
+    return require.resolve(AASWITCH_CLI_BIN_ENTRY);
   } catch {
     return null;
   }
@@ -530,16 +531,22 @@ export function buildTerminalEnvironment(
     input.paseoHookCliPath === undefined ? resolvePaseoCliExecutablePath() : input.paseoHookCliPath,
   );
 
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // Hook and activity scripts written against the PASEO_* names keep seeing
+  // them while the daemon hands new consumers the AASWITCH_* spellings.
+  const envWithLegacyMirrors = { ...envWithHookCli, ...legacyPaseoEnvMirror(envWithHookCli) };
+
   if (basename(input.shell) !== "zsh") {
-    return envWithHookCli;
+    return envWithLegacyMirrors;
   }
 
-  const originalZdotdir = envWithHookCli.ZDOTDIR ?? "";
-  return {
-    ...envWithHookCli,
-    PASEO_ZSH_ZDOTDIR: originalZdotdir,
+  const originalZdotdir = envWithLegacyMirrors.ZDOTDIR ?? "";
+  const zshEnv = {
+    ...envWithLegacyMirrors,
+    AASWITCH_ZSH_ZDOTDIR: originalZdotdir,
     ZDOTDIR: prepareZshShellIntegrationRuntimeDir(input.zshShellIntegrationDir),
   };
+  return { ...zshEnv, ...legacyPaseoEnvMirror(zshEnv) };
 }
 
 function injectPaseoHookCli(
@@ -552,7 +559,7 @@ function injectPaseoHookCli(
 
   return {
     ...env,
-    PASEO_HOOK_CLI: resolvePath(resolveExternalProcessPath(cliPath)),
+    AASWITCH_HOOK_CLI: resolvePath(resolveExternalProcessPath(cliPath)),
   };
 }
 
@@ -1031,7 +1038,7 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Te
     env: {
       ...env,
       ...activityEnv,
-      PASEO_WORKSPACE_ID: workspaceId,
+      AASWITCH_WORKSPACE_ID: workspaceId,
     },
   });
 

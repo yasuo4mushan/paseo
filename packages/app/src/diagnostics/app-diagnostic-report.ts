@@ -110,16 +110,20 @@ export function redactAppDiagnosticReport(report: string, hosts: HostProfile[]):
   for (const value of collectSensitiveHostValues(hosts)) {
     redacted = redacted.split(value).join("[redacted]");
   }
-  return redacted
-    .replace(/paseo:\/\/\S+/gi, "paseo://[redacted]")
-    .replace(
-      /([?&](?:password|token|secret|key|publicKey|daemonPublicKeyB64)=)[^&\s"']+/gi,
-      "$1[redacted]",
-    )
-    .replace(
-      /((?:password|token|secret|authorization|api[_-]?key|daemonPublicKeyB64|relayKey)\s*[:=]\s*)("[^"]+"|'[^']+'|[^\s,}]+)/gi,
-      "$1[redacted]",
-    );
+  return (
+    redacted
+      .replace(/aaswitch:\/\/\S+/gi, "aaswitch://[redacted]")
+      // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+      .replace(/paseo:\/\/\S+/gi, "paseo://[redacted]")
+      .replace(
+        /([?&](?:password|token|secret|key|publicKey|daemonPublicKeyB64)=)[^&\s"']+/gi,
+        "$1[redacted]",
+      )
+      .replace(
+        /((?:password|token|secret|authorization|api[_-]?key|daemonPublicKeyB64|relayKey)\s*[:=]\s*)("[^"]+"|'[^']+'|[^\s,}]+)/gi,
+        "$1[redacted]",
+      )
+  );
 }
 
 function collectSensitiveHostValues(hosts: HostProfile[]): string[] {

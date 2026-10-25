@@ -1450,7 +1450,7 @@ export const ptBR: TranslationResources = {
       fullStatus: {
         title: "Status completo",
         modalTitle: "Status do daemon",
-        hint: "Executa `paseo daemon status` e mostra a saída",
+        hint: "Executa `aaswitch daemon status` e mostra a saída",
         view: "Ver status",
         copied: "Status copiado para a área de transferência.",
         fetchFailed: "Falha ao buscar status do daemon: {{message}}",
@@ -2946,7 +2946,7 @@ export const ptBR: TranslationResources = {
         newScript: "Novo script",
         editScript: "Editar {{name}}",
         runAsService: "Executar como serviço",
-        serviceHint: "O aaswitch supervisiona o processo e atribui uma porta via $PASEO_PORT",
+        serviceHint: "O aaswitch supervisiona o processo e atribui uma porta via $AASWITCH_PORT",
         actions: {
           add: "Adicionar script",
           edit: "Editar",

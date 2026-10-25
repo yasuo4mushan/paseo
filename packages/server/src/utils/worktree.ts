@@ -65,6 +65,12 @@ export interface CreatedWorktree extends WorktreeConfig {
 
 export interface WorktreeRuntimeEnv {
   [key: string]: string;
+  AASWITCH_SOURCE_CHECKOUT_PATH: string;
+  AASWITCH_ROOT_PATH: string;
+  AASWITCH_WORKTREE_PATH: string;
+  AASWITCH_BRANCH_NAME: string;
+  AASWITCH_WORKTREE_PORT: string;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
   PASEO_SOURCE_CHECKOUT_PATH: string;
   PASEO_ROOT_PATH: string;
   PASEO_WORKTREE_PATH: string;
@@ -741,10 +747,18 @@ export async function resolveWorktreeRuntimeEnv(options: {
     await assertPortAvailable(worktreePort);
   }
 
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // Setup/teardown scripts in user workspaces may read either spelling; the
+  // daemon exports both.
   return {
     // Source checkout path is the original git repo root (shared across worktrees), not the
     // worktree itself. This allows setup scripts to copy local files (e.g. .env) from the
     // source checkout.
+    AASWITCH_SOURCE_CHECKOUT_PATH: repoRootPath,
+    AASWITCH_ROOT_PATH: repoRootPath,
+    AASWITCH_WORKTREE_PATH: options.worktreePath,
+    AASWITCH_BRANCH_NAME: branchName,
+    AASWITCH_WORKTREE_PORT: String(worktreePort),
     PASEO_SOURCE_CHECKOUT_PATH: repoRootPath,
     // Backward-compatible alias.
     PASEO_ROOT_PATH: repoRootPath,

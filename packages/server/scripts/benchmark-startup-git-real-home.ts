@@ -40,9 +40,9 @@ interface BenchmarkResult {
 }
 
 function parseArgs(): { sourceHome: string; frozenHomeRoot: string | null; scenario: Scenario } {
-  let sourceHome = process.env.PASEO_BENCHMARK_SOURCE_HOME ?? path.join(os.homedir(), ".paseo");
-  let frozenHomeRoot = process.env.PASEO_BENCHMARK_FROZEN_HOME_ROOT ?? null;
-  let scenario = (process.env.PASEO_BENCHMARK_SCENARIO ?? "snapshotOnly") as Scenario;
+  let sourceHome = process.env.AASWITCH_BENCHMARK_SOURCE_HOME ?? path.join(os.homedir(), ".paseo");
+  let frozenHomeRoot = process.env.AASWITCH_BENCHMARK_FROZEN_HOME_ROOT ?? null;
+  let scenario = (process.env.AASWITCH_BENCHMARK_SCENARIO ?? "snapshotOnly") as Scenario;
 
   for (const arg of process.argv.slice(2)) {
     const [key, value] = arg.split("=", 2);
@@ -78,7 +78,7 @@ function copyJsonTree(sourceDir: string, targetDir: string): void {
 
 async function freezeHome(sourceHome: string, requestedRoot: string | null): Promise<string> {
   const frozenHomeRoot = requestedRoot ?? mkdtempSync(path.join(os.tmpdir(), "paseo-real-home-"));
-  if (process.env.PASEO_BENCHMARK_REUSE_FROZEN_HOME === "1") {
+  if (process.env.AASWITCH_BENCHMARK_REUSE_FROZEN_HOME === "1") {
     return frozenHomeRoot;
   }
   const frozenHome = path.join(frozenHomeRoot, ".paseo");

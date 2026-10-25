@@ -9,13 +9,17 @@ import {
   updatePidLock,
 } from "../src/server/pid-lock.js";
 import { resolvePaseoHome } from "../src/server/paseo-home.js";
-import { daemonLogPath } from "../src/server/daemon-instance.js";
+import { daemonLogPath, ensureMigratedPaseoHome } from "../src/server/daemon-instance.js";
 import { PRIVATE_FILE_MODE } from "../src/server/private-files.js";
 import { loadPersistedConfig } from "../src/server/persisted-config.js";
 import { runSupervisor } from "./supervisor.js";
 import { resolveSupervisorLogFile } from "./supervisor-log-config.js";
+import { applyLegacyPaseoEnvAliases } from "../src/server/env-compat.js";
 
-process.title = "Paseo Supervisor";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+applyLegacyPaseoEnvAliases(process.env);
+
+process.title = "aaswitch Supervisor";
 
 interface DaemonRunnerConfig {
   devMode: boolean;
@@ -76,9 +80,9 @@ function resolveWorkerExecArgv(workerEntry: string, devMode: boolean): string[] 
     "--heapsnapshot-near-heap-limit=3",
     "--max-old-space-size=3072",
     "--report-on-fatalerror",
-    "--report-directory=/tmp/paseo-reports",
+    "--report-directory=/tmp/aaswitch-reports",
   ];
-  const inspectArg = process.env.PASEO_NODE_INSPECT ?? "--inspect";
+  const inspectArg = process.env.AASWITCH_NODE_INSPECT ?? "--inspect";
   if (inspectArg !== "0" && inspectArg !== "false" && inspectArg !== "off") {
     devArgs.push(inspectArg);
   }
@@ -108,6 +112,7 @@ async function main(): Promise<void> {
       : null;
 
   const paseoHome = resolvePaseoHome(workerEnv);
+  await ensureMigratedPaseoHome(paseoHome);
   const persistedConfig = loadPersistedConfig(paseoHome);
   const supervisorLogFile = resolveSupervisorLogFile(paseoHome, persistedConfig, workerEnv);
 

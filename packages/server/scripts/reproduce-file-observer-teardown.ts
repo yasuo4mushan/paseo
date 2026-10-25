@@ -7,9 +7,9 @@ import { promisify } from "node:util";
 import { createFileObserver } from "../src/server/file-observer/index.js";
 
 const execFileAsync = promisify(execFile);
-const ITERATIONS = readPositiveInteger("PASEO_WATCH_REPRO_ITERATIONS", 200);
+const ITERATIONS = readPositiveInteger("AASWITCH_WATCH_REPRO_ITERATIONS", 200);
 const CHILD_TIMEOUT_MS = readPositiveInteger(
-  "PASEO_WATCH_REPRO_TIMEOUT_MS",
+  "AASWITCH_WATCH_REPRO_TIMEOUT_MS",
   Math.max(45_000, ITERATIONS * 150),
 );
 

@@ -4,7 +4,11 @@ import { z } from "zod";
 import { PluginIdSchema, PluginRequirementsSchema } from "@aaswitch/protocol/messages";
 import { validatePluginRequirements } from "@aaswitch/protocol/plugin-requirements";
 
-const MANIFEST_FILENAME = "paseo-plugin.json";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Manifests are written as aaswitch-plugin.json; sources pinned to a
+// pre-rebrand commit still carry paseo-plugin.json and stay readable.
+const MANIFEST_FILENAME = "aaswitch-plugin.json";
+const LEGACY_MANIFEST_FILENAME = "paseo-plugin.json";
 const PluginBuildCommandSchema = z
   .array(z.string().refine((argument) => argument.trim().length > 0))
   .min(1);
@@ -39,10 +43,17 @@ const PluginManifestSchema = z.object({
 export type PluginManifest = z.infer<typeof PluginManifestSchema>;
 
 export async function readPluginManifest(directory: string): Promise<PluginManifest> {
-  const manifestPath = path.join(directory, MANIFEST_FILENAME);
-  const info = await stat(manifestPath).catch(() => null);
-  if (!info?.isFile()) throw new Error(`Plugin manifest is missing: ${manifestPath}`);
+  const manifestPath = await resolveManifestPath(directory);
   const manifest = PluginManifestSchema.parse(JSON.parse(await readFile(manifestPath, "utf8")));
   validatePluginRequirements(manifest.requirements);
   return manifest;
+}
+
+async function resolveManifestPath(directory: string): Promise<string> {
+  for (const filename of [MANIFEST_FILENAME, LEGACY_MANIFEST_FILENAME]) {
+    const candidate = path.join(directory, filename);
+    const info = await stat(candidate).catch(() => null);
+    if (info?.isFile()) return candidate;
+  }
+  throw new Error(`Plugin manifest is missing: ${path.join(directory, MANIFEST_FILENAME)}`);
 }

@@ -1426,7 +1426,7 @@ export const zhCN: TranslationResources = {
       fullStatus: {
         title: "完整状态",
         modalTitle: "守护进程状态",
-        hint: "运行 `paseo daemon status` 并显示输出",
+        hint: "运行 `aaswitch daemon status` 并显示输出",
         view: "查看状态",
         copied: "状态已复制到剪贴板。",
         fetchFailed: "获取守护进程状态失败：{{message}}",
@@ -2917,7 +2917,7 @@ export const zhCN: TranslationResources = {
         newScript: "新建脚本",
         editScript: "编辑 {{name}}",
         runAsService: "作为服务运行",
-        serviceHint: "aaswitch 会监管该进程，并通过 $PASEO_PORT 分配端口",
+        serviceHint: "aaswitch 会监管该进程，并通过 $AASWITCH_PORT 分配端口",
         actions: {
           add: "添加脚本",
           edit: "编辑",

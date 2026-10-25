@@ -1,4 +1,10 @@
 import { protectConsoleStreams } from "./diagnostics/console-streams.js";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Map PASEO_* variables from the launching shell onto AASWITCH_* once per
+// desktop process so all later reads use the new spelling.
+import { applyLegacyPaseoEnvAliases } from "@aaswitch/server/daemon-control";
+
+applyLegacyPaseoEnvAliases(process.env);
 protectConsoleStreams();
 
 process.emitWarning = (() => {}) as typeof process.emitWarning;
@@ -112,13 +118,13 @@ import {
 import { AgentNavigationInbox, parseAgentDeepLinkFromArgv } from "./agent-navigation.js";
 
 const DEV_SERVER_URL = process.env.EXPO_DEV_URL ?? "http://localhost:8081";
-const APP_SCHEME = "paseo";
-const PASEO_DEBUG = process.env.PASEO_DEBUG === "1";
-const DISABLE_SINGLE_INSTANCE_LOCK = process.env.PASEO_DISABLE_SINGLE_INSTANCE_LOCK === "1";
-const APP_NAME = process.env.PASEO_TEST_APP_NAME?.trim() || "aaswitch";
+const APP_SCHEME = "aaswitch";
+const PASEO_DEBUG = process.env.AASWITCH_DEBUG === "1";
+const DISABLE_SINGLE_INSTANCE_LOCK = process.env.AASWITCH_DISABLE_SINGLE_INSTANCE_LOCK === "1";
+const APP_NAME = process.env.AASWITCH_TEST_APP_NAME?.trim() || "aaswitch";
 const DESKTOP_WINDOW_CHROME_MODE = resolveDesktopWindowChromeMode({
   platform: process.platform,
-  override: process.env.PASEO_DESKTOP_WINDOW_CONTROLS,
+  override: process.env.AASWITCH_DESKTOP_WINDOW_CONTROLS,
   isPackaged: app.isPackaged,
 });
 const UPDATE_QUIT_DEADLINE_MS = 5_000;
@@ -300,7 +306,7 @@ function installBrowserWindowOpenHandler(input: {
 // In dev mode, detect git worktrees and isolate each instance so multiple
 // Electron windows can run side-by-side (separate userData = separate lock).
 let devWorktreeName: string | null = null;
-const forcedUserDataDir = process.env.PASEO_ELECTRON_USER_DATA_DIR?.trim();
+const forcedUserDataDir = process.env.AASWITCH_ELECTRON_USER_DATA_DIR?.trim();
 if (forcedUserDataDir) {
   app.setPath("userData", forcedUserDataDir);
   log.info("[dev-user-data] forced userData dir:", forcedUserDataDir);
@@ -334,10 +340,10 @@ if (forcedUserDataDir) {
   }
 }
 
-// Allow users to pass Chromium flags via PASEO_ELECTRON_FLAGS for debugging
+// Allow users to pass Chromium flags via AASWITCH_ELECTRON_FLAGS for debugging
 // rendering issues (e.g. "--disable-gpu --ozone-platform=x11").
 // Must run before app.whenReady().
-const electronFlags = process.env.PASEO_ELECTRON_FLAGS?.trim();
+const electronFlags = process.env.AASWITCH_ELECTRON_FLAGS?.trim();
 if (electronFlags) {
   for (const token of electronFlags.split(/\s+/)) {
     const [key, ...rest] = token.replace(/^--/, "").split("=");
@@ -352,7 +358,7 @@ if (process.platform === "linux") {
   if (!app.commandLine.hasSwitch("class")) app.commandLine.appendSwitch("class", "aaswitch");
   log.info("[linux-sandbox]", {
     enabled: !app.commandLine.hasSwitch("no-sandbox"),
-    reason: process.env.PASEO_DESKTOP_SANDBOX_REASON ?? "Chromium default",
+    reason: process.env.AASWITCH_DESKTOP_SANDBOX_REASON ?? "Chromium default",
   });
 }
 
@@ -616,7 +622,7 @@ function getDevBuildLabel(): string | null {
   if (app.isPackaged) {
     return null;
   }
-  return process.env.EXPO_PUBLIC_PASEO_DEV_BUILD_LABEL?.trim() || null;
+  return process.env.EXPO_PUBLIC_AASWITCH_DEV_BUILD_LABEL?.trim() || null;
 }
 
 let cachedEffectiveIconPath: string | null = null;
@@ -866,7 +872,7 @@ app.on("open-url", (event, url) => {
 
 function setupSingleInstanceLock(): boolean {
   if (DISABLE_SINGLE_INSTANCE_LOCK) {
-    log.info("[single-instance] disabled by PASEO_DISABLE_SINGLE_INSTANCE_LOCK");
+    log.info("[single-instance] disabled by AASWITCH_DISABLE_SINGLE_INSTANCE_LOCK");
     return true;
   }
 
@@ -891,7 +897,7 @@ function setupSingleInstanceLock(): boolean {
       isDefaultApp: false,
     });
     log.info("[open-project] second-instance openProjectPath:", openProjectPath);
-    // Relaunching the app (CLI `paseo [path]`, double-click, etc.) opens a new
+    // Relaunching the app (CLI `aaswitch [path]`, double-click, etc.) opens a new
     // window rather than focusing the existing one. Wait for bootstrap (not just
     // app.whenReady) so the protocol + IPC handlers exist before the window loads.
     void bootstrapComplete

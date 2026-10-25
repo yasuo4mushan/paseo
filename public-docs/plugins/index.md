@@ -52,7 +52,7 @@ greeting through an RPC.
 
 ```text
 workspace-plugin/
-  paseo-plugin.json      # plugin ID and supported Paseo versions
+  aaswitch-plugin.json      # plugin ID and supported Paseo versions Pre-rebrand sources that still ship a `paseo-plugin.json` manifest keep installing; both filenames are accepted during the compatibility window.
   index.client.tsx       # runs in the Paseo app
   index.server.ts        # runs in a daemon subprocess
   client/greeting.tsx    # the screen component
@@ -135,7 +135,7 @@ Or install the directory from the app:
 
 1. Open **Settings → Plugins** on the target host.
 2. Paste `/absolute/path/to/workspace-plugin` into **Plugin source**.
-3. Select **Install plugin**. The app uses the plugin ID from `paseo-plugin.json`.
+3. Select **Install plugin**. The app uses the plugin ID from `aaswitch-plugin.json`.
 
 The source field also accepts Git repositories, npm packages, and plugin subdirectories. See
 [Plugin sources](/docs/plugins/reference#plugin-sources) for the accepted syntax and resolution

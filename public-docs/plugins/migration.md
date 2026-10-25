@@ -19,7 +19,7 @@ Start from the old shape:
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  aaswitch-plugin.json Pre-rebrand sources that still ship a `paseo-plugin.json` manifest keep installing; both filenames are accepted during the compatibility window.
   package.json
   tsconfig.json
   index.ts
@@ -32,7 +32,7 @@ The finished shape is:
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  aaswitch-plugin.json
   package.json
   tsconfig.json
   index.client.tsx
@@ -55,7 +55,7 @@ Apply these rules exactly:
 4. Move every `name.shared.ts` or `name.shared.tsx` to `shared/name.ts` or `shared/name.tsx`.
 5. Preserve nested feature directories under the matching runtime directory.
 6. Update relative imports after every move.
-7. Keep `paseo-plugin.json`, `package.json`, and `tsconfig.json` at the root.
+7. Keep `aaswitch-plugin.json`, `package.json`, and `tsconfig.json` at the root.
 8. Delete the old root entry. Paseo does not load it.
 
 The directories are the compiler boundaries. A file beneath `client/` compiles only into the app
@@ -281,7 +281,7 @@ pills or subscriptions keeps that code; only the wrapper goes away.
 
 ## 7. Declare the Paseo requirement
 
-After migrating the entries and imports, add the minimum runtime version to `paseo-plugin.json`:
+After migrating the entries and imports, add the minimum runtime version to `aaswitch-plugin.json`:
 
 ```json
 {

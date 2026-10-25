@@ -65,9 +65,9 @@ export function buildDaemonConnectionCommandError(options: ConnectOptions & { er
 
 function describeConnectionRemedy(code: string, target: DaemonTarget): string {
   if (code === "AUTH_REQUIRED")
-    return "The daemon requires a password. Set PASEO_PASSWORD and retry.";
+    return "The daemon requires a password. Set AASWITCH_PASSWORD and retry.";
   if (code === "AUTH_FAILED")
-    return "The daemon rejected the password. Check PASEO_PASSWORD and retry.";
+    return "The daemon rejected the password. Check AASWITCH_PASSWORD and retry.";
   if (target.kind === "instance")
     return `Start with: aaswitch daemon start --home ${JSON.stringify(target.home)}`;
   return "Check the selected endpoint and credentials. SSH transport does not install or start the daemon.";
@@ -175,7 +175,8 @@ export function resolveDaemonPassword(host: string): string | undefined {
     const fromUri = parseConnectionUri(trimmed).password;
     if (fromUri) return fromUri;
   }
-  const fromEnv = process.env.PASEO_PASSWORD;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  const fromEnv = process.env.AASWITCH_PASSWORD ?? process.env.PASEO_PASSWORD;
   return fromEnv && fromEnv.length > 0 ? fromEnv : undefined;
 }
 

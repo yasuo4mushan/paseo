@@ -1,4 +1,10 @@
 import { renderError, toCommandError, defaultOutputOptions } from "./output/render.js";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Map PASEO_* variables from the launching shell onto AASWITCH_* once per
+// CLI process so every command reads the new spelling.
+import { applyLegacyPaseoEnvAliases } from "@aaswitch/server/daemon-control";
+
+applyLegacyPaseoEnvAliases(process.env);
 import { createCli } from "./cli.js";
 import { classifyInvocation } from "./classify.js";
 import { openDesktopWithProject } from "./commands/open.js";

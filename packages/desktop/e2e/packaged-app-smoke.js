@@ -83,7 +83,7 @@ function getCliShimPath(appPath) {
   }
 
   if (process.platform === "win32") {
-    return path.join(appPath, "resources", "bin", "paseo.cmd");
+    return path.join(appPath, "resources", "bin", "aaswitch.cmd");
   }
 
   return path.join(appPath, "resources", "bin", "aaswitch");
@@ -149,7 +149,11 @@ function getShellCommand(script) {
 
 function createDefaultDaemonEnv(extraEnv) {
   return {
-    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PASEO_"))),
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(
+        ([key]) => !key.startsWith("PASEO_") && !key.startsWith("AASWITCH_"),
+      ),
+    ),
     ...extraEnv,
   };
 }
@@ -157,10 +161,10 @@ function createDefaultDaemonEnv(extraEnv) {
 function createIsolatedDesktopEnv({ home, listen, userData, cdpPort }) {
   return {
     ...createDefaultDaemonEnv({ HOME: home, USERPROFILE: home }),
-    PASEO_HOME: home,
-    PASEO_LISTEN: listen,
-    PASEO_ELECTRON_USER_DATA_DIR: userData,
-    PASEO_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
+    AASWITCH_HOME: home,
+    AASWITCH_LISTEN: listen,
+    AASWITCH_ELECTRON_USER_DATA_DIR: userData,
+    AASWITCH_ELECTRON_FLAGS: `--remote-debugging-address=127.0.0.1 --remote-debugging-port=${cdpPort}`,
   };
 }
 
@@ -303,7 +307,7 @@ function formatLogs({ stdout, stderr, userData, daemonHome }) {
 }
 
 async function writeSmokeArtifacts({ page, stdout, stderr, userData, daemonHome, error }) {
-  const artifactDir = process.env.PASEO_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
+  const artifactDir = process.env.AASWITCH_DESKTOP_SMOKE_ARTIFACT_DIR?.trim();
   if (!artifactDir) {
     return;
   }
@@ -462,13 +466,13 @@ async function waitForPackagedAppPage(browser, deadline) {
     const page = browser
       .contexts()
       .flatMap((context) => context.pages())
-      .find((candidate) => candidate.url().startsWith("paseo://app/"));
+      .find((candidate) => candidate.url().startsWith("aaswitch://app/"));
     if (page) {
       return page;
     }
     await delay(250);
   }
-  throw new Error("Timed out waiting for the packaged paseo://app/ renderer");
+  throw new Error("Timed out waiting for the packaged aaswitch://app/ renderer");
 }
 
 async function assertPackagedRendererLoaded(page, deadline) {
@@ -642,7 +646,7 @@ async function smokeCliShim({ appPath, env }) {
 
 async function smokeColdCliDaemonStart({ appPath }) {
   const home = createTempDir("paseo-smoke-cli-daemon-home-");
-  const pidPath = path.join(home, "paseo.pid");
+  const pidPath = path.join(home, "aaswitch.pid");
   const port = await reserveLocalTcpPort();
   const listen = `127.0.0.1:${port}`;
   const env = createDefaultDaemonEnv({ HOME: home, USERPROFILE: home });

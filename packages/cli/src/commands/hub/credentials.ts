@@ -137,7 +137,8 @@ export class PrivateHubCredentialStore implements HubCredentialStore {
 }
 
 function resolvePaseoHome(env: Readonly<Record<string, string | undefined>>): string {
-  const configured = env.PASEO_HOME ?? "~/.paseo";
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  const configured = env.AASWITCH_HOME ?? env.PASEO_HOME ?? "~/.aaswitch";
   const expanded = configured === "~" ? homedir() : configured.replace(/^~\//u, `${homedir()}/`);
   return path.resolve(expanded);
 }
@@ -165,6 +166,6 @@ function invalidCredentialFile(): HubCommandError {
 function credentialStorageError(): HubCommandError {
   return new HubCommandError(
     "HUB_CREDENTIALS_UNAVAILABLE",
-    "Could not access the private Hub credential store under PASEO_HOME.",
+    "Could not access the private Hub credential store under AASWITCH_HOME.",
   );
 }

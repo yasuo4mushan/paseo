@@ -1,4 +1,5 @@
 import { projectServiceProxyUrls } from "./service-proxy.js";
+import { legacyPaseoEnvMirror } from "./env-compat.js";
 
 export interface WorkspaceServicePeer {
   scriptName: string;
@@ -35,7 +36,7 @@ export function buildWorkspaceServiceEnv(
 
   const env: Record<string, string> = {
     HOST: resolveServiceBindHost(options.daemonListenHost),
-    PASEO_PORT: String(selfPeer.port),
+    AASWITCH_PORT: String(selfPeer.port),
   };
 
   const selfProxyUrl = buildServiceProxyUrl({
@@ -46,12 +47,12 @@ export function buildWorkspaceServiceEnv(
     serviceProxyPublicBaseUrl: options.serviceProxyPublicBaseUrl,
   });
   if (selfProxyUrl) {
-    env.PASEO_URL = selfProxyUrl;
+    env.AASWITCH_URL = selfProxyUrl;
   }
 
   for (const peer of options.peers) {
     const envName = normalizeServiceEnvName(peer.scriptName);
-    env[`PASEO_SERVICE_${envName}_PORT`] = String(peer.port);
+    env[`AASWITCH_SERVICE_${envName}_PORT`] = String(peer.port);
 
     const peerProxyUrl = buildServiceProxyUrl({
       projectSlug: options.projectSlug,
@@ -61,11 +62,14 @@ export function buildWorkspaceServiceEnv(
       serviceProxyPublicBaseUrl: options.serviceProxyPublicBaseUrl,
     });
     if (peerProxyUrl) {
-      env[`PASEO_SERVICE_${envName}_URL`] = peerProxyUrl;
+      env[`AASWITCH_SERVICE_${envName}_URL`] = peerProxyUrl;
     }
   }
 
-  return env;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // Workspace service scripts read these variables by name; existing scripts
+  // keep seeing the PASEO_* spellings while new ones adopt AASWITCH_*.
+  return { ...env, ...legacyPaseoEnvMirror(env) };
 }
 
 export function resolveServiceBindHost(daemonListenHost: string | null | undefined): string {

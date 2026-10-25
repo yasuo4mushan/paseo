@@ -1438,7 +1438,7 @@ export const ja: TranslationResources = {
       fullStatus: {
         title: "詳細ステータス",
         modalTitle: "デーモンのステータス",
-        hint: "`paseo daemon status`を実行して出力を表示します",
+        hint: "`aaswitch daemon status`を実行して出力を表示します",
         view: "ステータスを表示",
         copied: "ステータスをクリップボードにコピーしました。",
         fetchFailed: "デーモンのステータスの取得に失敗しました: {{message}}",
@@ -2933,7 +2933,7 @@ export const ja: TranslationResources = {
         newScript: "新しいスクリプト",
         editScript: "{{name}}を編集",
         runAsService: "サービスとして実行",
-        serviceHint: "aaswitchがプロセスを監督し、$PASEO_PORTを通じてポートを割り当てます",
+        serviceHint: "aaswitchがプロセスを監督し、$AASWITCH_PORTを通じてポートを割り当てます",
         actions: {
           add: "スクリプトを追加",
           edit: "編集",

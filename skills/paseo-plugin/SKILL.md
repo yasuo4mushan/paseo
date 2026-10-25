@@ -63,7 +63,7 @@ The generated project contains:
 
 ```text
 my-plugin/
-  paseo-plugin.json
+  aaswitch-plugin.json Pre-rebrand sources that still ship a `paseo-plugin.json` manifest keep installing; both filenames are accepted during the compatibility window.
   OVERVIEW.md
   package.json
   tsconfig.json
@@ -641,14 +641,14 @@ When the same screen or sidebar item exists on several connected hosts, Paseo sh
 
 ## Publishing a listing
 
-Write `OVERVIEW.md` beside `paseo-plugin.json` for the plugin page inside Paseo.
+Write `OVERVIEW.md` beside `aaswitch-plugin.json` for the plugin page inside Paseo.
 It helps someone decide whether to install your plugin; the install command is already at
 the top of that page. A README assumes a GitHub audience and carries installation
 instructions, technical details, and badges. Long, AI-generated READMEs make people read
 past that material to understand what a plugin does.
 
 `OVERVIEW.md` is required to list your plugin in the registry. Commit it beside
-`paseo-plugin.json` in the source repository at the pinned commit. The registry resolves it
+`aaswitch-plugin.json` in the source repository at the pinned commit. The registry resolves it
 relative to the manifest, under `pluginPath` for monorepos. Include it in the published npm
 package too; the scaffold's `files` list includes it. Replace the scaffold's guidance comment
 with useful facts before publishing.
@@ -706,7 +706,7 @@ content once; they do not pin updates. `install` and `add` are aliases. Follow t
 [publishing guide](https://paseo.sh/docs/plugins/publishing.md) for Paseo's package contents and
 preparation requirements; standard npm publishing commands apply.
 
-Use `--host <url>` when managing a daemon other than the CLI default. A Git source that must install or generate something declares `build` in `paseo-plugin.json` as a list of argv arrays; Paseo runs them without a shell on install and update and keeps the old version if one fails. Plugin source edits require `aaswitch plugin reload`; config changes to the global switch require `aaswitch reload`. A failed plugin reload stays failed; inspect `aaswitch plugin ls` for the load error and `aaswitch plugin logs <id>` for subprocess output, fix the source, typecheck, and reload again. `remove` keeps local source directories and deletes managed Git/npm installations.
+Use `--host <url>` when managing a daemon other than the CLI default. A Git source that must install or generate something declares `build` in `aaswitch-plugin.json` as a list of argv arrays; Paseo runs them without a shell on install and update and keeps the old version if one fails. Plugin source edits require `aaswitch plugin reload`; config changes to the global switch require `aaswitch reload`. A failed plugin reload stays failed; inspect `aaswitch plugin ls` for the load error and `aaswitch plugin logs <id>` for subprocess output, fix the source, typecheck, and reload again. `remove` keeps local source directories and deletes managed Git/npm installations.
 
 Do not restart the daemon to load source changes. Restarting it can kill the agent performing the work.
 

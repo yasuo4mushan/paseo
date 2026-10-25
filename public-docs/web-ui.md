@@ -30,7 +30,7 @@ aaswitch daemon start
 Or run a foreground deployment with an environment variable:
 
 ```bash
-PASEO_WEB_UI_ENABLED=true aaswitch daemon run
+AASWITCH_WEB_UI_ENABLED=true aaswitch daemon run
 ```
 
 Or persist it in `config.json` so it survives restarts:
@@ -178,10 +178,10 @@ If your proxy reaches the daemon from another address, as in some Docker, LAN, o
 }
 ```
 
-`PASEO_TRUSTED_PROXIES` accepts the same comma-separated values:
+`AASWITCH_TRUSTED_PROXIES` accepts the same comma-separated values:
 
 ```bash
-PASEO_TRUSTED_PROXIES=loopback,172.16.0.0/12 PASEO_WEB_UI_ENABLED=true aaswitch daemon run
+AASWITCH_TRUSTED_PROXIES=loopback,172.16.0.0/12 AASWITCH_WEB_UI_ENABLED=true aaswitch daemon run
 ```
 
 Only use `trustedProxies: true` when your final trusted proxy overwrites client-supplied `X-Forwarded-*` headers. Otherwise a client could spoof forwarded header values.

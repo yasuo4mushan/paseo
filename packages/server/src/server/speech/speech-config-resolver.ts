@@ -67,40 +67,40 @@ function buildFeatureProviderInputs(params: {
 }): Record<keyof RequestedSpeechProviders, FeatureProviderInputs> {
   const voiceModeEnabled = resolveOptionalBooleanFlag(
     firstSpeechDefinedValue<string | boolean>([
-      params.env.PASEO_VOICE_MODE_ENABLED,
+      params.env.AASWITCH_VOICE_MODE_ENABLED,
       params.persisted.features?.voiceMode?.enabled,
     ]),
   );
   return {
     dictationStt: {
       configuredValue: firstSpeechDefinedValue<string>([
-        params.env.PASEO_DICTATION_STT_PROVIDER,
+        params.env.AASWITCH_DICTATION_STT_PROVIDER,
         params.persisted.features?.dictation?.stt?.provider,
       ]),
       enabled: resolveOptionalBooleanFlag(
         firstSpeechDefinedValue<string | boolean>([
-          params.env.PASEO_DICTATION_ENABLED,
+          params.env.AASWITCH_DICTATION_ENABLED,
           params.persisted.features?.dictation?.enabled,
         ]),
       ),
     },
     voiceTurnDetection: {
       configuredValue: firstSpeechDefinedValue<string>([
-        params.env.PASEO_VOICE_TURN_DETECTION_PROVIDER,
+        params.env.AASWITCH_VOICE_TURN_DETECTION_PROVIDER,
         params.persisted.features?.voiceMode?.turnDetection?.provider,
       ]),
       enabled: voiceModeEnabled,
     },
     voiceStt: {
       configuredValue: firstSpeechDefinedValue<string>([
-        params.env.PASEO_VOICE_STT_PROVIDER,
+        params.env.AASWITCH_VOICE_STT_PROVIDER,
         params.persisted.features?.voiceMode?.stt?.provider,
       ]),
       enabled: voiceModeEnabled,
     },
     voiceTts: {
       configuredValue: firstSpeechDefinedValue<string>([
-        params.env.PASEO_VOICE_TTS_PROVIDER,
+        params.env.AASWITCH_VOICE_TTS_PROVIDER,
         params.persisted.features?.voiceMode?.tts?.provider,
       ]),
       enabled: voiceModeEnabled,

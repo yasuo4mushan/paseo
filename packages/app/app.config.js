@@ -9,7 +9,9 @@ const withPasteInput = require("./plugins/with-paste-input");
 const withAndroidScroll = require("./modules/paseo-scroll/app.plugin");
 const { getNativeReleaseVersion } = require("./native-release-version");
 const appVariant = process.env.APP_VARIANT ?? "production";
-const isFdroidBuild = process.env.PASEO_FDROID_BUILD === "1";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+const isFdroidBuild =
+  process.env.AASWITCH_FDROID_BUILD === "1" || process.env.PASEO_FDROID_BUILD === "1";
 const isProfileBuild = process.env.PASEO_PROFILE_BUILD === "1";
 
 const buildProfile = isFdroidBuild
@@ -103,7 +105,7 @@ export default {
     version: nativeReleaseVersion.appVersion,
     orientation: "portrait",
     icon: "./assets/images/icon.png",
-    scheme: "paseo",
+    scheme: "aaswitch",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {

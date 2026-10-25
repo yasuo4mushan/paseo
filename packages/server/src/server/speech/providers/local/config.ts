@@ -94,7 +94,7 @@ function shouldIncludeLocalProviderConfig(params: {
 
   return (
     localRequestedByFeature ||
-    params.env.PASEO_LOCAL_MODELS_DIR !== undefined ||
+    params.env.AASWITCH_LOCAL_MODELS_DIR !== undefined ||
     params.persisted.providers?.local?.modelsDir !== undefined
   );
 }
@@ -130,13 +130,13 @@ function buildLocalSpeechLanguageResolutionInput(params: {
   const { env, persisted } = params;
   return {
     dictationLanguage: firstNonEmptyString([
-      env.PASEO_DICTATION_LANGUAGE,
+      env.AASWITCH_DICTATION_LANGUAGE,
       persisted.features?.dictation?.stt?.language,
       DEFAULT_DICTATION_STT_LANGUAGE,
     ]),
     voiceLanguage: firstNonEmptyString([
-      env.PASEO_VOICE_LANGUAGE,
-      env.PASEO_DICTATION_LANGUAGE,
+      env.AASWITCH_VOICE_LANGUAGE,
+      env.AASWITCH_DICTATION_LANGUAGE,
       persisted.features?.voiceMode?.stt?.language,
       persisted.features?.dictation?.stt?.language,
       DEFAULT_STT_LANGUAGE,
@@ -156,12 +156,12 @@ function buildLocalSpeechResolutionInput(params: {
   return {
     includeProviderConfig,
     modelsDir: firstDefinedValue<string>([
-      env.PASEO_LOCAL_MODELS_DIR,
+      env.AASWITCH_LOCAL_MODELS_DIR,
       persisted.providers?.local?.modelsDir,
       path.join(paseoHome, DEFAULT_LOCAL_MODELS_SUBDIR),
     ]),
     dictationLocalSttModel: firstDefinedValue<string>([
-      env.PASEO_DICTATION_LOCAL_STT_MODEL,
+      env.AASWITCH_DICTATION_LOCAL_STT_MODEL,
       persistedLocalFeatureModel(
         providers.dictationStt.provider,
         providers.dictationStt.enabled,
@@ -170,7 +170,7 @@ function buildLocalSpeechResolutionInput(params: {
       findSttModelIdForLanguage(languageInput.dictationLanguage ?? ""),
     ]),
     voiceLocalSttModel: firstDefinedValue<string>([
-      env.PASEO_VOICE_LOCAL_STT_MODEL,
+      env.AASWITCH_VOICE_LOCAL_STT_MODEL,
       persistedLocalFeatureModel(
         providers.voiceStt.provider,
         providers.voiceStt.enabled,
@@ -179,7 +179,7 @@ function buildLocalSpeechResolutionInput(params: {
       DEFAULT_LOCAL_STT_MODEL,
     ]),
     voiceLocalTtsModel: firstDefinedValue<string>([
-      env.PASEO_VOICE_LOCAL_TTS_MODEL,
+      env.AASWITCH_VOICE_LOCAL_TTS_MODEL,
       persistedLocalFeatureModel(
         providers.voiceTts.provider,
         providers.voiceTts.enabled,
@@ -189,11 +189,11 @@ function buildLocalSpeechResolutionInput(params: {
     ]),
     ...languageInput,
     voiceLocalTtsSpeakerId: firstDefinedValue<string | number>([
-      env.PASEO_VOICE_LOCAL_TTS_SPEAKER_ID,
+      env.AASWITCH_VOICE_LOCAL_TTS_SPEAKER_ID,
       persisted.features?.voiceMode?.tts?.speakerId,
     ]),
     voiceLocalTtsSpeed: firstDefinedValue<string | number>([
-      env.PASEO_VOICE_LOCAL_TTS_SPEED,
+      env.AASWITCH_VOICE_LOCAL_TTS_SPEED,
       persisted.features?.voiceMode?.tts?.speed,
     ]),
   };

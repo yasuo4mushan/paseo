@@ -11,15 +11,23 @@ describe("agent deep links", () => {
 
     const link = buildAgentDeepLink(target);
 
-    expect(link).toBe("paseo://h/server%2Fmain/agent/agent%20123");
+    expect(link).toBe("aaswitch://h/server%2Fmain/agent/agent%20123");
     expect(buildAgentDeepLinkRoute(target)).toBe("/h/server%2Fmain/agent/agent%20123");
     expect(parseAgentDeepLink(link)).toEqual(target);
   });
 
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  it("still parses pre-rebrand paseo:// links", () => {
+    expect(parseAgentDeepLink("paseo://h/server-main/agent/agent-1")).toEqual({
+      serverId: "server-main",
+      agentId: "agent-1",
+    });
+  });
+
   it("rejects links outside the exact agent route", () => {
     expect(parseAgentDeepLink("https://h/server/agent/agent-1")).toBeNull();
-    expect(parseAgentDeepLink("paseo://app/h/server/agent/agent-1")).toBeNull();
-    expect(parseAgentDeepLink("paseo://h/server/agent/agent-1?message=hello")).toBeNull();
-    expect(parseAgentDeepLink("paseo://h/server/agent/agent-1/extra")).toBeNull();
+    expect(parseAgentDeepLink("aaswitch://app/h/server/agent/agent-1")).toBeNull();
+    expect(parseAgentDeepLink("aaswitch://h/server/agent/agent-1?message=hello")).toBeNull();
+    expect(parseAgentDeepLink("aaswitch://h/server/agent/agent-1/extra")).toBeNull();
   });
 });

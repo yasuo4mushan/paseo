@@ -790,7 +790,9 @@ export async function createPaseoDaemon(
 
   // CORS - allow same-origin + configured origins
   const fixedAllowedOrigins = [
-    // Packaged desktop renderers use the custom paseo:// protocol scheme.
+    // Packaged desktop renderers use the custom aaswitch:// protocol scheme.
+    "aaswitch://app",
+    // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
     "paseo://app",
     // For TCP, add localhost variants
     ...(listenTarget.type === "tcp"

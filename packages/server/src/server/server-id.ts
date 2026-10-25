@@ -1,3 +1,4 @@
+import { readEnvSetting } from "./env-compat.js";
 import path from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
@@ -27,10 +28,10 @@ function generateServerId(): string {
 }
 
 /**
- * Stable daemon identifier scoped to a given $PASEO_HOME.
+ * Stable daemon identifier scoped to a given $AASWITCH_HOME.
  *
- * - Persisted to `$PASEO_HOME/server-id`
- * - Can be overridden via `PASEO_SERVER_ID` (useful for tests)
+ * - Persisted to `$AASWITCH_HOME/server-id`
+ * - Can be overridden via `AASWITCH_SERVER_ID` (useful for tests)
  */
 export function getOrCreateServerId(
   paseoHome: string,
@@ -40,19 +41,18 @@ export function getOrCreateServerId(
   const log = getLogger(options?.logger);
   const serverIdPath = getServerIdPath(paseoHome);
 
-  const envOverride =
-    typeof env.PASEO_SERVER_ID === "string" && env.PASEO_SERVER_ID.trim().length > 0
-      ? env.PASEO_SERVER_ID.trim()
-      : null;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  const serverIdEnv = readEnvSetting(env, "AASWITCH_SERVER_ID")?.trim();
+  const envOverride = serverIdEnv && serverIdEnv.length > 0 ? serverIdEnv : null;
 
   if (envOverride) {
     // Persist the override for consistent identity across restarts.
     if (!existsSync(serverIdPath)) {
       try {
         writePrivateFileAtomicSync(serverIdPath, `${envOverride}\n`);
-        log?.info({ serverId: envOverride }, "Persisted PASEO_SERVER_ID override");
+        log?.info({ serverId: envOverride }, "Persisted AASWITCH_SERVER_ID override");
       } catch (error) {
-        log?.warn({ error }, "Failed to persist PASEO_SERVER_ID override");
+        log?.warn({ error }, "Failed to persist AASWITCH_SERVER_ID override");
       }
     } else {
       ensurePrivateFile(serverIdPath);

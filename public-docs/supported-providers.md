@@ -45,7 +45,7 @@ This integration uses your installed CLI and sign-in. It is not endorsed by Goog
 Paseo MCP tools and steering are unavailable. Your own `agy` MCP servers still work. Attached
 images are passed as file references for the agent to read.
 
-If `agy` is outside your daemon's PATH, override its command in `~/.paseo/config.json`. Use `env`
+If `agy` is outside your daemon's PATH, override its command in `~/.aaswitch/config.json`. Use `env`
 for provider-specific environment variables:
 
 ```json
@@ -71,7 +71,7 @@ Install the [Kimi Code CLI](https://github.com/MoonshotAI/kimi-code) on your dae
 models, modes, and per-model thinking options over the Agent Client Protocol.
 
 If `kimi` is outside your daemon's PATH, override the command in
-`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+`~/.aaswitch/config.json`. Use `env` for provider-specific environment variables:
 
 ```json
 {
@@ -99,7 +99,7 @@ self-hosted enterprise domain). Paseo launches `codebuddy --acp` and discovers m
 modes over the Agent Client Protocol.
 
 If `codebuddy` is outside your daemon's PATH, override the command in
-`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+`~/.aaswitch/config.json`. Use `env` for provider-specific environment variables:
 
 ```json
 {
@@ -126,7 +126,7 @@ Install the [Qoder CLI](https://qoder.com) on your daemon host
 discovers models and modes over the Agent Client Protocol.
 
 If `qoder` is outside your daemon's PATH, override the command in
-`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+`~/.aaswitch/config.json`. Use `env` for provider-specific environment variables:
 
 ```json
 {
@@ -154,7 +154,7 @@ set `OPENAI_API_KEY` for the OpenAI-compatible API-key mode the ACP handshake ad
 Paseo launches `qwen --acp` and discovers models and modes over the Agent Client Protocol.
 
 If `qwen` is outside your daemon's PATH, override the command in
-`~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+`~/.aaswitch/config.json`. Use `env` for provider-specific environment variables:
 
 ```json
 {
@@ -182,7 +182,7 @@ ACP, so this is a native Direct integration — and discovers models, modes, and
 levels over its protocol. A `zcode` binary on PATH is preferred when present.
 
 If the app lives somewhere else or you use a standalone CLI build, override the command
-in `~/.paseo/config.json`. Use `env` for provider-specific environment variables:
+in `~/.aaswitch/config.json`. Use `env` for provider-specific environment variables:
 
 ```json
 {

@@ -8,7 +8,7 @@ export function createElectronSpawnOptions({ env, colorEnv, expoDevUrl, devBuild
       ...env,
       ...colorEnv,
       EXPO_DEV_URL: expoDevUrl,
-      ...(devBuildLabel ? { EXPO_PUBLIC_PASEO_DEV_BUILD_LABEL: devBuildLabel } : {}),
+      ...(devBuildLabel ? { EXPO_PUBLIC_AASWITCH_DEV_BUILD_LABEL: devBuildLabel } : {}),
     },
   };
 }

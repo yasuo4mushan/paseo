@@ -32,49 +32,54 @@ try {
 
 # Set EXPO_DEV_URL in the environment so Electron inherits it
 $env:EXPO_DEV_URL = "http://localhost:$($env:EXPO_PORT)"
-$env:EXPO_PUBLIC_PASEO_DEV_BUILD_LABEL = (git -C $RootDir branch --show-current).Trim()
+$env:EXPO_PUBLIC_AASWITCH_DEV_BUILD_LABEL = (git -C $RootDir branch --show-current).Trim()
 
-$env:PASEO_DEV_ROOT = $RootDir
-$env:PASEO_DEV_RUNTIME_FALLBACK_ROOT = $RootDir
+$env:AASWITCH_DEV_ROOT = $RootDir
+$env:AASWITCH_DEV_RUNTIME_FALLBACK_ROOT = $RootDir
 $DevRuntime = node "$ScriptDir\dev-runtime.mjs" | ConvertFrom-Json
-$env:PASEO_ELECTRON_FLAGS = $DevRuntime.electronFlags
-$env:PASEO_ELECTRON_USER_DATA_DIR = $DevRuntime.userDataDir
-Remove-Item Env:\PASEO_DEV_RUNTIME_FALLBACK_ROOT -ErrorAction SilentlyContinue
+$env:AASWITCH_ELECTRON_FLAGS = $DevRuntime.electronFlags
+$env:AASWITCH_ELECTRON_USER_DATA_DIR = $DevRuntime.userDataDir
+Remove-Item Env:\AASWITCH_DEV_RUNTIME_FALLBACK_ROOT -ErrorAction SilentlyContinue
 
 # Allow any origin in dev so Electron on random ports works.
 # SECURITY: wildcard CORS is unsafe in production — only acceptable here because
 # the daemon binds to localhost and this script is never used for production.
-$env:PASEO_CORS_ORIGINS = "*"
+$env:AASWITCH_CORS_ORIGINS = "*"
 
 # Fully isolate the dev instance from a production Paseo install so `npm run dev`
 # works while the installed app is open. Without this the dev build loses the
 # Electron single-instance lock to the installed app and quits, and ends up
 # pointed at the production daemon, whose CORS allowlist rejects the Metro origin.
-# PASEO_HOME defaults to a script-managed dev home. If you override it (to point
+# AASWITCH_HOME defaults to a script-managed dev home. If you override it (to point
 # dev at real data), we DON'T touch your config.json — only the managed home gets
 # its daemon config seeded below, so we never rewrite a production config.
 $DevStateDir = "$DesktopDir\.dev"
-if (-not $env:PASEO_HOME) {
-    $env:PASEO_HOME = "$DevStateDir\paseo-home"
+# COMPAT(paseoNames): a pre-existing PASEO_HOME still seeds AASWITCH_HOME.
+if (-not $env:AASWITCH_HOME -and $env:PASEO_HOME) { $env:AASWITCH_HOME = $env:PASEO_HOME }
+if (-not $env:AASWITCH_HOME) {
+    $env:AASWITCH_HOME = "$DevStateDir\aaswitch-home"
     $PaseoHomeManaged = $true
 } else {
     $PaseoHomeManaged = $false
 }
-New-Item -ItemType Directory -Force -Path $env:PASEO_HOME, $env:PASEO_ELECTRON_USER_DATA_DIR | Out-Null
+if ((Test-Path "$DevStateDir\paseo-home") -and -not (Test-Path $env:AASWITCH_HOME)) {
+    Move-Item "$DevStateDir\paseo-home" $env:AASWITCH_HOME
+}
+New-Item -ItemType Directory -Force -Path $env:AASWITCH_HOME, $env:AASWITCH_ELECTRON_USER_DATA_DIR | Out-Null
 
-$DevDaemonPort = if ($env:PASEO_DEV_DAEMON_PORT) { $env:PASEO_DEV_DAEMON_PORT } else { "6788" }
-if (-not $env:PASEO_LISTEN) { $env:PASEO_LISTEN = "127.0.0.1:$DevDaemonPort" }
+$DevDaemonPort = if ($env:AASWITCH_DEV_DAEMON_PORT) { $env:AASWITCH_DEV_DAEMON_PORT } else { "6788" }
+if (-not $env:AASWITCH_LISTEN) { $env:AASWITCH_LISTEN = "127.0.0.1:$DevDaemonPort" }
 
 # Seed the isolated daemon config. The desktop daemon-manager decides whether a
 # daemon is already running by reading `daemon.listen` from this config.json
-# (it does NOT honor the PASEO_LISTEN env var) and probing that address. Without
+# (it does NOT honor the AASWITCH_LISTEN env var) and probing that address. Without
 # this it reads the default 6767, finds a production daemon there, and connects
 # the dev app to prod — whose CORS allowlist then rejects the Metro origin. Pin
 # the dev port + wildcard CORS in the file so the dev app starts its OWN daemon.
-# ONLY seed the script-managed home: never rewrite a user-supplied PASEO_HOME
+# ONLY seed the script-managed home: never rewrite a user-supplied AASWITCH_HOME
 # (that could clobber a production config.json with the dev port + wildcard CORS).
 if ($PaseoHomeManaged) {
-    $env:TMP_CFG_PATH = "$($env:PASEO_HOME)/config.json"
+    $env:TMP_CFG_PATH = "$($env:AASWITCH_HOME)/config.json"
     $env:TMP_CFG_PORT = $DevDaemonPort
     $TmpScript = [System.IO.Path]::GetTempFileName() + ".js"
     $ScriptContent = @"
@@ -96,7 +101,7 @@ fs.writeFileSync(path, JSON.stringify(cfg, null, 2));
     Remove-Item Env:\TMP_CFG_PATH -ErrorAction SilentlyContinue
     Remove-Item Env:\TMP_CFG_PORT -ErrorAction SilentlyContinue
 } else {
-    Write-Host "  (custom PASEO_HOME - leaving its config.json untouched)"
+    Write-Host "  (custom AASWITCH_HOME - leaving its config.json untouched)"
 }
 
 Write-Host @"
@@ -104,9 +109,9 @@ Write-Host @"
   aaswitch Desktop Dev (Windows)
 ======================================================
   Metro:      http://localhost:$($env:EXPO_PORT)
-  Daemon:     $($env:PASEO_LISTEN) (isolated)
-  PASEO_HOME: $($env:PASEO_HOME)
-  userData:   $($env:PASEO_ELECTRON_USER_DATA_DIR)
+  Daemon:     $($env:AASWITCH_LISTEN) (isolated)
+  AASWITCH_HOME: $($env:AASWITCH_HOME)
+  userData:   $($env:AASWITCH_ELECTRON_USER_DATA_DIR)
 ======================================================
 "@
 
@@ -115,5 +120,5 @@ concurrently `
     --kill-others `
     --names "metro,electron" `
     --prefix-colors "magenta,cyan" `
-    "cd `"$AppDir`" && cross-env PASEO_WEB_PLATFORM=electron npx expo start --port $($env:EXPO_PORT)" `
+    "cd `"$AppDir`" && cross-env AASWITCH_WEB_PLATFORM=electron npx expo start --port $($env:EXPO_PORT)" `
     "npx wait-on tcp:$($env:EXPO_PORT) && npx electron `"$DesktopDir`""

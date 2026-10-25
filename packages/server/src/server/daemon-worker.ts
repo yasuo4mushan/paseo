@@ -6,8 +6,14 @@ import { resolvePaseoHome } from "./paseo-home.js";
 import { createRootLogger } from "./logger.js";
 import type { DaemonLifecycleIntent } from "./bootstrap.js";
 import { getProcessDiagnostics } from "./process-diagnostics.js";
+import { applyLegacyPaseoEnvAliases } from "./env-compat.js";
 
-process.title = "Paseo Daemon";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Map any PASEO_* variables the launcher still exports onto their
+// AASWITCH_* successors so the worker reads one spelling everywhere.
+applyLegacyPaseoEnvAliases(process.env);
+
+process.title = "aaswitch Daemon";
 
 type SupervisorLifecycleMessage =
   | {

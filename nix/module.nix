@@ -6,40 +6,40 @@
 }:
 
 let
-  cfg = config.services.paseo;
+  cfg = config.services.aaswitch;
 in
 {
   imports = [
-    (lib.mkRenamedOptionModule [ "services" "paseo" "allowedHosts" ] [ "services" "paseo" "hostnames" ])
+    (lib.mkRenamedOptionModule [ "services" "aaswitch" "allowedHosts" ] [ "services" "aaswitch" "hostnames" ])
   ];
 
-  options.services.paseo = {
+  options.services.aaswitch = {
     enable = lib.mkEnableOption "Paseo, a self-hosted daemon for AI coding agents";
 
-    package = lib.mkPackageOption pkgs "paseo" { };
+    package = lib.mkPackageOption pkgs "aaswitch" { };
 
     user = lib.mkOption {
       type = lib.types.str;
-      default = "paseo";
+      default = "aaswitch";
       description = "User account under which Paseo runs.";
     };
 
     group = lib.mkOption {
       type = lib.types.str;
-      default = "paseo";
+      default = "aaswitch";
       description = "Group under which Paseo runs.";
     };
 
     dataDir = lib.mkOption {
       type = lib.types.str;
       default =
-        if cfg.user == "paseo"
-        then "/var/lib/paseo"
-        else "/home/${cfg.user}/.paseo";
+        if cfg.user == "aaswitch"
+        then "/var/lib/aaswitch"
+        else "/home/${cfg.user}/.aaswitch";
       defaultText = lib.literalExpression ''
-        if cfg.user == "paseo"
-        then "/var/lib/paseo"
-        else "/home/''${cfg.user}/.paseo"
+        if cfg.user == "aaswitch"
+        then "/var/lib/aaswitch"
+        else "/home/''${cfg.user}/.aaswitch"
       '';
       description = "Directory for Paseo state (PASEO_HOME). Stores agent data, config, and logs.";
     };
@@ -139,8 +139,8 @@ in
 
     inheritUserEnvironment = lib.mkOption {
       type = lib.types.bool;
-      default = cfg.user != "paseo";
-      defaultText = lib.literalExpression ''cfg.user != "paseo"'';
+      default = cfg.user != "aaswitch";
+      defaultText = lib.literalExpression ''cfg.user != "aaswitch"'';
       description = ''
         Whether to include the user's profile PATH in the service environment.
 
@@ -159,7 +159,7 @@ in
       default = { };
       example = lib.literalExpression ''
         {
-          PASEO_RELAY_ENDPOINT = "relay.paseo.sh:443";
+          AASWITCH_RELAY_ENDPOINT = "relay.paseo.sh:443";
         }
       '';
       description = "Extra environment variables for the Paseo daemon.";
@@ -176,7 +176,7 @@ in
             label = "My Agent";
             command = { path = "/run/current-system/sw/bin/my-acp"; };
           };
-          log.file = { level = "info"; path = "/var/lib/paseo/daemon.log"; };
+          log.file = { level = "info"; path = "/var/lib/aaswitch/daemon.log"; };
         }
       '';
       description = ''
@@ -196,31 +196,31 @@ in
 
   config = lib.mkIf cfg.enable (
     let
-      settingsFile = (pkgs.formats.json { }).generate "paseo-config.json" cfg.settings;
+      settingsFile = (pkgs.formats.json { }).generate "aaswitch-config.json" cfg.settings;
     in
     {
     assertions = [
       {
         assertion = !(cfg.relay.enable && cfg.relay.mode == "remote" && cfg.relay.host == "");
         message = ''
-          services.paseo.relay.host must be set when relay.mode = "remote".
+          services.aaswitch.relay.host must be set when relay.mode = "remote".
         '';
       }
     ];
 
-    users.users.${cfg.user} = lib.mkIf (cfg.user == "paseo") {
+    users.users.${cfg.user} = lib.mkIf (cfg.user == "aaswitch") {
       isSystemUser = true;
       group = cfg.group;
       home = cfg.dataDir;
     };
 
-    users.groups.${cfg.group} = lib.mkIf (cfg.group == "paseo") { };
+    users.groups.${cfg.group} = lib.mkIf (cfg.group == "aaswitch") { };
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0700 ${cfg.user} ${cfg.group} - -"
     ];
 
-    systemd.services.paseo = {
+    systemd.services.aaswitch = {
       description = "Paseo - self-hosted daemon for AI coding agents";
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
@@ -244,7 +244,7 @@ in
           # so user-installed CLIs (claude, opencode, codex, ...) are reachable
           # by agent processes the daemon spawns.
           PATH = lib.mkForce (lib.concatStringsSep ":" (
-            lib.optionals (cfg.user != "paseo") [
+            lib.optionals (cfg.user != "aaswitch") [
               "${userHome}/.nix-profile/bin"
               "${userHome}/.local/state/nix/profile/bin"
             ]
@@ -273,7 +273,7 @@ in
         Group = cfg.group;
 
         ExecStart =
-          "${cfg.package}/bin/paseo-server"
+          "${cfg.package}/bin/aaswitch-server"
           + lib.optionalString (!cfg.relay.enable) " --no-relay";
 
         Restart = "on-failure";

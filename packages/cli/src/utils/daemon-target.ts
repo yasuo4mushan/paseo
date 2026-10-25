@@ -1,12 +1,16 @@
-import { resolvePaseoHome } from "@aaswitch/server/daemon-control";
+import { resolvePaseoHome, withLegacyPaseoEnvAliases } from "@aaswitch/server/daemon-control";
 
 export type DaemonTarget = { kind: "instance"; home: string } | { kind: "endpoint"; host: string };
 
 export function selectDaemonTarget(
   options: { home?: string; host?: string },
-  env: NodeJS.ProcessEnv = process.env,
+  rawEnv: NodeJS.ProcessEnv = process.env,
   localOnly = false,
 ): DaemonTarget {
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // Accept PASEO_HOME/PASEO_HOST from direct library callers too, not only
+  // from processes that ran the entry-point alias.
+  const env = withLegacyPaseoEnvAliases(rawEnv);
   for (const key of ["home", "host"] as const) {
     if (options[key] !== undefined && !options[key]!.trim())
       throw { code: "TARGET_INVALID", message: `--${key} requires a non-empty value.` };
@@ -21,19 +25,23 @@ export function selectDaemonTarget(
       };
     return {
       kind: "instance",
-      home: resolvePaseoHome({ PASEO_HOME: options.home ?? env.PASEO_HOME }),
+      home: resolvePaseoHome({ AASWITCH_HOME: options.home ?? env.AASWITCH_HOME }),
     };
   }
   if (options.home !== undefined)
-    return { kind: "instance", home: resolvePaseoHome({ PASEO_HOME: options.home }) };
+    return { kind: "instance", home: resolvePaseoHome({ AASWITCH_HOME: options.home }) };
   if (options.host !== undefined) return { kind: "endpoint", host: options.host };
-  if (env.PASEO_HOME && env.PASEO_HOST)
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // PASEO_HOME/PASEO_HOST still resolve when their AASWITCH_* successors
+  // are unset; run.ts aliases them before commands run, so explicit checks
+  // here only guard against both spellings being set at once.
+  if (env.AASWITCH_HOME && env.AASWITCH_HOST)
     throw {
       code: "TARGET_AMBIGUOUS",
-      message: "PASEO_HOME and PASEO_HOST are both set. Choose --home or --host explicitly.",
+      message: "AASWITCH_HOME and AASWITCH_HOST are both set. Choose --home or --host explicitly.",
     };
-  if (env.PASEO_HOST) return { kind: "endpoint", host: env.PASEO_HOST };
-  return { kind: "instance", home: resolvePaseoHome({ PASEO_HOME: env.PASEO_HOME }) };
+  if (env.AASWITCH_HOST) return { kind: "endpoint", host: env.AASWITCH_HOST };
+  return { kind: "instance", home: resolvePaseoHome({ AASWITCH_HOME: env.AASWITCH_HOME }) };
 }
 
 export function describeDaemonTarget(target: DaemonTarget): string {

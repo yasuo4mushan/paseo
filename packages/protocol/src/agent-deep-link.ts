@@ -23,8 +23,13 @@ export function buildAgentDeepLinkRoute(
   return `/h/${encodeURIComponent(serverId)}/agent/${encodeURIComponent(agentId)}`;
 }
 
+export const AGENT_DEEP_LINK_SCHEME = "aaswitch";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Links minted before the rebrand keep parsing for one version window.
+export const LEGACY_AGENT_DEEP_LINK_SCHEME = "paseo";
+
 export function buildAgentDeepLink(target: AgentDeepLinkTarget): string {
-  return `paseo:/${buildAgentDeepLinkRoute(target)}`;
+  return `${AGENT_DEEP_LINK_SCHEME}:/${buildAgentDeepLinkRoute(target)}`;
 }
 
 export function parseAgentDeepLink(input: string): AgentDeepLinkTarget | null {
@@ -36,7 +41,7 @@ export function parseAgentDeepLink(input: string): AgentDeepLinkTarget | null {
   }
 
   if (
-    url.protocol !== "paseo:" ||
+    (url.protocol !== "aaswitch:" && url.protocol !== "paseo:") ||
     url.hostname !== "h" ||
     url.username ||
     url.password ||

@@ -6,7 +6,7 @@ function isTruthyEnv(value: string | undefined): boolean {
 }
 
 export function isPaseoDictationDebugEnabled(): boolean {
-  return isTruthyEnv(process.env.PASEO_DICTATION_DEBUG);
+  return isTruthyEnv(process.env.AASWITCH_DICTATION_DEBUG);
 }
 
 export function resolveRecordingsDebugDir(explicitEnvVarName: string): string | null {

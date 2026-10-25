@@ -9,7 +9,7 @@ import {
 
 function parseArgs(argv: string[]): { modelsDir: string; modelIds: LocalSpeechModelId[] } {
   const home = resolvePaseoHome();
-  let modelsDir = process.env.PASEO_LOCAL_MODELS_DIR || `${home}/models/local-speech`;
+  let modelsDir = process.env.AASWITCH_LOCAL_MODELS_DIR || `${home}/models/local-speech`;
   const modelIds: LocalSpeechModelId[] = [];
 
   for (let i = 0; i < argv.length; i++) {
