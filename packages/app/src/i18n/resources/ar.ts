@@ -1681,9 +1681,15 @@ export const ar: TranslationResources = {
     },
     done: {
       title: "You're all set",
-      subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+      subtitle: "افتح تطبيق aaswitch المصغّر وامسح هذا الرمز للاتصال بوكلاء هذا الجهاز.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "جارٍ الاتصال بالخادم المحلي…",
+      relayOffHint: "شغّل المرحّل المشفّر طرفًا لطرف لإنشاء رمز QR للإقران.",
+      copyLink: "نسخ رابط الإقران",
+      qrAccessibility: "رمز QR للإقران",
+      securityHint: "تعامل مع رابط الإقران ككلمة مرور.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2556,6 +2562,14 @@ export const ar: TranslationResources = {
         title: "إقران الأجهزة",
         rowTitle: "إقران جهاز",
         rowHint: "امسح رمز QR ضوئيًا أو انسخ رابطًا لتوصيل هاتفك بهذا المضيف",
+      },
+      connectPhone: {
+        title: "ربط الهاتف",
+        hint: "امسح الرمز بتطبيق aaswitch المصغّر للاتصال بوكلاء هذا الجهاز",
+      },
+      autoArchive: {
+        title: "أرشفة مساحات العمل المدموجة",
+        hint: "أرشفة تلقائية لمساحات العمل النظيفة بعد دمج طلب السحب",
       },
       account: {
         signedOutTitle: "Not signed in",

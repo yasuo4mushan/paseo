@@ -1711,8 +1711,15 @@ export const ru: TranslationResources = {
     done: {
       title: "You're all set",
       subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+        "Откройте мини-приложение aaswitch и отсканируйте код, чтобы подключиться к агентам этого компьютера.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "Подключение к локальному демону…",
+      relayOffHint: "Включите сквозное шифрованное реле, чтобы сгенерировать QR-код сопряжения.",
+      copyLink: "Скопировать ссылку сопряжения",
+      qrAccessibility: "QR-код сопряжения",
+      securityHint: "Обращайтесь со ссылкой сопряжения как с паролем.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2598,6 +2605,14 @@ export const ru: TranslationResources = {
         rowTitle: "Подключить устройство",
         rowHint:
           "Отсканируйте QR-код или скопируйте ссылку, чтобы подключить телефон к этому хосту.",
+      },
+      connectPhone: {
+        title: "Подключить телефон",
+        hint: "Отсканируйте в мини-приложении aaswitch, чтобы подключиться к агентам этого компьютера",
+      },
+      autoArchive: {
+        title: "Архивировать объединённые рабочие области",
+        hint: "Автоматически архивировать чистые рабочие области после слияния pull request",
       },
       account: {
         signedOutTitle: "Not signed in",

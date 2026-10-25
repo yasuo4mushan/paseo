@@ -1728,8 +1728,16 @@ export const es: TranslationResources = {
     done: {
       title: "You're all set",
       subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+        "Abre el miniprograma de aaswitch y escanea este código para conectar con los agentes de este equipo.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "Conectando con el daemon local…",
+      relayOffHint:
+        "Activa el relay cifrado de extremo a extremo para generar el código QR de emparejamiento.",
+      copyLink: "Copiar enlace de emparejamiento",
+      qrAccessibility: "Código QR de emparejamiento",
+      securityHint: "Trata el enlace de emparejamiento como una contraseña.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2610,6 +2618,14 @@ export const es: TranslationResources = {
         title: "Emparejar dispositivos",
         rowTitle: "Emparejar un dispositivo",
         rowHint: "Escanee un códigoQRo copie un enlace para conectar su teléfono a este host",
+      },
+      connectPhone: {
+        title: "Conectar el teléfono",
+        hint: "Escanea con el miniprograma de aaswitch para conectarte a los agentes de este equipo",
+      },
+      autoArchive: {
+        title: "Archivar espacios de trabajo fusionados",
+        hint: "Archiva automáticamente los espacios de trabajo limpios tras fusionar su pull request",
       },
       account: {
         signedOutTitle: "Not signed in",
