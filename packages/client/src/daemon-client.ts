@@ -9,12 +9,12 @@ import {
   type TimelineSubscription,
 } from "./connection/index.js";
 import { CreationClient } from "./creation/index.js";
-import type { CreationSnapshot } from "@getpaseo/protocol/messages";
+import type { CreationSnapshot } from "@aaswitch/protocol/messages";
 import type { z } from "zod";
-import type { SessionEventSubscription } from "@getpaseo/protocol/messages";
-import type { ClientCapability } from "@getpaseo/protocol/client-capabilities";
-import type { AgentAttentionNotificationPayload } from "@getpaseo/protocol/agent-attention-notification";
-import { MAX_WEBSOCKET_MESSAGE_BYTES } from "@getpaseo/protocol/websocket-message-limit";
+import type { SessionEventSubscription } from "@aaswitch/protocol/messages";
+import type { ClientCapability } from "@aaswitch/protocol/client-capabilities";
+import type { AgentAttentionNotificationPayload } from "@aaswitch/protocol/agent-attention-notification";
+import { MAX_WEBSOCKET_MESSAGE_BYTES } from "@aaswitch/protocol/websocket-message-limit";
 import {
   AgentCreateFailedStatusPayloadSchema,
   AgentCreatedStatusPayloadSchema,
@@ -29,8 +29,8 @@ import {
   SessionInboundMessageSchema,
   type ActiveTurnBehavior,
   type ServerInfoStatusPayload,
-} from "@getpaseo/protocol/messages";
-import { validateWSOutboundMessage } from "@getpaseo/protocol/validation/ws-outbound";
+} from "@aaswitch/protocol/messages";
+import { validateWSOutboundMessage } from "@aaswitch/protocol/validation/ws-outbound";
 import type {
   AgentStreamEventPayload,
   AgentSnapshotPayload,
@@ -129,7 +129,7 @@ import type {
   AgentSkillSelection,
   AgentSkillsStatus,
   AgentSkillsSaveResult,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import type {
   AgentPermissionRequest,
   AgentPermissionResponse,
@@ -137,13 +137,13 @@ import type {
   AgentProviderNotice,
   AgentProvider,
   AgentSessionConfig,
-} from "@getpaseo/protocol/agent-types";
+} from "@aaswitch/protocol/agent-types";
 import type {
   AgentConfigApply,
   MutableDaemonConfig,
   MutableDaemonConfigPatch,
-} from "@getpaseo/protocol/messages";
-import { isRelayClientWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
+} from "@aaswitch/protocol/messages";
+import { isRelayClientWebSocketUrl } from "@aaswitch/protocol/daemon-endpoints";
 import {
   asUint8Array,
   decodeFileTransferFrame,
@@ -152,7 +152,7 @@ import {
   FileTransferOpcode,
   TerminalStreamOpcode,
   type FileTransferFrame,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@aaswitch/protocol/binary-frames/index";
 import {
   createRelayE2eeTransportFactory,
   createRelayTransportFactory,
@@ -175,7 +175,7 @@ import { TerminalStreamRouter, type TerminalStreamEvent } from "./terminal-strea
 import type {
   BrowserAutomationExecuteRequest,
   BrowserAutomationExecuteResponse,
-} from "@getpaseo/protocol/browser-automation/rpc-schemas";
+} from "@aaswitch/protocol/browser-automation/rpc-schemas";
 
 export interface Logger {
   debug(obj: object, msg?: string): void;
@@ -3316,7 +3316,7 @@ export class DaemonClient {
 
   async appendAgentTimelineItem(
     agentId: string,
-    item: Omit<import("@getpaseo/protocol/agent-types").PluginTimelineItem, "pluginId">,
+    item: Omit<import("@aaswitch/protocol/agent-types").PluginTimelineItem, "pluginId">,
   ): Promise<{ seq: number; epoch: string }> {
     const requestId = this.createRequestId();
     const payload = await this.sendCorrelatedSessionRequest({

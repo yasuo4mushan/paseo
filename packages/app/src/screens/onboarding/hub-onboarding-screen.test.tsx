@@ -4,7 +4,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
 
 const { theme, toastMock, copyMock } = vi.hoisted(() => ({
   theme: {

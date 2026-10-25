@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "vitest";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
 import type { HubCredentialStore, StoredHubCredential } from "./credentials.js";
 import type { HubDaemonClient, HubStatus } from "./daemon-client.js";
 import type { HubHttpClient } from "./hub-client/index.js";
@@ -48,8 +48,8 @@ describe("Hub guided setup continuation", () => {
     ]);
     assert.deepEqual(prompts.selections, []);
     assert.deepEqual(prompts.messages, [
-      "Daemon connected with no permissions.\n\nEnable Hub automations later:\n  paseo hub permissions grant hub.execute",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Daemon connected with no permissions.\n\nEnable Hub automations later:\n  aaswitch hub permissions grant hub.execute",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: aaswitch hub init",
     ]);
     assert.deepEqual(calls, [{ operation: "token", origin: "https://hub.test" }]);
     assert.equal(daemon.connections, 1);
@@ -69,8 +69,8 @@ describe("Hub guided setup continuation", () => {
       setupEnvironment(cwd, credentials, daemon, connectDeclined, []),
     );
     assert.deepEqual(connectDeclined.messages, [
-      "Skipped daemon connection. Connect later with: paseo hub connect https://hub.test",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Skipped daemon connection. Connect later with: aaswitch hub connect https://hub.test",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: aaswitch hub init",
     ]);
   });
 
@@ -90,7 +90,7 @@ describe("Hub guided setup continuation", () => {
     assert.deepEqual(prompts.confirmations, []);
     assert.deepEqual(prompts.messages, [
       "This daemon is already connected to https://hub.test. Permissions: None.",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: aaswitch hub init",
     ]);
   });
 
@@ -126,8 +126,8 @@ describe("Hub guided setup continuation", () => {
     );
 
     assert.deepEqual(prompts.messages, [
-      "Skipped daemon connection. Connect later with: paseo hub connect https://hub.test",
-      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: paseo hub init",
+      "Skipped daemon connection. Connect later with: aaswitch hub connect https://hub.test",
+      "Configure triggers in Hub: https://hub.test/triggers\nOr scaffold triggers as code: aaswitch hub init",
     ]);
   });
 

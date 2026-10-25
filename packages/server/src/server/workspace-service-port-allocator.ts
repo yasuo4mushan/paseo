@@ -1,7 +1,7 @@
 import net from "node:net";
 import { execCommand } from "../utils/spawn.js";
 import { findFreePort } from "./service-proxy.js";
-import type { PaseoServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { PaseoServicePortAllocation } from "@aaswitch/protocol/paseo-config-schema";
 
 const PORT_SCRIPT_TIMEOUT_MS = 10_000;
 const PORT_SCRIPT_MAX_OUTPUT_BYTES = 1024;

@@ -139,11 +139,11 @@ async function createRootAlias(directory: string): Promise<string> {
 
 describe("plugin runtime entries", () => {
   it.each([
-    'import type { AgentTimelineItem, ToolCallDetail } from "@getpaseo/protocol/agent-types"; export type Detail = ToolCallDetail; export type Item = AgentTimelineItem;',
-    'import { type AgentTimelineItem } from "@getpaseo/protocol/agent-types"; export type Item = AgentTimelineItem;',
-    'export type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";',
-    'export type Item = import("@getpaseo/protocol/agent-types").AgentTimelineItem;',
-    'export type { AgentAttachment } from "@getpaseo/protocol/messages";',
+    'import type { AgentTimelineItem, ToolCallDetail } from "@aaswitch/protocol/agent-types"; export type Detail = ToolCallDetail; export type Item = AgentTimelineItem;',
+    'import { type AgentTimelineItem } from "@aaswitch/protocol/agent-types"; export type Item = AgentTimelineItem;',
+    'export type { AgentTimelineItem } from "@aaswitch/protocol/agent-types";',
+    'export type Item = import("@aaswitch/protocol/agent-types").AgentTimelineItem;',
+    'export type { AgentAttachment } from "@aaswitch/protocol/messages";',
   ])("compiles protocol types without local dependencies: %s", async (typeSource) => {
     const entries = await createSplitPlugin();
     await writeFile(
@@ -155,19 +155,19 @@ describe("plugin runtime entries", () => {
 
     expect(result.clientBundle).toContain("Client contribution");
     expect(result.serverBundle).toContain("Server contribution");
-    expect(result.clientBundle).not.toContain("@getpaseo/protocol");
-    expect(result.serverBundle).not.toContain("@getpaseo/protocol");
+    expect(result.clientBundle).not.toContain("@aaswitch/protocol");
+    expect(result.serverBundle).not.toContain("@aaswitch/protocol");
   });
 
   it("still requires local dependencies for protocol runtime imports", async () => {
     const entries = await createSplitPlugin();
     await writeFile(
       entries.server,
-      'import { TOOL_CALL_ICON_NAMES } from "@getpaseo/protocol/agent-types"; export default () => TOOL_CALL_ICON_NAMES;',
+      'import { TOOL_CALL_ICON_NAMES } from "@aaswitch/protocol/agent-types"; export default () => TOOL_CALL_ICON_NAMES;',
     );
 
     await expect(compilePlugin(entries)).rejects.toThrow(
-      'Could not resolve "@getpaseo/protocol/agent-types"',
+      'Could not resolve "@aaswitch/protocol/agent-types"',
     );
   });
 
@@ -187,8 +187,8 @@ describe("plugin runtime entries", () => {
     "react",
     "react/jsx-runtime",
     "react-native",
-    "@getpaseo/plugin/client",
-    "@getpaseo/plugin/client/ui",
+    "@aaswitch/plugin/client",
+    "@aaswitch/plugin/client/ui",
   ])("rejects %s from server code", async (specifier) => {
     const entries = await createSplitPlugin();
     await writeFile(
@@ -199,9 +199,9 @@ describe("plugin runtime entries", () => {
   });
 
   it.each([
-    "@getpaseo/plugin/server",
-    "@getpaseo/plugin/server/provider",
-    "@getpaseo/plugin/server/acp",
+    "@aaswitch/plugin/server",
+    "@aaswitch/plugin/server/provider",
+    "@aaswitch/plugin/server/acp",
   ])("rejects %s from client code", async (specifier) => {
     const entries = await createSplitPlugin();
     await writeFile(
@@ -215,8 +215,8 @@ describe("plugin runtime entries", () => {
     "react",
     "node:fs",
     "fs",
-    "@getpaseo/plugin/client",
-    "@getpaseo/plugin/server",
+    "@aaswitch/plugin/client",
+    "@aaswitch/plugin/server",
     "../client/surface",
     "../server/handler",
   ])("rejects %s from shared code", async (specifier) => {
@@ -231,7 +231,7 @@ describe("plugin runtime entries", () => {
   it.each([
     { target: "client", dependency: "react" },
     { target: "server", dependency: "node:fs" },
-    { target: "server", dependency: "@getpaseo/plugin/server/provider" },
+    { target: "server", dependency: "@aaswitch/plugin/server/provider" },
   ] as const)(
     "rejects a shared dependency reaching $dependency in the $target bundle",
     async ({ target, dependency }) => {
@@ -257,10 +257,10 @@ describe("plugin runtime entries", () => {
   );
 
   it.each([
-    'import type { PluginClientContext } from "@getpaseo/plugin/client"; export type Context = PluginClientContext;',
-    'export type { PluginClientContext } from "@getpaseo/plugin/client";',
-    'export type Context = import("@getpaseo/plugin/client").PluginClientContext;',
-    'import { type PluginClientContext } from "@getpaseo/plugin/client"; export type Context = PluginClientContext;',
+    'import type { PluginClientContext } from "@aaswitch/plugin/client"; export type Context = PluginClientContext;',
+    'export type { PluginClientContext } from "@aaswitch/plugin/client";',
+    'export type Context = import("@aaswitch/plugin/client").PluginClientContext;',
+    'import { type PluginClientContext } from "@aaswitch/plugin/client"; export type Context = PluginClientContext;',
     'import type { ComponentType } from "react"; export type Component = ComponentType;',
   ])("rejects runtime-owned types in shared code: %s", async (typeSource) => {
     const entries = await createSplitPlugin();
@@ -371,7 +371,7 @@ export type Value = string;`,
       );
       await writeFile(
         referencedFile,
-        'export type { PluginClientContext } from "@getpaseo/plugin/client";',
+        'export type { PluginClientContext } from "@aaswitch/plugin/client";',
       );
       await writeFile(
         path.join(entries.directory, "shared/labels.ts"),
@@ -422,16 +422,16 @@ export type Value = string;`,
     });
     await writeFile(
       path.join(entries.directory, "shared/types.ts"),
-      'export type { PluginClientContext as Value } from "@getpaseo/plugin/client";',
+      'export type { PluginClientContext as Value } from "@aaswitch/plugin/client";',
     );
     await expect(compilePlugin(entries)).rejects.toThrow("plugin shared");
   });
 
   it.each([
-    { specifier: "@getpaseo/plugin/client", importKind: "import type" },
-    { specifier: "@getpaseo/plugin/server", importKind: "import type" },
-    { specifier: "@getpaseo/plugin/client", importKind: "import" },
-    { specifier: "@getpaseo/plugin/server", importKind: "import" },
+    { specifier: "@aaswitch/plugin/client", importKind: "import type" },
+    { specifier: "@aaswitch/plugin/server", importKind: "import type" },
+    { specifier: "@aaswitch/plugin/client", importKind: "import" },
+    { specifier: "@aaswitch/plugin/server", importKind: "import" },
   ])(
     "rejects transitive declaration dependencies on $specifier through $importKind",
     async ({ specifier, importKind }) => {
@@ -464,7 +464,7 @@ export type Value = string;`,
     const entries = await createSplitPlugin();
     await writeFile(
       path.join(entries.directory, "shared/types.ts"),
-      'export type { PluginClientContext } from "@getpaseo/plugin/client";',
+      'export type { PluginClientContext } from "@aaswitch/plugin/client";',
     );
     await writeFile(
       path.join(entries.directory, "shared/labels.ts"),
@@ -475,11 +475,11 @@ export type Value = string;`,
 
   it.each([
     "@paseo/plugin",
-    "@getpaseo/plugin/react-native",
-    "@getpaseo/plugin/ui",
-    "@getpaseo/plugin/provider",
-    "@getpaseo/plugin/acp",
-    "@getpaseo/plugin/host",
+    "@aaswitch/plugin/react-native",
+    "@aaswitch/plugin/ui",
+    "@aaswitch/plugin/provider",
+    "@aaswitch/plugin/acp",
+    "@aaswitch/plugin/host",
   ])("rejects retired entry %s", async (specifier) => {
     const entries = await createSplitPlugin();
     await writeFile(

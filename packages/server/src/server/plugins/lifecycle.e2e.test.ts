@@ -293,7 +293,7 @@ async function createProviderPlugin(
   ProviderEvent,
   ProviderInput,
   ProviderRegistration,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 
 const CAPABILITIES = ["prompt.message", "session.persistence"];
 

@@ -1,7 +1,7 @@
 import {
   PluginRegistryIdentitySchema,
   parsePluginRegistryReference,
-} from "@getpaseo/protocol/plugin-registry";
+} from "@aaswitch/protocol/plugin-registry";
 import { resolveRegistryPlugin, type RegistryOptions } from "./managed-source/registry.js";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -18,7 +18,7 @@ import {
   type PluginUpdateProposal,
   type PluginUpdateSelection,
   type PluginUpdateTarget,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import { runGitCommand } from "../../utils/run-git-command.js";
 import { ensurePrivateDirectory, writePrivateFileAtomicSync } from "../private-files.js";
 import { readPluginManifest, type PluginManifest } from "./manifest.js";

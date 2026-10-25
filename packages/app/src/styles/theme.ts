@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { darkHighlightColors, lightHighlightColors } from "@getpaseo/highlight";
+import { darkHighlightColors, lightHighlightColors } from "@aaswitch/highlight";
 
 export const baseColors = {
   // Base colors

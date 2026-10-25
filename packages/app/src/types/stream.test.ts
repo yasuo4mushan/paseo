@@ -16,10 +16,10 @@ import {
   upsertUserMessage,
   upsertUserMessageAcrossStream,
 } from "./stream";
-import type { AgentProvider, ToolCallDetail } from "@getpaseo/protocol/agent-types";
-import type { AgentStreamEventPayload } from "@getpaseo/protocol/messages";
-import { buildToolCallDisplayModel } from "@getpaseo/protocol/tool-call-display";
-import { timelineItemIdentity } from "@getpaseo/protocol/timeline-identity";
+import type { AgentProvider, ToolCallDetail } from "@aaswitch/protocol/agent-types";
+import type { AgentStreamEventPayload } from "@aaswitch/protocol/messages";
+import { buildToolCallDisplayModel } from "@aaswitch/protocol/tool-call-display";
+import { timelineItemIdentity } from "@aaswitch/protocol/timeline-identity";
 
 type CanonicalToolStatus = "running" | "completed" | "failed" | "canceled";
 

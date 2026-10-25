@@ -284,7 +284,7 @@ import type {
   PluginUpdatePreview,
   PluginUpdateProposal,
   PluginUpdateResult,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 function reviewFixture(answer = true, outcome: "update" | "installed-newer" = "update") {
   const proposal: PluginUpdateProposal = {
     id: "review",

@@ -99,13 +99,13 @@ miniprogram/
 
 开发期勾选"不校验合法域名"即可用任意 `ws://` 调试；**正式发布/体验版必须满足**：
 
-| 事项 | 要求 |
-| --- | --- |
-| AppID | 在 [小程序后台](https://mp.weixin.qq.com) 注册并获得正式 AppID，替换 `project.config.json` 的 `touristappid` |
+| 事项            | 要求                                                                                                                    |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| AppID           | 在 [小程序后台](https://mp.weixin.qq.com) 注册并获得正式 AppID，替换 `project.config.json` 的 `touristappid`            |
 | socket 合法域名 | 后台「开发管理 → 开发设置 → 服务器域名 → socket 合法域名」添加 relay 域名，**必须是 `wss://` 协议头**（`ws://` 不允许） |
-| ICP 备案 | 域名必须完成 ICP 备案（微信强制校验，未备案域名无法加入白名单） |
-| TLS | wss 需要 有效证书（不能自签）；自托管 relay 若走 80 明文只能用于开发调试 |
-| relay 端口 | 建议 `wss://域名:443`（或 443 映射），非常用端口也可配置但域名规则相同 |
+| ICP 备案        | 域名必须完成 ICP 备案（微信强制校验，未备案域名无法加入白名单）                                                         |
+| TLS             | wss 需要 有效证书（不能自签）；自托管 relay 若走 80 明文只能用于开发调试                                                |
+| relay 端口      | 建议 `wss://域名:443`（或 443 映射），非常用端口也可配置但域名规则相同                                                  |
 
 自托管 relay 开启 TLS 的参考：域名 443 → 反向代理（Nginx/Caddy，挂 ICP 备案证书）→ relay `ws://127.0.0.1:<port>`，relay URI 用 `relay://域名:443/...?key=...&ssl=true`。
 
@@ -120,7 +120,7 @@ npm run typecheck               # src + tests 两个 tsconfig
 ```
 
 - **官方互通**（`tests/e2ee-interop.test.ts`）：vendor 的客户端 E2EE 信道与主仓
-  `@getpaseo/relay` 的 `createDaemonChannel`（官方 daemon 侧实现）在内存管道上握手、
+  `@aaswitch/relay` 的 `createDaemonChannel`（官方 daemon 侧实现）在内存管道上握手、
   互发消息。主仓实现位置通过 `PASEO_MAIN_CHECKOUT` 环境变量或相邻检出路径探测，
   找不到时自动 skip。
 - **hub 客户端**（`tests/hub-client.test.ts`）：Taro request/storage 全 mock；覆盖

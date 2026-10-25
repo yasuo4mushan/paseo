@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WorkspaceScriptPayload } from "@getpaseo/protocol/messages";
+import type { WorkspaceScriptPayload } from "@aaswitch/protocol/messages";
 import { scriptStatus, summarizeScripts } from "./script-status";
 
 function service(

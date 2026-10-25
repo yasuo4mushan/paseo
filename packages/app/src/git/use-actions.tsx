@@ -18,7 +18,7 @@ import {
   type GitActions,
 } from "@/git/policy";
 import { deriveMergeCapability } from "@/git/merge-capability";
-import type { CheckoutPrMergeMethod } from "@getpaseo/protocol/messages";
+import type { CheckoutPrMergeMethod } from "@aaswitch/protocol/messages";
 import { openExternalUrl } from "@/utils/open-external-url";
 import { useToast } from "@/contexts/toast-context";
 import { useSessionStore, type WorkspaceDescriptor } from "@/stores/session-store";

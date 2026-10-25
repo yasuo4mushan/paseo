@@ -10,7 +10,7 @@ The image source lives in [`docker/`](../docker/).
 
 The official image:
 
-- builds `@getpaseo/server` and `@getpaseo/cli` from source-built workspace tarballs
+- builds `@aaswitch/server` and `aaswitch` from source-built workspace tarballs
 - runs the daemon as the non-root `paseo` user
 - listens on `0.0.0.0:6767` inside the container
 - enables the bundled daemon web UI with `PASEO_WEB_UI_ENABLED=true`
@@ -22,7 +22,7 @@ the web UI. The served app receives a same-origin connection hint and connects
 back to that daemon. Static UI files load without daemon auth; API and
 WebSocket requests still require `PASEO_PASSWORD` when one is configured.
 
-Host-side CLI commands select the container explicitly, for example `paseo project ls --host 127.0.0.1:6767`. Without an endpoint selector the CLI looks for a local home’s supervisor. Container environment settings are deployment overrides; worker restart preserves them. Your container manager owns full supervisor replacement.
+Host-side CLI commands select the container explicitly, for example `aaswitch project ls --host 127.0.0.1:6767`. Without an endpoint selector the CLI looks for a local home’s supervisor. Container environment settings are deployment overrides; worker restart preserves them. Your container manager owns full supervisor replacement.
 
 ## Quick Start
 
@@ -104,8 +104,8 @@ You can also mount credentials from the host or run agent login once inside the
 container:
 
 ```bash
-docker exec -it --user paseo paseo codex
-docker exec -it --user paseo paseo claude
+docker exec -it --user paseo aaswitch codex
+docker exec -it --user paseo aaswitch claude
 ```
 
 Agent credentials and config persist in `/home/paseo`, alongside daemon state.

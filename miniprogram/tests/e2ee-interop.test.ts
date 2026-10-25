@@ -1,5 +1,5 @@
 /**
- * 互通测试：小程序 vendor 的 E2EE 客户端信道 vs 官方 @getpaseo/relay 实现。
+ * 互通测试：小程序 vendor 的 E2EE 客户端信道 vs 官方 @aaswitch/relay 实现。
  *
  * 场景 1（最重要）：vendor createClientChannel（小程序侧） ↔ 官方
  *   createDaemonChannel（daemon 侧）在内存管道上完成 e2ee_hello/e2ee_ready
@@ -22,7 +22,7 @@ const official = loadOfficialRelay();
 
 /** it.skipIf(official === null) 只是跳过；类型层面用守卫收窄。 */
 function requireOfficial() {
-  if (!official) throw new Error("official @getpaseo/relay not found");
+  if (!official) throw new Error("official @aaswitch/relay not found");
   return official;
 }
 

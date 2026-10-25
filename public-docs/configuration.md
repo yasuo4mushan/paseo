@@ -24,7 +24,7 @@ You can change the home directory by setting `PASEO_HOME` or selecting `--home` 
 
 Managed `start` and Desktop use defaults, then `config.json`. Inherited daemon-setting environment variables are removed from their launches.
 
-Foreground `paseo daemon run`, Docker, and direct supervisor launches apply environment variables after the file. Existing legacy supervisor flags retain their precedence across worker restart. Changing deployment overrides requires stopping and relaunching that deployment. Lists append across sources, including hostnames and CORS origins.
+Foreground `aaswitch daemon run`, Docker, and direct supervisor launches apply environment variables after the file. Existing legacy supervisor flags retain their precedence across worker restart. Changing deployment overrides requires stopping and relaunching that deployment. Lists append across sources, including hostnames and CORS origins.
 
 ## Example
 
@@ -49,9 +49,9 @@ Minimal example that configures listening address, hostnames, and MCP:
 Edit the selected file through the CLI:
 
 ```bash
-paseo daemon config get daemon.listen --home ~/paseo-test
-paseo daemon config set daemon.listen 127.0.0.1:6800 --home ~/paseo-test
-paseo daemon config unset features.webUi.enabled --home ~/paseo-test
+aaswitch daemon config get daemon.listen --home ~/paseo-test
+aaswitch daemon config set daemon.listen 127.0.0.1:6800 --home ~/paseo-test
+aaswitch daemon config unset features.webUi.enabled --home ~/paseo-test
 ```
 
 `get [path]` reports configured values and labels missing fields unset. It does not create a home. `set` parses JSON, otherwise treats the input as a string; `--string` forces a literal string. `--json` selects output format. Use whole-object JSON for dynamic keys containing dots. Unknown paths, invalid values, and invalid existing files are rejected without writing. Passwords use `set-password`.
@@ -61,13 +61,13 @@ A successful edit saves the validated file, then reloads once if the instance is
 After editing `config.json` directly, reload it:
 
 ```bash
-paseo reload
+aaswitch reload
 ```
 
 The daemon validates the complete file before applying anything. It applies runtime-safe changes and lists any settings that still need a restart. If it reports restart-required paths, run:
 
 ```bash
-paseo daemon restart
+aaswitch daemon restart
 ```
 
 Runtime-safe settings include relay enablement, MCP settings, browser tools, hostnames, CORS origins, trusted proxies, Git process limits, agent and terminal profiles, provider definitions, metadata generation, the app base URL, provider catalog timeout, and the global plugin switch. Removing one of these settings applies its omitted-field behavior; removing a provider removes it from future launches.
@@ -111,14 +111,14 @@ The daemon can serve the browser web client from the same HTTP server. This is e
 Enable it from the CLI:
 
 ```bash
-paseo daemon config set features.webUi.enabled true
-paseo daemon start
+aaswitch daemon config set features.webUi.enabled true
+aaswitch daemon start
 ```
 
 Or set the environment variable:
 
 ```bash
-PASEO_WEB_UI_ENABLED=true paseo daemon run
+PASEO_WEB_UI_ENABLED=true aaswitch daemon run
 ```
 
 Or persist it in `config.json`:
@@ -171,15 +171,15 @@ You can require a password to connect to the daemon. When set, all HTTP and WebS
 The easiest way to set a password is with the CLI:
 
 ```bash
-paseo daemon set-password
+aaswitch daemon set-password
 ```
 
-This prompts for a password, writes the bcrypt hash to `config.json`, and tells you to restart the daemon. Authentication is a startup setting, so `paseo reload` will also report it as restart-required.
+This prompts for a password, writes the bcrypt hash to `config.json`, and tells you to restart the daemon. Authentication is a startup setting, so `aaswitch reload` will also report it as restart-required.
 
 Alternatively, set the `PASEO_PASSWORD` environment variable (plaintext, hashed automatically at startup):
 
 ```bash
-PASEO_PASSWORD=my-secret paseo daemon start
+PASEO_PASSWORD=my-secret aaswitch daemon start
 ```
 
 Or write the hash directly in `config.json`:
@@ -203,14 +203,14 @@ The CLI picks up a password from, in order:
 1. The `password` query parameter on a `tcp://` host URI:
 
    ```bash
-   paseo --host "tcp://192.168.1.10:6767?password=my-secret" ls
+   aaswitch --host "tcp://192.168.1.10:6767?password=my-secret" ls
    ```
 
 2. The `PASEO_PASSWORD` environment variable, used as a fallback when the host carries no embedded password (works for `localhost:6767`, bare `host:port`, or `tcp://` hosts without a `password=` query):
 
    ```bash
-   PASEO_PASSWORD=my-secret paseo ls
-   PASEO_PASSWORD=my-secret paseo --host 192.168.1.10:6767 ls
+   PASEO_PASSWORD=my-secret aaswitch ls
+   PASEO_PASSWORD=my-secret aaswitch --host 192.168.1.10:6767 ls
    ```
 
 A `password=` in the URI always wins over the env var, so you can keep `PASEO_PASSWORD` set globally and still target a different daemon by spelling its password into the URI.
@@ -233,7 +233,7 @@ Set the persisted value in `config.json`:
 }
 ```
 
-`PASEO_RELAY_ENABLED=true|false` overrides the file for a foreground deployment. Managed `start` uses the file. End and relaunch a deployment to remove its override before changing relay from the app or `paseo daemon pair --relay`.
+`PASEO_RELAY_ENABLED=true|false` overrides the file for a foreground deployment. Managed `start` uses the file. End and relaunch a deployment to remove its override before changing relay from the app or `aaswitch daemon pair --relay`.
 
 ## Common env vars
 

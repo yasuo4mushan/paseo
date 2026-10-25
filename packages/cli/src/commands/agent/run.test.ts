@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DaemonConnectionError } from "@getpaseo/client/internal/daemon-client";
+import { DaemonConnectionError } from "@aaswitch/client/internal/daemon-client";
 import { resolveCallerAgentId as resolveRunCallerAgentId } from "../../utils/caller-agent.js";
 import {
   resolveExistingRunWorkspace,

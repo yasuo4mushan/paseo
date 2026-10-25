@@ -740,7 +740,7 @@
   --color-mock-diff-remove-fg: #ef4444;
 
   /* The one darkHighlightColors role the --color-syn-* block below is missing.
-     @getpaseo/highlight src/colors.ts, `class`. */
+     @aaswitch/highlight src/colors.ts, `class`. */
   --color-mock-syn-class: #ffa657;
 
   /* Terminal ANSI — darkTerminalAnsi, theme.ts:358-373 */

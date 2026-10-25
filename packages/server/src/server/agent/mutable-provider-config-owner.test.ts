@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import type { MutableDaemonConfig } from "@getpaseo/protocol/messages";
+import type { MutableDaemonConfig } from "@aaswitch/protocol/messages";
 import { createTestLogger } from "../../test-utils/test-logger.js";
 import { DaemonConfigStore } from "../daemon-config-store.js";
 import type { PersistedConfig } from "../persisted-config.js";

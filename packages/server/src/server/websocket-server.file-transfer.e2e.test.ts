@@ -6,7 +6,7 @@ import { WebSocket, type RawData } from "ws";
 import {
   decodeFileTransferFrame,
   FileTransferOpcode,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@aaswitch/protocol/binary-frames/index";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/index.js";
 import { WSOutboundMessageSchema, type WSOutboundMessage } from "./messages.js";
 

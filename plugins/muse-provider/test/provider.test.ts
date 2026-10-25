@@ -15,9 +15,9 @@ import {
   type ProviderRegistration,
   type ProviderLaunch,
   type ProviderInput,
-} from "@getpaseo/plugin/server/provider";
-import type { UsageSourceRegistration } from "@getpaseo/plugin/server";
-import { execCommand } from "@getpaseo/plugin/server";
+} from "@aaswitch/plugin/server/provider";
+import type { UsageSourceRegistration } from "@aaswitch/plugin/server";
+import { execCommand } from "@aaswitch/plugin/server";
 import contribute from "../index.server.js";
 
 const connections: ProviderConnection[] = [];

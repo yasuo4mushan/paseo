@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
   normalizeLoopbackToLocalhost,
   parseConnectionUri,
-} from "@getpaseo/protocol/daemon-endpoints";
+} from "@aaswitch/protocol/daemon-endpoints";
 
 const FILE_NAME = "local-credential";
 

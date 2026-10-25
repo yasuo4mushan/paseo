@@ -1,6 +1,6 @@
 import path from "node:path";
 import { expect, type Locator, type Page } from "@playwright/test";
-import type { UsageReportEntry } from "@getpaseo/protocol/messages";
+import type { UsageReportEntry } from "@aaswitch/protocol/messages";
 import { expectComposerVisible } from "./composer";
 import { openAgentRoute, seedMockAgentWorkspace } from "./mock-agent";
 import { installUsageReportsFixture, type UsageListResponse } from "./usage-reports";

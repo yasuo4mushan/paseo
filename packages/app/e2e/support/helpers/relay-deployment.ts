@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
+import { parseConnectionOfferFromUrl } from "@aaswitch/protocol/connection-offer";
 import type { LocalElixirRelay } from "./local-elixir-relay";
 import type { PackagedWebDaemon } from "./packaged-web-daemon";
 import { expectRunningAgentChrome } from "./agent-stream";

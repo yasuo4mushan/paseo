@@ -1,5 +1,5 @@
-import { PluginRegistriesSchema } from "@getpaseo/protocol/plugin-registry";
-import { BUILTIN_PROVIDER_IDS } from "@getpaseo/protocol/provider-manifest";
+import { PluginRegistriesSchema } from "@aaswitch/protocol/plugin-registry";
+import { BUILTIN_PROVIDER_IDS } from "@aaswitch/protocol/provider-manifest";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -11,10 +11,10 @@ import {
 } from "./agent/provider-launch-config.js";
 import type { AgentProviderRuntimeSettingsMap } from "./agent/provider-launch-config.js";
 import { ensurePrivateFile, writePrivateFileAtomicSync } from "./private-files.js";
-import { AgentProfileSchema, AgentSkillSelectionSchema } from "@getpaseo/protocol/agent-profile";
-import { PluginIdSchema, PluginSourceSchema } from "@getpaseo/protocol/plugin-config";
-import { TerminalProfileSchema } from "@getpaseo/protocol/terminal-profile";
-import { PaseoServicePortAllocationSchema } from "@getpaseo/protocol/paseo-config-schema";
+import { AgentProfileSchema, AgentSkillSelectionSchema } from "@aaswitch/protocol/agent-profile";
+import { PluginIdSchema, PluginSourceSchema } from "@aaswitch/protocol/plugin-config";
+import { TerminalProfileSchema } from "@aaswitch/protocol/terminal-profile";
+import { PaseoServicePortAllocationSchema } from "@aaswitch/protocol/paseo-config-schema";
 
 export const LogLevelSchema = z.enum(["trace", "debug", "info", "warn", "error", "fatal"]);
 export const LogFormatSchema = z.enum(["pretty", "json"]);

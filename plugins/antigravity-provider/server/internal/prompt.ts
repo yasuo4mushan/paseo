@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { ProviderPrompt } from "@getpaseo/plugin/server/provider";
+import type { ProviderPrompt } from "@aaswitch/plugin/server/provider";
 import { AntigravityError } from "./wire.js";
 
 interface EncodedPrompt {

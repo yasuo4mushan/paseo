@@ -28,7 +28,7 @@ function createFakeMacBundle(options: { includeHelper: boolean }): {
   const appPath = join(root, "aaswitch.app");
   const contentsPath = join(appPath, "Contents");
   const resourcesPath = join(contentsPath, "Resources");
-  const shimPath = join(resourcesPath, "bin", "paseo");
+  const shimPath = join(resourcesPath, "bin", "aaswitch");
   const mainPath = join(contentsPath, "MacOS", "aaswitch");
   const helperPath = join(
     contentsPath,
@@ -41,7 +41,7 @@ function createFakeMacBundle(options: { includeHelper: boolean }): {
 
   mkdirSync(dirname(shimPath), { recursive: true });
   mkdirSync(dirname(mainPath), { recursive: true });
-  copyFileSync(join(packageRoot, "bin", "paseo"), shimPath);
+  copyFileSync(join(packageRoot, "bin", "aaswitch"), shimPath);
   chmodSync(shimPath, 0o755);
 
   writeExecutable(mainPath, "#!/bin/sh\necho main-executable\n");
@@ -83,10 +83,10 @@ describe("desktop packaging", () => {
     const config = readFileSync(join(packageRoot, "electron-builder.yml"), "utf8");
 
     expect(config).toContain(
-      "node_modules/@getpaseo/server/dist/server/terminal/shell-integration/**/*",
+      "node_modules/@aaswitch/server/dist/server/terminal/shell-integration/**/*",
     );
     expect(config).not.toContain(
-      "node_modules/@getpaseo/server/dist/src/terminal/shell-integration/**/*",
+      "node_modules/@aaswitch/server/dist/src/terminal/shell-integration/**/*",
     );
   });
 
@@ -94,15 +94,15 @@ describe("desktop packaging", () => {
     const config = readFileSync(join(packageRoot, "electron-builder.yml"), "utf8");
 
     expect(config).toContain("!**/*.map");
-    expect(config).toContain("!node_modules/@getpaseo/*/src/**");
-    expect(config).toContain("!node_modules/@getpaseo/**/*.test.*");
-    expect(config).toContain("!node_modules/@getpaseo/**/*.spec.*");
+    expect(config).toContain("!node_modules/@aaswitch/*/src/**");
+    expect(config).toContain("!node_modules/@aaswitch/**/*.test.*");
+    expect(config).toContain("!node_modules/@aaswitch/**/*.spec.*");
   });
 
   it("excludes the bundled daemon web UI from the packaged app", () => {
     const config = readFileSync(join(packageRoot, "electron-builder.yml"), "utf8");
 
-    expect(config).toContain("!node_modules/@getpaseo/server/dist/server/web-ui/**");
+    expect(config).toContain("!node_modules/@aaswitch/server/dist/server/web-ui/**");
   });
 
   it("uses the server skill catalog without a duplicate desktop resource", () => {
@@ -127,7 +127,7 @@ describe("desktop packaging", () => {
   });
 
   // electron-builder packs production dependencies declared in package.json into
-  // app.asar. Runtime code in runtime-paths.ts and bin/paseo dynamically resolves
+  // app.asar. Runtime code in runtime-paths.ts and bin/aaswitch dynamically resolves
   // these workspace packages by string, so static analysis (TypeScript, Knip) cannot
   // see the link. If a runtime-required workspace dep is dropped from
   // dependencies, the build still succeeds but ships a broken bundle. This
@@ -138,7 +138,7 @@ describe("desktop packaging", () => {
     };
     const deps = pkg.dependencies ?? {};
 
-    for (const required of ["@getpaseo/cli", "@getpaseo/server"]) {
+    for (const required of ["aaswitch", "@aaswitch/server"]) {
       expect(deps[required], `${required} must be declared in dependencies`).toBe("*");
     }
   });
@@ -154,7 +154,7 @@ describe("desktop packaging", () => {
       expect(result.stdout).toContain(`helper env=1/production cli=${bundle.shimPath}`);
       expect(result.stdout).toContain("node-entrypoint-runner.js");
       expect(result.stdout).toContain("node-script");
-      expect(result.stdout).toContain("@getpaseo/cli/dist/index.js");
+      expect(result.stdout).toContain("aaswitch/dist/index.js");
       expect(result.stdout).toContain("--version");
       expect(result.stdout).not.toContain("main-executable");
     } finally {

@@ -5,11 +5,11 @@ import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 import { generateLocalPairingOffer } from "../pairing-offer.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
-import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
+import { buildRelayWebSocketUrl } from "@aaswitch/protocol/daemon-endpoints";
 import {
   parseConnectionOfferFromUrl,
   type ConnectionOffer,
-} from "@getpaseo/protocol/connection-offer";
+} from "@aaswitch/protocol/connection-offer";
 
 const relayEndpoint = process.env.PASEO_LIVE_RELAY_ENDPOINT ?? "paseo-relay-next.fly.dev:443";
 const liveTest = process.env.RUN_LIVE_RELAY_E2E === "1" ? test : test.skip;

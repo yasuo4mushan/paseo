@@ -1,6 +1,6 @@
 ---
 title: SDK API reference
-description: Public configuration, methods, handles, results, defaults, and lifecycle behavior for @getpaseo/client.
+description: Public configuration, methods, handles, results, defaults, and lifecycle behavior for @aaswitch/client.
 nav: API reference
 order: 58
 category: TypeScript SDK
@@ -8,7 +8,7 @@ category: TypeScript SDK
 
 # SDK API reference
 
-Import every supported runtime value and TypeScript type from `@getpaseo/client`.
+Import every supported runtime value and TypeScript type from `@aaswitch/client`.
 
 ## `createPaseoClient(config)`
 

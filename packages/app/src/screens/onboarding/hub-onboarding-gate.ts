@@ -1,4 +1,4 @@
-import type { HubAccountStatus } from "@getpaseo/protocol/messages";
+import type { HubAccountStatus } from "@aaswitch/protocol/messages";
 
 /**
  * t29 first-run onboarding gate (Web/desktop).

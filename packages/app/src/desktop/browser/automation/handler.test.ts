@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import type { SessionInboundMessage, SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { SessionInboundMessage, SessionOutboundMessage } from "@aaswitch/protocol/messages";
 import { createJSONStorage, type StateStorage } from "zustand/middleware";
 import { mountBrowserAutomationHandler } from "./handler";
 import type { DesktopHostBridge } from "@/desktop/host";

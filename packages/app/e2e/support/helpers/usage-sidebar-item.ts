@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { UsageReportEntry } from "@getpaseo/protocol/messages";
+import type { UsageReportEntry } from "@aaswitch/protocol/messages";
 import { expect, type Locator, type Page } from "@playwright/test";
 import { connectNewWorkspaceDaemonClient } from "./new-workspace";
 import { pluginRequirements } from "./plugin-fixture";

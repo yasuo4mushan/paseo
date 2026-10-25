@@ -158,7 +158,7 @@ export default function contribute() {
       version: "2.0.0",
       files,
       dependencies: { "paseo-fixture-dependency": "1.0.0" },
-      peerDependencies: { "@getpaseo/plugin": "*" },
+      peerDependencies: { "@aaswitch/plugin": "*" },
     },
   ];
 }

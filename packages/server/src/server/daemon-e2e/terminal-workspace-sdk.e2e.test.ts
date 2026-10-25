@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { createPaseoClient, type PaseoClient } from "@getpaseo/client";
+import { createPaseoClient, type PaseoClient } from "@aaswitch/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 
@@ -123,7 +123,7 @@ test("plugin handlers operate terminals through their host-owned Paseo API", asy
   await writeFile(
     path.join(pluginDirectory, "index.server.ts"),
     `
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 const operate = defineRpc({ name: "operate", input: z.object({ workspaceId: z.string(), command: z.string() }), output: z.object({ workspaceIds: z.array(z.string()), lines: z.array(z.string()), remaining: z.number() }) });
 async function waitForTerminalOutput(terminal, text) {

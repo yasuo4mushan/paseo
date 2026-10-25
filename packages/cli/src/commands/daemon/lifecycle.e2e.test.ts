@@ -5,8 +5,8 @@ import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { hashDaemonPassword } from "@getpaseo/server/auth";
-import { startDaemonInstance, readDaemonInstance } from "@getpaseo/server/daemon-control";
+import { hashDaemonPassword } from "@aaswitch/server/auth";
+import { startDaemonInstance, readDaemonInstance } from "@aaswitch/server/daemon-control";
 import { expect, test } from "vitest";
 import { connectToDaemon } from "../../utils/client.js";
 
@@ -23,7 +23,7 @@ async function port() {
 }
 
 async function fixture() {
-  const root = await mkdtemp(path.join(tmpdir(), "paseo lifecycle "));
+  const root = await mkdtemp(path.join(tmpdir(), "aaswitch lifecycle "));
   const env = {
     ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("PASEO_"))),
     HOME: root,

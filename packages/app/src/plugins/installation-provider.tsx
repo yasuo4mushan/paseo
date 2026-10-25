@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { PaseoApiProvider, PluginRpcProvider } from "@getpaseo/plugin/client/host";
+import { PaseoApiProvider, PluginRpcProvider } from "@aaswitch/plugin/client/host";
 import React, { type ReactNode } from "react";
 import type { InstalledPlugin } from "./types";
 

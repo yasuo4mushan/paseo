@@ -11,7 +11,7 @@ category: Plugins
 Start with the [plugin quickstart](/docs/plugins) if you have not built a Paseo plugin before.
 
 A provider plugin connects a coding agent to Paseo without adding it to Paseo core. [Publish the plugin](/docs/plugins/publishing) on npm or in a Git repository so users can
-install it with `paseo plugin install`.
+install it with `aaswitch plugin install`.
 
 Choose one implementation path:
 
@@ -32,7 +32,7 @@ Add a server entry:
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { createProvider } from "./server/provider";
 
 export default function contribute(server: PluginServerContext) {
@@ -47,7 +47,7 @@ export default function contribute(server: PluginServerContext) {
 import {
   negotiateProviderCapabilities,
   type ProviderRegistration,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 
 const supported = ["prompt.message"] as const;
 
@@ -75,7 +75,7 @@ to `ProviderEvent` objects before publishing it.
 
 ## Launch the provider CLI
 
-Use `spawnProcess` and `execCommand` from `@getpaseo/plugin/server` for process transports
+Use `spawnProcess` and `execCommand` from `@aaswitch/plugin/server` for process transports
 and CLI probes. Both handle Windows `.cmd`/`.bat` launchers and quote shell arguments.
 Raw Node `spawn` and `execFile` reject those launchers on Windows.
 
@@ -86,7 +86,7 @@ shutdown; use `terminateProcess(child)` for a forced stop. It kills the process 
 including the CLI behind a command-script launcher. Bound your final wait for closed streams.
 
 ```ts
-import { spawnProcess, execCommand } from "@getpaseo/plugin/server";
+import { spawnProcess, execCommand } from "@aaswitch/plugin/server";
 
 const child = spawnProcess(launch.command, [...launch.args, "serve"], {
   env: launch.env,
@@ -333,7 +333,7 @@ emit({
 Register the renderer independently in `index.client.tsx`:
 
 ```tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { z } from "zod";
 import { ReviewVerdict } from "./client/review-verdict";
 
@@ -361,8 +361,8 @@ daemon timeline append. A renderer does not require a provider implementation.
 Use the ACP shim when the agent already speaks ACP:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
-import { runAcpProvider } from "@getpaseo/plugin/server/acp";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
+import { runAcpProvider } from "@aaswitch/plugin/server/acp";
 
 export default function contribute(server: PluginServerContext) {
   server.registerProvider(
@@ -384,7 +384,7 @@ Use `transformers` only for vendor differences ACP cannot describe. Validate ven
 Zod and leave malformed or unrelated values unchanged:
 
 ```ts
-import type { AcpTransformer } from "@getpaseo/plugin/server/acp";
+import type { AcpTransformer } from "@aaswitch/plugin/server/acp";
 import { z } from "zod";
 
 const editSchema = z.object({

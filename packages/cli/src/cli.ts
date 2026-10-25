@@ -47,7 +47,7 @@ export function createCli(): Command {
   const program = new Command();
 
   program
-    .name("paseo")
+    .name("aaswitch")
     .description(
       "aaswitch CLI (based on Paseo) - control your AI coding agents from the command line",
     )

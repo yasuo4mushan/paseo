@@ -187,7 +187,7 @@ Single file, validated with `PersistedConfigSchema`.
 one serialized owner. Codex discovers the shared directory. Updates retire unchanged files from
 Paseo-managed copies in `~/.codex/skills`, preserving user edits and untracked files.
 
-`paseo reload` reads and validates this file once inside the daemon. That snapshot drives resolution,
+`aaswitch reload` reads and validates this file once inside the daemon. That snapshot drives resolution,
 classification, application, and reload bookkeeping. `DaemonConfigStore` owns applying runtime-safe
 fields and their removal/default semantics; session handlers and the CLI only relay the structured
 result. Normal config patches persist only the requested fields, so launch overrides and resolved
@@ -349,7 +349,7 @@ Environment variables override `config.json`:
 | `PASEO_GIT_MAX_PROCESS_CONCURRENCY`  | `maxProcessConcurrency`  |
 | `PASEO_GIT_CONCURRENCY`              | Legacy concurrency alias |
 
-`PASEO_GIT_MAX_PROCESS_CONCURRENCY` wins when it and the legacy alias are both set. Run `paseo reload`
+`PASEO_GIT_MAX_PROCESS_CONCURRENCY` wins when it and the legacy alias are both set. Run `aaswitch reload`
 after changing `config.json`. Environment changes require a daemon restart; the launch environment
 remains authoritative during reload.
 

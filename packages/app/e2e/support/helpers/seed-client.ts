@@ -1,6 +1,6 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import type { TerminalActivity } from "@getpaseo/protocol/terminal-activity";
+import type { TerminalActivity } from "@aaswitch/protocol/terminal-activity";
 import { connectDaemonClient } from "./daemon-client-loader";
 import { withProjectOwnership } from "./project-ownership";
 import { createTempDirectory, createTempGitRepo } from "./workspace";

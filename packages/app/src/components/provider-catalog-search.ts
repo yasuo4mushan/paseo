@@ -2,7 +2,7 @@ import {
   compareMatchScores,
   scoreTextFields,
   type MatchScore,
-} from "@getpaseo/protocol/search/text-match";
+} from "@aaswitch/protocol/search/text-match";
 
 export interface SearchableCatalogEntry {
   id: string;

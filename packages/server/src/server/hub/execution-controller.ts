@@ -6,7 +6,7 @@ import type {
   HubExecutionAgentValidationIssue,
   HubExecutionControlRequest,
   SessionOutboundMessage,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import {
   ProviderOptionsValidationError,
   ToolPolicyUnsupportedError,

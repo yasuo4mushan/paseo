@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { CheckoutPrStatusSchema } from "@getpaseo/protocol/messages";
+import { CheckoutPrStatusSchema } from "@aaswitch/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 
 import { buildGitActions, type BuildGitActionsInput } from "./policy";

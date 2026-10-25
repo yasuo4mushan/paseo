@@ -12,7 +12,7 @@ import {
   type ProviderInput,
   type ProviderLaunch,
   type ProviderPersistence,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 import { signalPlan } from "./internal/signals.js";
 import { createAntigravityProvider } from "./provider.js";
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-empty-pattern -- Playwright reads fixture dependencies from destructured parameters. */
 import { randomUUID } from "node:crypto";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { metroTest, expect } from "../support/fixtures";
 import { connectDaemonClient } from "../support/helpers/daemon-client-loader";
 import { startIsolatedHostDaemon } from "../support/helpers/isolated-host-daemon";

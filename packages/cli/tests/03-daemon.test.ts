@@ -51,13 +51,13 @@ async function stopChildProcess(child: ChildProcess): Promise<void> {
 }
 
 function resolveDaemonWorkerEntry(): string {
-  let currentDir = dirname(require.resolve("@getpaseo/server"));
+  let currentDir = dirname(require.resolve("@aaswitch/server"));
 
   while (true) {
     const packageJsonPath = join(currentDir, "package.json");
     if (existsSync(packageJsonPath)) {
       const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-      if (packageJson.name === "@getpaseo/server") {
+      if (packageJson.name === "@aaswitch/server") {
         const candidates = [
           join(currentDir, "dist", "server", "server", "daemon-worker.js"),
           join(currentDir, "src", "server", "daemon-worker.ts"),
@@ -73,7 +73,7 @@ function resolveDaemonWorkerEntry(): string {
     currentDir = parentDir;
   }
 
-  throw new Error("Unable to resolve @getpaseo/server package root");
+  throw new Error("Unable to resolve @aaswitch/server package root");
 }
 
 async function tailDaemonLog(): Promise<string> {
@@ -291,7 +291,7 @@ try {
       const nestedReload = await daemonCommand(["reload", "--host", listen, "--json"]);
       assert.strictEqual(nestedReload.exitCode, 0, nestedReload.stderr);
       assert.deepStrictEqual(JSON.parse(nestedReload.stdout), {
-        restartCommand: `paseo daemon restart --host ${JSON.stringify(listen)}`,
+        restartCommand: `aaswitch daemon restart --host ${JSON.stringify(listen)}`,
         appliedPaths: ["daemon.browserTools.enabled"],
         restartRequiredPaths: [],
         overrideControlledPaths: ["daemon.listen"],
@@ -304,7 +304,7 @@ try {
       });
       assert.strictEqual(aliasReload.exitCode, 0, aliasReload.stderr);
       assert.deepStrictEqual(JSON.parse(aliasReload.stdout), {
-        restartCommand: `paseo daemon restart --host ${JSON.stringify(listen)}`,
+        restartCommand: `aaswitch daemon restart --host ${JSON.stringify(listen)}`,
         appliedPaths: ["daemon.browserTools.enabled"],
         restartRequiredPaths: [],
         overrideControlledPaths: [],
@@ -313,7 +313,7 @@ try {
       const yamlReload = await daemonCommand(["reload", "--host", listen, "--format", "yaml"]);
       assert.strictEqual(yamlReload.exitCode, 0, yamlReload.stderr);
       assert.deepStrictEqual(YAML.parse(yamlReload.stdout), {
-        restartCommand: `paseo daemon restart --host ${JSON.stringify(listen)}`,
+        restartCommand: `aaswitch daemon restart --host ${JSON.stringify(listen)}`,
         appliedPaths: [],
         restartRequiredPaths: [],
         overrideControlledPaths: [],

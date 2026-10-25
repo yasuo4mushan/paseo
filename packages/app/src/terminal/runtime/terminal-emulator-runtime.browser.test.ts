@@ -1,6 +1,6 @@
 import { page, userEvent } from "@vitest/browser/context";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { TerminalInputModeState } from "@getpaseo/protocol/terminal-input-mode";
+import type { TerminalInputModeState } from "@aaswitch/protocol/terminal-input-mode";
 import { encodeTerminalOutput, TerminalEmulatorRuntime } from "./terminal-emulator-runtime";
 
 vi.mock("@xterm/addon-webgl", () => ({

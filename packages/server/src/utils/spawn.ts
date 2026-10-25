@@ -1,5 +1,5 @@
 import type { ChildProcess, SpawnOptions } from "node:child_process";
-import { spawnProcess as spawnCli, execCommand as execCli } from "@getpaseo/plugin/server";
+import { spawnProcess as spawnCli, execCommand as execCli } from "@aaswitch/plugin/server";
 import { createExternalCommandProcessEnv, type ProcessEnvRecord } from "../server/paseo-env.js";
 
 interface ExternalEnvOptions {

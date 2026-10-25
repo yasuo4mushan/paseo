@@ -1,6 +1,6 @@
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
-import type { AgentPermissionRequest } from "@getpaseo/protocol/agent-types";
-import { getParentAgentIdFromLabels } from "@getpaseo/protocol/agent-labels";
+import type { AgentSnapshotPayload } from "@aaswitch/protocol/messages";
+import type { AgentPermissionRequest } from "@aaswitch/protocol/agent-types";
+import { getParentAgentIdFromLabels } from "@aaswitch/protocol/agent-labels";
 import {
   TURN_LIVENESS_IDLE,
   type ActiveTurnIdentity,

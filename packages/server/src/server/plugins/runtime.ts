@@ -1,10 +1,10 @@
-import type { UsageScope } from "@getpaseo/plugin/server/usage";
+import type { UsageScope } from "@aaswitch/plugin/server/usage";
 import {
   ProviderStatusSchema,
   type ProviderStatus,
   type ProviderStatusRequest,
-} from "@getpaseo/plugin/server/provider";
-import type { PluginBeforeRequests, PluginLifecycleEvents } from "@getpaseo/plugin/server";
+} from "@aaswitch/plugin/server/provider";
+import type { PluginBeforeRequests, PluginLifecycleEvents } from "@aaswitch/plugin/server";
 import { validateBeforeRequest, validateBeforeResult } from "./lifecycle/index.js";
 import { fork } from "node:child_process";
 import { stat } from "node:fs/promises";
@@ -20,12 +20,12 @@ import {
   type ProviderConnection,
   type ProviderEvent,
   type ProviderInput,
-} from "@getpaseo/plugin/server/provider";
-import type { PluginLogEntry } from "@getpaseo/protocol/messages";
+} from "@aaswitch/plugin/server/provider";
+import type { PluginLogEntry } from "@aaswitch/protocol/messages";
 import { compilePlugin } from "./compiler.js";
 import { readPluginManifest } from "./manifest.js";
-import type { PluginRequirements } from "@getpaseo/protocol/messages";
-import { assertPluginCompatibility } from "@getpaseo/protocol/plugin-requirements";
+import type { PluginRequirements } from "@aaswitch/protocol/messages";
+import { assertPluginCompatibility } from "@aaswitch/protocol/plugin-requirements";
 import type {
   PluginProcessMessage,
   PluginProcessRequest,

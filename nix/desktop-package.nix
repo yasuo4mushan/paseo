@@ -104,13 +104,13 @@ buildNpmPackage {
     npm run build:server
 
     # App workspace deps not covered by build:server
-    npm run build --workspace=@getpaseo/expo-two-way-audio
+    npm run build --workspace=@aaswitch/expo-two-way-audio
 
     # Expo web export for the Electron renderer
     ( cd packages/app && PASEO_WEB_PLATFORM=electron npx expo export --platform web )
 
     # Desktop main process
-    npm run build:main --workspace=@getpaseo/desktop
+    npm run build:main --workspace=@aaswitch/desktop
 
     ${lib.optionalString stdenv.hostPlatform.isDarwin ''
       # Let electron-builder create the native bundle layout (including helper

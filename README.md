@@ -74,7 +74,7 @@ iOS, and Android. Write a plugin once and it is on your phone.
 - **Agent lifecycle:** change configuration, environment, and MCP servers, answer permissions, follow up when a turn ends.
 - **Providers:** add a coding agent as a provider.
 
-Install from the registry with `paseo plugin add owner/slug`, or from Git or a local directory.
+Install from the registry with `aaswitch plugin add owner/slug`, or from Git or a local directory.
 
 **[Browse plugins](https://paseo.sh/plugins)** · **[Plugin docs](https://paseo.sh/docs/plugins)**
 
@@ -107,8 +107,8 @@ To connect from your phone, open **Settings → your host → Pair Device**.
 For a server, a VM, or any machine without the desktop app. Install the CLI and start the daemon:
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g aaswitch
+aaswitch
 ```
 
 Paseo starts, then asks whether to enable the end-to-end encrypted relay for device pairing. If you decline, connect directly over TCP, Tailscale, or another VPN. The desktop, mobile, and web apps connect to this daemon like any other host.
@@ -139,25 +139,25 @@ Open `http://localhost:6767` after it starts. Extend the base image with the age
 Everything you can do in the app, you can do from the terminal.
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.5 --worktree feature-x "implement feature X"
+aaswitch run --provider claude/opus-4.6 "implement user authentication"
+aaswitch run --provider codex/gpt-5.5 --worktree feature-x "implement feature X"
 
-paseo ls                           # list running agents
-paseo attach abc123                # stream live output
-paseo send abc123 "also add tests" # follow-up task
+aaswitch ls                           # list running agents
+aaswitch attach abc123                # stream live output
+aaswitch send abc123 "also add tests" # follow-up task
 
 # run on a remote daemon; --cwd is a path on that host
-paseo run --host workstation.local:6767 --cwd /workspace "run the full test suite"
+aaswitch run --host workstation.local:6767 --cwd /workspace "run the full test suite"
 ```
 
 See the [full CLI reference](https://paseo.sh/docs/cli) for more.
 
 ## TypeScript SDK
 
-Build issue integrations, dashboards, and orchestration services with `@getpaseo/client`:
+Build issue integrations, dashboards, and orchestration services with `@aaswitch/client`:
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createPaseoClient } from "@aaswitch/client";
 
 const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
@@ -196,7 +196,7 @@ Quick monorepo package map:
 
 - `packages/server`: Paseo daemon (agent process orchestration, WebSocket API, MCP server)
 - `packages/app`: Expo client (iOS, Android, web)
-- `packages/cli`: `paseo` CLI for daemon and agent workflows
+- `packages/cli`: `aaswitch` CLI for daemon and agent workflows
 - `packages/desktop`: Electron desktop app
 - `packages/relay`: Relay transport and encryption used by the daemon and clients
 - `packages/website`: Marketing site and documentation (`paseo.sh`)

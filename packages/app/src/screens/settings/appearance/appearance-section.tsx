@@ -8,7 +8,7 @@ import {
   SYNTAX_THEME_OPTIONS,
   type SyntaxThemeId,
   type SyntaxThemeOption,
-} from "@getpaseo/highlight";
+} from "@aaswitch/highlight";
 import {
   DropdownMenu,
   DropdownMenuContent,

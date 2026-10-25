@@ -28,7 +28,7 @@ Plugin code is trusted and unsandboxed. Client surfaces run in the Paseo app. Ba
 
 ## Project files
 
-`paseo plugin init /absolute/path/to/my-plugin` creates:
+`aaswitch plugin init /absolute/path/to/my-plugin` creates:
 
 ```text
 my-plugin/
@@ -88,7 +88,7 @@ Empty strings, invalid ranges, and unknown manifest requirement keys are rejecte
 
 Prerelease Paseo versions also satisfy a range their stable core (`major.minor.patch`) satisfies, so `0.8.0-beta.1` satisfies `>=0.8.0` but not `<0.8.0`.
 
-`paseo plugin init` writes `>=` followed by the current CLI version and pins the matching SDK
+`aaswitch plugin init` writes `>=` followed by the current CLI version and pins the matching SDK
 for typechecking. Raise the minimum when adopting a newer API. Add an upper bound when a later
 release is incompatible; a minimum alone does not promise protection from future breaking changes.
 
@@ -115,7 +115,7 @@ old `index.ts` fails to load and points at the [migration guide](/docs/plugins/m
 Plugin, screen, sidebar-item, workspace-panel, Command Center item, attachment-source, and
 slash-command IDs start with a lowercase letter and contain lowercase letters, numbers, or hyphens.
 
-The generated `package.json` installs `@getpaseo/plugin` and the other host modules as development
+The generated `package.json` installs `@aaswitch/plugin` and the other host modules as development
 dependencies for local typechecking and tests. Paseo supplies their runtime instances. Consumers do
 not install them when adding the plugin.
 
@@ -135,7 +135,7 @@ from `server/` into the app bundle, or of a Node module anywhere in the app bund
 error. Server imports of React, React Native, or client SDK entries also fail. Shared code imports
 only shared code: no Node, React, runtime-specific SDK entries, or runtime-specific types.
 
-The SDK root (`@getpaseo/plugin`) contains shared data, schemas, and runtime-neutral helpers only.
+The SDK root (`@aaswitch/plugin`) contains shared data, schemas, and runtime-neutral helpers only.
 Import client contexts and hooks from `/client`, server contexts and lifecycle contracts from
 `/server`, and UI from `/client/react-native` or `/client/ui`. These rules include type imports and transitive
 dependencies. `/client/host` is private to the app host; plugins cannot import it.
@@ -146,10 +146,10 @@ Paseo provides these modules to client code:
 
 | Module                                 | Use it for                                                                                        |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `@getpaseo/plugin`                     | Shared data, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, and `RpcOutput` |
-| `@getpaseo/plugin/client/ui`           | Named, composable settings components                                                             |
-| `@getpaseo/plugin/client/react-native` | Paseo UI components and UI hooks                                                                  |
-| `@getpaseo/plugin/client`              | Client contribution contexts, `usePaseo`, `useRpc`, `useSettings`, and data hooks                 |
+| `@aaswitch/plugin`                     | Shared data, `defineRpc`, `defineSettings`, `defineAttachmentSource`, `RpcInput`, and `RpcOutput` |
+| `@aaswitch/plugin/client/ui`           | Named, composable settings components                                                             |
+| `@aaswitch/plugin/client/react-native` | Paseo UI components and UI hooks                                                                  |
+| `@aaswitch/plugin/client`              | Client contribution contexts, `usePaseo`, `useRpc`, `useSettings`, and data hooks                 |
 | `@tanstack/react-query`                | Request state and caching                                                                         |
 | `react`                                | Components and hooks                                                                              |
 | `react/jsx-runtime`                    | Compiled JSX                                                                                      |
@@ -208,7 +208,7 @@ and does not promise delivery while the app is suspended or closed.
 Use `ExternalLink` to open documentation outside Paseo:
 
 ```tsx
-import { ExternalLink } from "@getpaseo/plugin/client/ui";
+import { ExternalLink } from "@aaswitch/plugin/client/ui";
 
 export function DocumentationLink() {
   return <ExternalLink href="https://paseo.sh/docs">Open documentation</ExternalLink>;
@@ -219,7 +219,7 @@ The component has accessible link semantics and uses the same opener as
 `openExternalUrl(url: string): Promise<void>`:
 
 ```ts
-import { openExternalUrl } from "@getpaseo/plugin/client";
+import { openExternalUrl } from "@aaswitch/plugin/client";
 
 export async function openDocumentation() {
   await openExternalUrl("https://paseo.sh/docs");
@@ -250,8 +250,8 @@ Use `navigation.openBrowser` from a surface or panel. Check availability before 
 the action. This workspace panel chooses an external link on other platforms:
 
 ```tsx
-import type { PluginWorkspacePanelProps } from "@getpaseo/plugin/client";
-import { ExternalLink } from "@getpaseo/plugin/client/ui";
+import type { PluginWorkspacePanelProps } from "@aaswitch/plugin/client";
+import { ExternalLink } from "@aaswitch/plugin/client/ui";
 import { Pressable, Text } from "react-native";
 
 export function DocumentationPanel({ navigation, workspaceId, theme }: PluginWorkspacePanelProps) {
@@ -304,8 +304,8 @@ Use `openSettings`, `openScreen`, and `openPanel` for your own registered contri
 
 ### Server runtime
 
-Paseo provides `@getpaseo/plugin`, `@getpaseo/plugin/server`,
-`@getpaseo/plugin/server/provider`, `@getpaseo/plugin/server/acp`, and `zod` to server code. Backend
+Paseo provides `@aaswitch/plugin`, `@aaswitch/plugin/server`,
+`@aaswitch/plugin/server/provider`, `@aaswitch/plugin/server/acp`, and `zod` to server code. Backend
 contributions run in a daemon subprocess with Node access to the host machine. Keep filesystem,
 process, credential, and other machine-local work under `server/`. A plugin without
 `index.server.ts` starts no subprocess.
@@ -316,7 +316,7 @@ Follow [Build a provider plugin](/docs/plugins/providers) for direct and ACP imp
 session lifecycle, composer settings, timeline renderers, testing, and distribution.
 
 Call `server.registerProvider()` with a `ProviderRegistration` from
-`@getpaseo/plugin/server/provider`. Its connection accepts inputs with `send()` and emits complete state
+`@aaswitch/plugin/server/provider`. Its connection accepts inputs with `send()` and emits complete state
 snapshots through `onEvent()`. `send()` reports acceptance only; prompt disposition, turns,
 configuration, persistence, permissions, and failures are events.
 
@@ -334,7 +334,7 @@ session config.
 Paseo refreshes an agent by closing its current provider session and opening it with current
 configuration and persistence. Providers re-read external state during `session.open`.
 
-Use `runAcpProvider()` from `@getpaseo/plugin/server/acp` to adapt a command-backed ACP. Add transformer
+Use `runAcpProvider()` from `@aaswitch/plugin/server/acp` to adapt a command-backed ACP. Add transformer
 hooks only for a vendor's discovery, configuration, notification, or tool-call differences.
 
 `ProviderRegistration.icon` is a file path relative to the plugin directory, such as `icon.svg`.
@@ -348,7 +348,7 @@ SVG or URL.
 
 **Requires Paseo 0.11.** Register a source from your server entry with
 `server.registerUsageSource()`. Import its contract and helpers from
-`@getpaseo/plugin/server/usage`.
+`@aaswitch/plugin/server/usage`.
 
 A source implements two calls:
 
@@ -440,7 +440,7 @@ do not establish duration. When the provider omits it, use a neutral name such a
 “Primary limit” and explain the missing metadata next to the adapter.
 
 For numeric durations, use `windowFromReportedDuration()` from
-`@getpaseo/plugin/server/usage` (Paseo 0.11+). Pass the reported seconds or `null`, a neutral
+`@aaswitch/plugin/server/usage` (Paseo 0.11+). Pass the reported seconds or `null`, a neutral
 `unknown` identity and name, and an optional stable quota `scope`. The helper derives the ID,
 label, and short label together; it accepts no duration-label override. For named API periods,
 use `windowFromUsedPct()` with names justified by that field.
@@ -468,8 +468,8 @@ field. For `no_quota`, `detail` is displayed verbatim.
 
 ```ts
 import { z } from "zod";
-import type { PluginServerContext } from "@getpaseo/plugin/server";
-import { hashAccountKey, unavailable } from "@getpaseo/plugin/server/usage";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
+import { hashAccountKey, unavailable } from "@aaswitch/plugin/server/usage";
 import { findLoginStores, readLogin, readQuota } from "./server/logins";
 
 const input = z.object({ path: z.string() }).strict();
@@ -525,7 +525,7 @@ receive `PluginClientContext`; server entries receive `PluginServerContext`. Cli
 which return `{ update, remove }` handles. The entry cleanup runs before Paseo removes remaining registrations.
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { Main } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -541,7 +541,7 @@ Cleanup can be async. Release timers, watchers, sockets, and other resources cre
 In `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 
 export default function contribute(server: PluginServerContext) {
   server.on("agent.turn_ended", (event) => {
@@ -642,12 +642,12 @@ and directory lookup/import operations are unaffected.
 ### Send a follow-up when a turn ends
 
 Copy [server/inspect.ts](https://github.com/getpaseo/paseo/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts)
-into your plugin. The helper imports types from `@getpaseo/protocol/agent-types`; add
-`@getpaseo/protocol` at the same version as your plugin SDK to your development dependencies
+into your plugin. The helper imports types from `@aaswitch/protocol/agent-types`; add
+`@aaswitch/protocol` at the same version as your plugin SDK to your development dependencies
 and install them before loading the plugin. `latestOutputText` joins text chunks after the latest user message.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { latestOutputText } from "./server/inspect";
 
 export default function contribute(server: PluginServerContext) {
@@ -680,7 +680,7 @@ add limits or delays in your plugin when needed. Attachments and tool effects ar
 Using `shellCommand` from the same [helper file](https://github.com/getpaseo/paseo/blob/main/plugin-examples/lifecycle-actions/server/inspect.ts):
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { shellCommand } from "./server/inspect";
 
 export default function contribute(server: PluginServerContext) {
@@ -739,7 +739,7 @@ Agent events exclude the daemon's private disposable helpers. Public background 
 their ordinary agents run the same lifecycle hooks as other workspaces. Archive events can precede
 runtime/worktree cleanup; observe lifecycle completion separately when cleanup matters.
 
-**Shared payload shapes** (`@getpaseo/plugin/server`):
+**Shared payload shapes** (`@aaswitch/plugin/server`):
 
 ```ts
 interface PluginHookAgent {
@@ -858,7 +858,7 @@ saved; environment overrides are not persisted with it.
 | [lifecycle-actions](https://github.com/getpaseo/paseo/tree/main/plugin-examples/lifecycle-actions)     | Follow-ups, permissions, environment, provider switching, worktree selection |
 | [agent-configuration](https://github.com/getpaseo/paseo/tree/main/plugin-examples/agent-configuration) | MCP injection and Codex sandbox/approval options                             |
 
-Read logger output with `paseo plugin logs lifecycle-logger` or the host's `daemon.log`.
+Read logger output with `aaswitch plugin logs lifecycle-logger` or the host's `daemon.log`.
 
 ## Screens and sidebar items
 
@@ -868,7 +868,7 @@ header or footer; it decides what a press does. Register the screen, then an ite
 `client/main.tsx`:
 
 ```tsx
-import type { PluginScreenProps } from "@getpaseo/plugin/client";
+import type { PluginScreenProps } from "@aaswitch/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -897,8 +897,8 @@ export function Main({ theme, host, layout }: PluginScreenProps) {
 `index.client.tsx`:
 
 ```tsx
-import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import type { PluginClientContext, PluginSidebarItemProps } from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { Main } from "./client/main";
 
 function MainItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
@@ -966,7 +966,7 @@ of its items, else the first host.
 `Content` receives `theme`, `host`, `layout`, `close()`, and `openScreen(input)`. Opening a screen
 closes the popover.
 
-Render the item with the sidebar kit from `@getpaseo/plugin/client/ui`:
+Render the item with the sidebar kit from `@aaswitch/plugin/client/ui`:
 
 | Component          | Props and behavior                                                                                                                                                                                                                                                                                                    |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -977,8 +977,8 @@ A popover anchors to the row that was pressed, whether the press landed on the r
 `trailing` content, so a per-row "More" button opens its popover next to its own row.
 
 ```tsx
-import type { PluginSidebarItemProps, PluginPopoverProps } from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import type { PluginSidebarItemProps, PluginPopoverProps } from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { Pressable, Text } from "react-native";
 
 function SyncDetails({ theme, close, openScreen }: PluginPopoverProps) {
@@ -1009,8 +1009,8 @@ import type {
   PluginClientContext,
   PluginScreenProps,
   PluginSidebarItemProps,
-} from "@getpaseo/plugin/client";
-import { SidebarRow, SidebarSeparator } from "@getpaseo/plugin/client/ui";
+} from "@aaswitch/plugin/client";
+import { SidebarRow, SidebarSeparator } from "@aaswitch/plugin/client/ui";
 import { Text } from "react-native";
 import { botName, useBots } from "./client/bots";
 
@@ -1073,12 +1073,12 @@ function hideAlerts() {
 
 ## Host UI
 
-Import Paseo-owned UI from `@getpaseo/plugin/client/react-native` in client code. This example
+Import Paseo-owned UI from `@aaswitch/plugin/client/react-native` in client code. This example
 opens a controlled modal, renders a host icon, and confirms the action with a toast:
 
 ```tsx
-import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
-import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
+import type { PluginSurfaceProps } from "@aaswitch/plugin/client";
+import { Icon, Modal, useToast } from "@aaswitch/plugin/client/react-native";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -1157,7 +1157,7 @@ Modal children keep the plugin runtime context. `usePaseo`, `useRpc`, `useWorksp
 
 ### Scrolling
 
-Import `ScrollView` and `FlatList` from `@getpaseo/plugin/client/react-native` when content can appear in a
+Import `ScrollView` and `FlatList` from `@aaswitch/plugin/client/react-native` when content can appear in a
 Paseo modal. They accept React Native props and refs and integrate with the sheet's gestures. Outside
 a sheet they use ordinary React Native scrolling. Do not import bottom-sheet libraries directly.
 
@@ -1171,7 +1171,7 @@ container without changing these gestures. Expand the sheet before using list me
 `scrollToEnd`; the sheet locks list offsets below its largest height.
 
 ```tsx
-import { FlatList, Modal } from "@getpaseo/plugin/client/react-native";
+import { FlatList, Modal } from "@aaswitch/plugin/client/react-native";
 import { Text } from "react-native";
 
 // Inside your controlled Modal:
@@ -1201,7 +1201,7 @@ user action and await it before reporting success. It rejects if the platform de
 clipboard is unavailable; browser permissions and secure-context requirements still apply.
 
 ```tsx
-import { copyText, useToast } from "@getpaseo/plugin/client/react-native";
+import { copyText, useToast } from "@aaswitch/plugin/client/react-native";
 
 // Inside your component:
 const toast = useToast();
@@ -1216,7 +1216,7 @@ async function copyResult() {
 ```
 
 Programmatic copying and native text selection are separate interactions. Use `<Text selectable>`
-for long-press selection and OS Copy. Import `TextInput` from `@getpaseo/plugin/client/react-native` for modal forms. It accepts React Native
+for long-press selection and OS Copy. Import `TextInput` from `@aaswitch/plugin/client/react-native` for modal forms. It accepts React Native
 input props and refs, supports OS Paste, and registers focus with the native sheet so the keyboard
 can raise the form. Outside a sheet it uses the ordinary input. A plain React Native input supports
 Paste too, but does not register focus with the sheet; the keyboard can cover it. No clipboard read
@@ -1262,7 +1262,7 @@ registrations are client contributions. Paseo applies the transformer while buil
 model, including every live streaming update.
 
 ```tsx
-import type { PluginClientContext, PluginTimelineItemProps } from "@getpaseo/plugin/client";
+import type { PluginClientContext, PluginTimelineItemProps } from "@aaswitch/plugin/client";
 import { Text } from "react-native";
 import { z } from "zod";
 
@@ -1330,7 +1330,7 @@ the web and desktop apps.
 A server handler can add a plugin-owned row to canonical history:
 
 ```ts
-import type { PluginHandlerContext } from "@getpaseo/plugin/server";
+import type { PluginHandlerContext } from "@aaswitch/plugin/server";
 
 async function publishReview(agentId: string, { paseo }: PluginHandlerContext) {
   await paseo.agents.ref(agentId).timeline.append({
@@ -1389,7 +1389,7 @@ Workspace and agent panels receive the same `theme`, `layout`, and optional `nav
 `name`. A theme is data, so it needs no component file:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 
 export default function contribute(client: PluginClientContext) {
   client.addTheme({
@@ -1454,12 +1454,12 @@ A disabled or removed plugin leaves an unavailable screen with working Back navi
 
 ### Named UI components
 
-Import settings components from `@getpaseo/plugin/client/ui`. They work with your own state and RPCs;
+Import settings components from `@aaswitch/plugin/client/ui`. They work with your own state and RPCs;
 no form wrapper or storage binding is required.
 
 ```tsx
 import { useState } from "react";
-import { SettingsCard, SettingsSection, SettingsSwitch } from "@getpaseo/plugin/client/ui";
+import { SettingsCard, SettingsSection, SettingsSwitch } from "@aaswitch/plugin/client/ui";
 
 export function DisplaySettings() {
   const [visible, setVisible] = useState(true);
@@ -1493,7 +1493,7 @@ can sit beside or inside these components.
 Define a settings document in `shared/`:
 
 ```ts
-import { defineSettings } from "@getpaseo/plugin";
+import { defineSettings } from "@aaswitch/plugin";
 import { z } from "zod";
 
 export const preferences = defineSettings({
@@ -1584,7 +1584,7 @@ Register one panel for workspace or agent context:
 `client/review.tsx`:
 
 ```tsx
-import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@getpaseo/plugin/client";
+import { type PluginAgentPanelProps, useAgent, useWorkspace } from "@aaswitch/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -1615,7 +1615,7 @@ export function ReviewPanel({ theme, layout, workspaceId, agentId }: PluginAgent
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { ReviewPanel } from "./client/review";
 
 export default function contribute(client: PluginClientContext) {
@@ -1696,7 +1696,7 @@ Open the Command Center with **⌘K** on macOS or **Ctrl+K** on Windows and Linu
 Register an action and open a panel from the callback:
 
 ```tsx
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 const refreshReview = defineRpc({
@@ -1849,7 +1849,7 @@ replaces registrations on each snapshot and aborts the observation during entry 
 
 ## Button descriptor
 
-These contracts are exported from `@getpaseo/plugin/client`.
+These contracts are exported from `@aaswitch/plugin/client`.
 
 | Field      | Required | Meaning                                                                 |
 | ---------- | -------- | ----------------------------------------------------------------------- |
@@ -1954,7 +1954,7 @@ every surface. Release what you subscribe to in your cleanup; when the plugin is
 or removed, or its host goes away, Paseo disposes the client and ends every subscription still open.
 
 ```tsx
-import { usePaseo } from "@getpaseo/plugin/client";
+import { usePaseo } from "@aaswitch/plugin/client";
 import { useEffect, useState } from "react";
 import { Text } from "react-native";
 
@@ -1971,7 +1971,7 @@ function ProjectChanges() {
 ```
 
 ```tsx
-import { type PluginSurfaceProps, usePaseo } from "@getpaseo/plugin/client";
+import { type PluginSurfaceProps, usePaseo } from "@aaswitch/plugin/client";
 import { Pressable, Text } from "react-native";
 
 function PullRequestAction({ theme }: PluginSurfaceProps) {
@@ -2009,7 +2009,7 @@ Use `useHosts()` to display configured hosts and `getPaseoClient(serverId)` in a
 to run SDK operations on one of them:
 
 ```tsx
-import { getPaseoClient, useHosts, type PluginSurfaceProps } from "@getpaseo/plugin/client";
+import { getPaseoClient, useHosts, type PluginSurfaceProps } from "@aaswitch/plugin/client";
 import { useMemo, useState, type ReactElement } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -2088,7 +2088,7 @@ Define one contract with Zod, handle it in the subprocess, and call it from the 
 `shared/greeting.ts`:
 
 ```ts
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 export const greeting = defineRpc({
@@ -2101,7 +2101,7 @@ export const greeting = defineRpc({
 `client/greeting.tsx`:
 
 ```tsx
-import { useRpc } from "@getpaseo/plugin/client";
+import { useRpc } from "@aaswitch/plugin/client";
 import { greeting } from "../shared/greeting";
 
 export function GreetingButton() {
@@ -2114,7 +2114,7 @@ export function GreetingButton() {
 `server/greeting.ts`:
 
 ```ts
-import type { RpcInput } from "@getpaseo/plugin";
+import type { RpcInput } from "@aaswitch/plugin";
 import { greeting } from "../shared/greeting";
 
 export function createGreeting({ name }: RpcInput<typeof greeting>) {
@@ -2125,7 +2125,7 @@ export function createGreeting({ name }: RpcInput<typeof greeting>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { GreetingButton } from "./client/greeting";
 
 export default function contribute(client: PluginClientContext) {
@@ -2137,7 +2137,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greeting } from "./shared/greeting";
 
@@ -2170,9 +2170,9 @@ Open **Settings → Plugins → Logs** for the plugin, or inspect the same recen
 CLI:
 
 ```bash
-paseo plugin logs my-plugin
-paseo plugin logs my-plugin --json
-paseo --host <url> plugin logs my-plugin
+aaswitch plugin logs my-plugin
+aaswitch plugin logs my-plugin --json
+aaswitch --host <url> plugin logs my-plugin
 ```
 
 The command returns a snapshot rather than following live output. Refresh the settings view or run
@@ -2195,7 +2195,7 @@ An attachment source searches external resources and returns a stable text snaps
 `shared/issues.ts`:
 
 ```ts
-import { defineAttachmentSource, defineRpc } from "@getpaseo/plugin";
+import { defineAttachmentSource, defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 export const searchIssues = defineRpc({
@@ -2229,7 +2229,7 @@ export const issues = defineAttachmentSource({
 `server/issues.ts`:
 
 ```ts
-import type { RpcInput } from "@getpaseo/plugin";
+import type { RpcInput } from "@aaswitch/plugin";
 import { searchIssues } from "../shared/issues";
 
 export function search({ query }: RpcInput<typeof searchIssues>) {
@@ -2240,7 +2240,7 @@ export function search({ query }: RpcInput<typeof searchIssues>) {
 `index.client.tsx`:
 
 ```ts
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {
@@ -2252,7 +2252,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { search } from "./server/issues";
 import { searchIssues } from "./shared/issues";
 
@@ -2285,7 +2285,7 @@ reports `failed` because the plugin is absent from the runtime catalog until its
 ## Plugin sources
 
 Paste one of these source identifiers into **Settings → Plugins**, or pass it to
-`paseo plugin install`. `paseo plugin add <source>` and `paseo plugin install <source>` are aliases.
+`aaswitch plugin install`. `aaswitch plugin add <source>` and `aaswitch plugin install <source>` are aliases.
 The CLI resolves relative directory paths from your current working directory and expands `~`
 to your local home directory, preserving any `:plugin/path` suffix. With `--host`, use an absolute
 path that exists on the daemon host; plugin files are read there and are never uploaded by the CLI.
@@ -2329,7 +2329,7 @@ Paseo resolves an identifier in this order:
    Reject anything else.
 
 The default registry is `https://plugins.paseo.sh`. Browse [published plugins](https://paseo.sh/plugins)
-and install with `paseo plugin add owner/slug`. Registry records own the revision and plugin path.
+and install with `aaswitch plugin add owner/slug`. Registry records own the revision and plugin path.
 Use `git:owner/repository` for explicit GitHub shorthand or a full Git URL.
 Set `PASEO_PLUGIN_REGISTRY` to use a self-hosted default URL, including a path prefix.
 Private registry credentials use `pluginRegistries: { "host": { "authorization": "Bearer token" } }`
@@ -2342,15 +2342,15 @@ accepts `--id <runtime-id>` to override it. An existing installation ID is rejec
 its enabled state or files.
 
 ```bash
-paseo plugin install /srv/paseo/plugins/review
-paseo plugin install github:acme/paseo-review
-paseo plugin install git:https://git.example.com:8443/acme/monorepo.git:plugins/review --ref main
-paseo plugin install git@git.example.com:acme/review.git
-paseo plugin install file:///srv/repos/monorepo:plugins/review
-paseo plugin install npm:paseo-review@1.2.0
-paseo plugin install npm:@acme/paseo-review@next
-paseo plugin install 'npm:@acme/paseo-review@>=1.2.0 <2.0.0' --id review-staging
-paseo plugin install npm:@acme/plugins@^1.2.0:plugins/review
+aaswitch plugin install /srv/paseo/plugins/review
+aaswitch plugin install github:acme/paseo-review
+aaswitch plugin install git:https://git.example.com:8443/acme/monorepo.git:plugins/review --ref main
+aaswitch plugin install git@git.example.com:acme/review.git
+aaswitch plugin install file:///srv/repos/monorepo:plugins/review
+aaswitch plugin install npm:paseo-review@1.2.0
+aaswitch plugin install npm:@acme/paseo-review@next
+aaswitch plugin install 'npm:@acme/paseo-review@>=1.2.0 <2.0.0' --id review-staging
+aaswitch plugin install npm:@acme/plugins@^1.2.0:plugins/review
 ```
 
 `--ref` applies only to Git and accepts a branch, tag, or commit for this installation. Without it,
@@ -2380,24 +2380,24 @@ deletes its managed files; removing a directory plugin keeps your source directo
 ## CLI reference
 
 ```bash
-paseo plugin init /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin --id another-runtime-id
-paseo plugin add owner/slug
-paseo plugin add git:owner/repository
-paseo plugin add https://git.example.com/owner/repository.git --ref main
-paseo plugin add git:owner/monorepo:plugins/review
-paseo plugin ls [id]
-paseo plugin update <id>
-paseo plugin update --all --check
-paseo plugin update --all --yes
-paseo plugin update my-plugin --version 1.2.0
-paseo plugin update my-plugin --ref v2
-paseo plugin reload my-plugin
-paseo plugin logs my-plugin
-paseo plugin disable my-plugin
-paseo plugin enable my-plugin
-paseo plugin remove my-plugin
+aaswitch plugin init /absolute/path/to/plugin
+aaswitch plugin install /absolute/path/to/plugin
+aaswitch plugin install /absolute/path/to/plugin --id another-runtime-id
+aaswitch plugin add owner/slug
+aaswitch plugin add git:owner/repository
+aaswitch plugin add https://git.example.com/owner/repository.git --ref main
+aaswitch plugin add git:owner/monorepo:plugins/review
+aaswitch plugin ls [id]
+aaswitch plugin update <id>
+aaswitch plugin update --all --check
+aaswitch plugin update --all --yes
+aaswitch plugin update my-plugin --version 1.2.0
+aaswitch plugin update my-plugin --ref v2
+aaswitch plugin reload my-plugin
+aaswitch plugin logs my-plugin
+aaswitch plugin disable my-plugin
+aaswitch plugin enable my-plugin
+aaswitch plugin remove my-plugin
 ```
 
 `ls` and Settings show source identity and the current installed revision without contacting the
@@ -2429,7 +2429,7 @@ Put `--host <url>` before a management command when the target is not the CLI's 
 never deletes a directory source; it deletes managed files for Git and npm sources. The install-time
 `--id` is the runtime ID and allows the same directory or repository to be installed more than once.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Server code and preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Paseo. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
+> **Trust every plugin you add.** `aaswitch plugin add` and `aaswitch plugin install` mean “I trust this codebase.” Server code and preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Paseo. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
 
 Most plugins should omit `build`. Use it only when the staged checkout must install a dependency
 that Paseo does not provide, generate source or assets, or perform another required preparation
@@ -2455,11 +2455,11 @@ Settings; see [Plugin sources](#plugin-sources) for install syntax.
 
 The daemon-wide **Enable plugins** switch lives under **Settings → Plugins**. A configured plugin remains `disabled` until that switch and the plugin's own enabled state are both on.
 
-The switch is the root `pluginsEnabled` field in `config.json`. After changing it, run `paseo reload --json`. Enabling starts every configured plugin whose own `enabled` value is not `false`; disabling tears down all plugins. No daemon restart is required. Manual edits to plugin source entries are not reloaded; use the plugin lifecycle commands for those.
+The switch is the root `pluginsEnabled` field in `config.json`. After changing it, run `aaswitch reload --json`. Enabling starts every configured plugin whose own `enabled` value is not `false`; disabling tears down all plugins. No daemon restart is required. Manual edits to plugin source entries are not reloaded; use the plugin lifecycle commands for those.
 
 ## Load failures
 
-Use `paseo plugin ls` to read the current status and error.
+Use `aaswitch plugin ls` to read the current status and error.
 
 | Symptom                                                               | Check                                                                                                                                              |
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2471,6 +2471,6 @@ Use `paseo plugin ls` to read the current status and error.
 | Sidebar item is missing                                               | The plugin is `running`, the item is not hidden in Settings > Sidebar, its component does not throw, and the client is on the installation's host. |
 | Client module is unavailable                                          | Import only the host-provided client modules listed above.                                                                                         |
 | RPC rejects                                                           | Check both Zod schemas and the daemon-side handler error.                                                                                          |
-| Edited code does not appear                                           | Run `npm run typecheck`, then `paseo plugin reload <id>`.                                                                                          |
-| Reload fails                                                          | Read `paseo plugin ls` and `paseo plugin logs <id>`, fix the source error, then reload; Paseo does not restore the previous bundle.                |
-| Plugin exits unexpectedly                                             | Read `paseo plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                                |
+| Edited code does not appear                                           | Run `npm run typecheck`, then `aaswitch plugin reload <id>`.                                                                                       |
+| Reload fails                                                          | Read `aaswitch plugin ls` and `aaswitch plugin logs <id>`, fix the source error, then reload; Paseo does not restore the previous bundle.          |
+| Plugin exits unexpectedly                                             | Read `aaswitch plugin logs <id>` for retained initialization, cleanup, stderr, and final crash output.                                             |

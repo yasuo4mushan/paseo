@@ -11,7 +11,7 @@ import { AGENT_WAIT_TIMEOUT_MS } from "./mcp-shared.js";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 import { createTestAgentClients } from "../test-utils/fake-agent-client.js";
 import type { AgentClient, AgentProvider, AgentSessionConfig } from "./agent-sdk-types.js";
-import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+import { PARENT_AGENT_ID_LABEL } from "@aaswitch/protocol/agent-labels";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { parseAgentMessage } from "./agent-messages/index.js";
 

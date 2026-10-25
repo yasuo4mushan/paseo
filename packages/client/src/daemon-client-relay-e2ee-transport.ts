@@ -1,9 +1,9 @@
-import { MAX_RELAY_WEBSOCKET_MESSAGE_BYTES } from "@getpaseo/protocol/websocket-message-limit";
+import { MAX_RELAY_WEBSOCKET_MESSAGE_BYTES } from "@aaswitch/protocol/websocket-message-limit";
 import {
   createClientChannel,
   type EncryptedChannel,
   type Transport as RelayTransport,
-} from "@getpaseo/relay/e2ee";
+} from "@aaswitch/relay/e2ee";
 import type {
   DaemonTransport,
   DaemonTransportFactory,

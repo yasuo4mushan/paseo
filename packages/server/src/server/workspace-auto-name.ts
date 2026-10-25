@@ -1,5 +1,5 @@
 import type pino from "pino";
-import type { FirstAgentContext } from "@getpaseo/protocol/messages";
+import type { FirstAgentContext } from "@aaswitch/protocol/messages";
 
 import { resolveFirstAgentPromptTitle } from "./agent/create-agent-title.js";
 import type { AgentManager } from "./agent/agent-manager.js";

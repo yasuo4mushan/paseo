@@ -27,15 +27,15 @@ descriptors, updates, and React content. Return `.remove()` cleanup when the exa
 See the [button reference](../../public-docs/plugins/reference.md#button-descriptor) and
 [composer migration](../../public-docs/plugins/migration.md#composer-pills).
 
-From the repository root, `npm run typecheck --workspace=@getpaseo/plugin` checks this example
-against the SDK. Existing plugin projects must update `@getpaseo/plugin` before running their own
+From the repository root, `npm run typecheck --workspace=@aaswitch/plugin` checks this example
+against the SDK. Existing plugin projects must update `@aaswitch/plugin` before running their own
 `npm run typecheck` to detect the old `Component`/`onPress` pill shape and callable cleanup handle.
 
 The browser regression installs this exact directory in an isolated daemon and exercises both
 layouts, updates, and cleanup:
 
 ```sh
-npm run test:e2e --workspace=@getpaseo/app -- e2e/browser/plugin-button-example.spec.ts
+npm run test:e2e --workspace=@aaswitch/app -- e2e/browser/plugin-button-example.spec.ts
 ```
 
 The captures use Chromium at desktop and phone widths; native iOS and Android were not exercised.

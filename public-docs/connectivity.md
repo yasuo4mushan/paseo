@@ -28,22 +28,22 @@ Before connecting:
 The CLI accepts an SSH URI as its host:
 
 ```bash
-paseo --host ssh://user@host ls -a
+aaswitch --host ssh://user@host ls -a
 ```
 
 The daemon is expected at `127.0.0.1:6767` on the remote host. The port in the SSH URL is the SSH server port:
 
 ```bash
-paseo --host ssh://user@host:2222 ls -a
+aaswitch --host ssh://user@host:2222 ls -a
 ```
 
 Set a different remote daemon port with `daemonPort`:
 
 ```bash
-paseo --host 'ssh://user@host?daemonPort=7777' ls -a
+aaswitch --host 'ssh://user@host?daemonPort=7777' ls -a
 ```
 
-Put `--host` before the command. `paseo daemon status` observes the default local home; use `paseo --host ssh://user@host daemon status` to query a remote daemon. `paseo --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
+Put `--host` before the command. `aaswitch daemon status` observes the default local home; use `aaswitch --host ssh://user@host daemon status` to query a remote daemon. `aaswitch --host ssh://user@host run --cwd /path/on/remote ...` requires a working directory that exists on the remote host.
 
 In Paseo Desktop, open **Settings → Add host → Remote SSH** and enter the same `ssh://` destination, including `:port` or `?daemonPort=` when those differ from the defaults.
 
@@ -66,7 +66,7 @@ Relay is disabled until you enable it.
 Run:
 
 ```bash
-paseo daemon pair
+aaswitch daemon pair
 ```
 
 Confirm when prompted. Paseo prints a QR code and pairing link. Scan the QR code with Paseo on your phone, or choose **Paste pairing link** in the phone app.
@@ -106,7 +106,7 @@ To restrict access with a password, see [Password authentication](/docs/configur
 Restart the daemon:
 
 ```bash
-paseo daemon restart
+aaswitch daemon restart
 ```
 
 If Paseo Desktop manages the daemon, use **Settings → your host → Overview → Restart daemon**.
@@ -124,8 +124,8 @@ If the host was already paired through the relay, Paseo adds the direct connecti
 ## Troubleshooting
 
 - **SSH authentication failed:** Run `ssh user@host` in a terminal and fix the key, agent, host key, or `~/.ssh/config` entry there. Paseo does not prompt for SSH passwords.
-- **SSH connects but Paseo is refused:** Run `paseo daemon status` on the remote host. SSH transport does not start the daemon.
+- **SSH connects but Paseo is refused:** Run `aaswitch daemon status` on the remote host. SSH transport does not start the daemon.
 - **SSH connects but Paseo reports "Password required":** The remote daemon is password-protected. Remove the SSH connection from the host and add it again, this time entering the daemon password in **Daemon password**.
 - **Connection timed out:** Check that Tailscale is connected on both devices and that you used the daemon machine's Tailscale IP.
-- **Connection refused:** Run `paseo daemon status` and confirm the daemon is running on the configured IP and port.
-- **Config change has no effect:** Run `paseo reload`. `daemon.listen` is a startup setting, so restart when the command reports it.
+- **Connection refused:** Run `aaswitch daemon status` and confirm the daemon is running on the configured IP and port.
+- **Config change has no effect:** Run `aaswitch reload`. `daemon.listen` is a startup setting, so restart when the command reports it.

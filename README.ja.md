@@ -91,8 +91,8 @@ Paseo はコーディングエージェントを管理するローカルサー�
 CLI をインストールして Paseo を起動します。
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g aaswitch
+aaswitch
 ```
 
 ターミナルに QR コードが表示されます。どのクライアントからでも接続できます。サーバーやリモートマシンでの利用に適しています。
@@ -107,15 +107,15 @@ paseo
 アプリでできることはすべてターミナルからも実行できます。
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
+aaswitch run --provider claude/opus-4.6 "implement user authentication"
+aaswitch run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
 
-paseo ls                           # 実行中のエージェントを一覧表示
-paseo attach abc123                # ライブ出力をストリーミング
-paseo send abc123 "also add tests" # 追加タスクを送信
+aaswitch ls                           # 実行中のエージェントを一覧表示
+aaswitch attach abc123                # ライブ出力をストリーミング
+aaswitch send abc123 "also add tests" # 追加タスクを送信
 
 # リモートデーモンで実行
-paseo --host workstation.local:6767 run "run the full test suite"
+aaswitch --host workstation.local:6767 run "run the full test suite"
 ```
 
 詳細は[完全な CLI リファレンス](https://paseo.sh/docs/cli)を参照してください。
@@ -140,7 +140,7 @@ npx skills add getpaseo/paseo
 
 - `packages/server`: Paseo デーモン（エージェントプロセスのオーケストレーション、WebSocket API、MCP サーバー）
 - `packages/app`: Expo クライアント（iOS、Android、Web）
-- `packages/cli`: デーモンおよびエージェントワークフロー向け `paseo` CLI
+- `packages/cli`: デーモンおよびエージェントワークフロー向け `aaswitch` CLI
 - `packages/desktop`: Electron デスクトップアプリ
 - `packages/relay`: リモート接続用リレーパッケージ
 - `packages/website`: マーケティングサイトとドキュメント（`paseo.sh`）

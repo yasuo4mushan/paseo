@@ -3,14 +3,14 @@ import { Buffer } from "buffer";
 import {
   normalizeAgentModelCatalog,
   type ProviderSnapshotEntry,
-} from "@getpaseo/protocol/agent-types";
+} from "@aaswitch/protocol/agent-types";
 import {
   expandProviderSnapshot,
   type CompactProviderSnapshot,
-} from "@getpaseo/protocol/provider-snapshot-codec";
-import { CompactProviderSnapshotSchema } from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/provider-snapshot-codec";
+import { CompactProviderSnapshotSchema } from "@aaswitch/protocol/messages";
 import { z } from "zod";
-import type { GetProvidersSnapshotResponseMessage } from "@getpaseo/protocol/messages";
+import type { GetProvidersSnapshotResponseMessage } from "@aaswitch/protocol/messages";
 type SnapshotPayload = GetProvidersSnapshotResponseMessage["payload"];
 
 const CACHE_VERSION = 2;

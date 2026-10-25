@@ -1,12 +1,12 @@
 import type pino from "pino";
 import type { SessionDelivery } from "../owned-subscriptions/index.js";
-import type { FileVersion } from "@getpaseo/protocol/messages";
-import { getErrorMessage } from "@getpaseo/protocol/error-utils";
+import type { FileVersion } from "@aaswitch/protocol/messages";
+import { getErrorMessage } from "@aaswitch/protocol/error-utils";
 import {
   encodeFileTransferFrame,
   FileTransferOpcode,
   type FileTransferFrame,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@aaswitch/protocol/binary-frames/index";
 import type {
   FileDownloadTokenRequest,
   FileEntryCreateRequest,

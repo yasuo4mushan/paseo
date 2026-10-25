@@ -1,5 +1,5 @@
-import type { AgentMessage } from "@getpaseo/protocol/agent-message";
-import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
+import type { AgentMessage } from "@aaswitch/protocol/agent-message";
+import type { ToolCallDetail } from "@aaswitch/protocol/agent-types";
 import { describe, expect, it } from "vitest";
 
 import { buildToolCallPresentation, type ToolCallPresentationIcon } from "./presentation";

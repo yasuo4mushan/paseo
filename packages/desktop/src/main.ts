@@ -108,7 +108,7 @@ import {
   buildAgentDeepLinkRoute,
   parseAgentDeepLink,
   type AgentDeepLinkTarget,
-} from "@getpaseo/protocol/agent-deep-link";
+} from "@aaswitch/protocol/agent-deep-link";
 import { AgentNavigationInbox, parseAgentDeepLinkFromArgv } from "./agent-navigation.js";
 
 const DEV_SERVER_URL = process.env.EXPO_DEV_URL ?? "http://localhost:8081";

@@ -1,6 +1,6 @@
 import { createPluginHosts } from "./hosts";
 import { afterEach, expect, it } from "vitest";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { PluginRegistry } from "./registry";
 
 const audio = { play: async () => 0 };

@@ -2,8 +2,8 @@
  * @vitest-environment jsdom
  */
 import { act } from "@testing-library/react";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { WorkspaceScriptPayload } from "@getpaseo/protocol/messages";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
+import type { WorkspaceScriptPayload } from "@aaswitch/protocol/messages";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import React from "react";

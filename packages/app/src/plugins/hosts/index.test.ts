@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { createPluginHosts, type PluginHostsSource } from "./index";
 
 function registry() {

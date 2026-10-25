@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { HubAccountStatus } from "@getpaseo/protocol/messages";
+import type { HubAccountStatus } from "@aaswitch/protocol/messages";
 import { resolveHubOnboardingGate } from "./hub-onboarding-gate";
 
 function status(overrides: Partial<HubAccountStatus> = {}): HubAccountStatus {

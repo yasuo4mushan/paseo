@@ -3,10 +3,10 @@ import {
   isGitHubHost,
   parseGitHubRemoteIdentity,
   parseGitRemoteLocation,
-} from "@getpaseo/protocol/git-remote";
-import { pluginOverviewUrl } from "@getpaseo/protocol/plugin-overview";
-import { pluginMediaKind, type PublishedPluginSchema } from "@getpaseo/protocol/plugin-registry";
-import { scoreTextFields } from "@getpaseo/protocol/search/text-match";
+} from "@aaswitch/protocol/git-remote";
+import { pluginOverviewUrl } from "@aaswitch/protocol/plugin-overview";
+import { pluginMediaKind, type PublishedPluginSchema } from "@aaswitch/protocol/plugin-registry";
+import { scoreTextFields } from "@aaswitch/protocol/search/text-match";
 import { CATEGORIES, type Category, type CategorySlug } from "./categories";
 import type { InstallCounts, InstallWindow } from "./installs";
 export { CATEGORIES, type Category, type CategorySlug };
@@ -46,7 +46,7 @@ export function getPluginsByAuthor(plugins: Plugin[], owner: string): Plugin[] {
   return plugins.filter((plugin) => pluginOwner(plugin) === owner);
 }
 export function installCommand(plugin: Plugin): string {
-  return `paseo plugin add ${plugin.id}`;
+  return `aaswitch plugin add ${plugin.id}`;
 }
 export function pluginVersion(plugin: Plugin): string {
   return plugin.artifact.kind === "npm"

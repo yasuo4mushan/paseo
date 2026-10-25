@@ -8,7 +8,7 @@ import type { Readable } from "node:stream";
 import { join } from "node:path";
 import { createDaemonTestContext } from "./test-utils/daemon-test-context.js";
 import { createTestAgentClients } from "./test-utils/fake-agent-client.js";
-import type { AgentStreamEvent } from "@getpaseo/protocol/agent-types";
+import type { AgentStreamEvent } from "@aaswitch/protocol/agent-types";
 
 interface CliResult {
   exitCode: number | null;

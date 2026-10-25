@@ -66,7 +66,7 @@ export interface TestContext {
   workDir: string;
   /** Running daemon process */
   daemon: ProcessPromise | null;
-  /** Run a paseo CLI command against the test daemon */
+  /** Run a aaswitch CLI command against the test daemon */
   paseo: (args: string[]) => ProcessPromise;
   /** Clean up all resources */
   cleanup: () => Promise<void>;
@@ -91,13 +91,13 @@ export async function createTempDirs(): Promise<{ paseoHome: string; workDir: st
 
 /**
  * Wait for daemon to be ready by testing WebSocket connection
- * Uses `paseo agent ls` which connects via WebSocket
+ * Uses `aaswitch agent ls` which connects via WebSocket
  */
 async function probeDaemon(port: number, paseoHome: string): Promise<boolean> {
   try {
     const result = await $({
       env: testEnvironment(paseoHome),
-    })`paseo agent ls --host localhost:${port}`.nothrow();
+    })`aaswitch agent ls --host localhost:${port}`.nothrow();
     return result.exitCode === 0;
   } catch {
     return false;
@@ -133,7 +133,7 @@ export async function startDaemon(port: number, paseoHome: string): Promise<Proc
       PASEO_RELAY_ENABLED: "false",
       CI: "true",
     },
-  })`paseo daemon run`.nothrow();
+  })`aaswitch daemon run`.nothrow();
   return daemon;
 }
 
@@ -147,7 +147,7 @@ export async function createTestContext(): Promise<TestContext> {
   // Helper to run CLI commands against test daemon
   const paseo = (args: string[]): ProcessPromise => {
     $.verbose = false;
-    return $({ env: testEnvironment(paseoHome) })`paseo --home ${paseoHome} ${args}`.nothrow();
+    return $({ env: testEnvironment(paseoHome) })`aaswitch --home ${paseoHome} ${args}`.nothrow();
   };
 
   // Cleanup function

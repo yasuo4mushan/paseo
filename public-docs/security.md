@@ -25,7 +25,7 @@ Clients connect to the daemon over WebSocket. There are two ways to establish th
 
 The relay is the simplest way to connect from your phone. It requires no VPN setup, no port forwarding, and no firewall configuration. The daemon can stay bound to localhost or a socket file, it connects _outbound_ to the relay, and your phone meets it there. The official relay server is the open-source Elixir service at [getpaseo/paseo-relay](https://github.com/getpaseo/paseo-relay).
 
-Relay is off on new installations. When you pair a device from `paseo`, `paseo daemon pair`, or Paseo Desktop, Paseo asks before enabling it. Choosing not to enable relay leaves the daemon available for direct TCP, Tailscale, or other VPN connections and does not create a pairing QR code. Use `--relay` with the CLI pairing or startup command to opt in without an interactive prompt.
+Relay is off on new installations. When you pair a device from `paseo`, `aaswitch daemon pair`, or Paseo Desktop, Paseo asks before enabling it. Choosing not to enable relay leaves the daemon available for direct TCP, Tailscale, or other VPN connections and does not create a pairing QR code. Use `--relay` with the CLI pairing or startup command to opt in without an interactive prompt.
 
 > **The relay is designed to be untrusted.** All traffic between your phone and daemon is end-to-end encrypted. The relay server cannot read your messages, see your code, or modify traffic without detection. Even if the relay is compromised, your data remains protected.
 
@@ -141,11 +141,11 @@ Paseo never stores or transmits provider API keys. Agents run in your user conte
 
 ## Hub identities and credentials
 
-Hub CLI login and daemon enrollment are separate identities. `paseo hub login [origin]` stores a durable organization-scoped human credential in a private file under `PASEO_HOME`, keyed by the normalized Hub origin. A stored credential is never sent to another origin. Protect `PASEO_HOME` as sensitive local state.
+Hub CLI login and daemon enrollment are separate identities. `aaswitch hub login [origin]` stores a durable organization-scoped human credential in a private file under `PASEO_HOME`, keyed by the normalized Hub origin. A stored credential is never sent to another origin. Protect `PASEO_HOME` as sensitive local state.
 
 Hub CLI credentials are bearer secrets. Remote Hub origins must use HTTPS; cleartext HTTP is accepted only for loopback development origins (`localhost`, `127.0.0.1`, and `[::1]`).
 
-`paseo hub connect [origin]` uses that credential, or an explicit API key, only to request a short-lived one-time enrollment token. The daemon exchanges the token and retains its own independently generated relationship credential. Logging out of the CLI does not silently remove daemon authority. Interactive logout completes any accepted same-origin daemon disconnection before deleting the login. In JSON and noninteractive use, `logout` never prompts or disconnects; pass `--disconnect-daemon` only when automation intends to remove both identities.
+`aaswitch hub connect [origin]` uses that credential, or an explicit API key, only to request a short-lived one-time enrollment token. The daemon exchanges the token and retains its own independently generated relationship credential. Logging out of the CLI does not silently remove daemon authority. Interactive logout completes any accepted same-origin daemon disconnection before deleting the login. In JSON and noninteractive use, `logout` never prompts or disconnects; pass `--disconnect-daemon` only when automation intends to remove both identities.
 
 `--api-key` and `PASEO_HUB_API_KEY` override stored login without being persisted. Prefer environment or secret-manager injection for automation, and avoid command-line flags when local process listings or shell history are visible to other users.
 

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import type { PluginClientContext, PluginSidebarItemProps } from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { Hosts } from "./client/hosts";
 
 function HostsItem({ currentScreen, openScreen }: PluginSidebarItemProps) {

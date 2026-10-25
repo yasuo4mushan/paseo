@@ -3,7 +3,7 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { afterEach, describe, expect, test } from "vitest";
 
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/paseo-daemon.js";

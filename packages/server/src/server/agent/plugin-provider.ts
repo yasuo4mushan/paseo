@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { resolve as resolvePath } from "node:path";
 import type { Logger } from "pino";
-import type { JsonValue } from "@getpaseo/protocol/agent-types";
+import type { JsonValue } from "@aaswitch/protocol/agent-types";
 import { z } from "zod";
 import {
   PROVIDER_CAPABILITIES,
@@ -25,7 +25,7 @@ import {
   type ProviderSessionConfig,
   type ProviderContent,
   type ProviderTimelineItem,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 import type {
   AgentCapabilityFlags,
   AgentClient,

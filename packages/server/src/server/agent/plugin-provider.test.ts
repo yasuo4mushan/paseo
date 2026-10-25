@@ -5,7 +5,7 @@ import type {
   ProviderEvent,
   ProviderInput,
   ProviderRegistration,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 import { setImmediate as nextTurn } from "node:timers/promises";
 import { describe, expect, test } from "vitest";
 import { createTestLogger } from "../../test-utils/test-logger.js";
@@ -13,7 +13,7 @@ import type { AgentClient, AgentStreamEvent } from "./agent-sdk-types.js";
 import { toStoredAgentRecord } from "./agent-projections.js";
 import { AgentManager } from "./agent-manager.js";
 import { buildProviderRegistry } from "./provider-registry.js";
-import { ProviderOverrideSchema } from "@getpaseo/protocol/provider-config";
+import { ProviderOverrideSchema } from "@aaswitch/protocol/provider-config";
 import { PluginAgentClientRegistry } from "./plugin-provider.js";
 import {
   isStaleProviderSessionError,

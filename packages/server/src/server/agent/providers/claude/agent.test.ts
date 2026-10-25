@@ -6,7 +6,7 @@ import type { PermissionResult, SDKMessage, SDKUserMessage } from "@anthropic-ai
 
 import { createTestLogger } from "../../../../test-utils/test-logger.js";
 import * as executableUtils from "../../../../executable-resolution/executable-resolution.js";
-import { buildAgentAttentionNotificationPayload } from "@getpaseo/protocol/agent-attention-notification";
+import { buildAgentAttentionNotificationPayload } from "@aaswitch/protocol/agent-attention-notification";
 import {
   ClaudeAgentClient,
   convertClaudeHistoryEntry,
@@ -23,7 +23,7 @@ import type {
   AgentTimelineItem,
   AgentStreamEvent,
 } from "../../agent-sdk-types.js";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
+import type { AgentAttachment } from "@aaswitch/protocol/messages";
 import { buildAgentPrompt, renderPromptAttachmentAsText } from "../../prompt-attachments.js";
 
 interface TestClaudeSession {

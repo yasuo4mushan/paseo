@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
   CheckoutPrStatusResponse,
   PullRequestTimelineResponse,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import {
   createInMemoryUnsupportedTimelineRegistry,
   extractPrRepoIdentity,

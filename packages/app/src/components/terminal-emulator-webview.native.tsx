@@ -17,8 +17,8 @@ import {
 } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import type { ITheme } from "@xterm/xterm";
-import type { TerminalState } from "@getpaseo/protocol/messages";
-import type { TerminalInputModeState } from "@getpaseo/protocol/terminal-input-mode";
+import type { TerminalState } from "@aaswitch/protocol/messages";
+import type { TerminalInputModeState } from "@aaswitch/protocol/terminal-input-mode";
 import type {
   TerminalOutputData,
   TerminalFindResult,

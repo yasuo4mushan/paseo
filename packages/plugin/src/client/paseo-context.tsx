@@ -1,4 +1,4 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { PaseoApi } from "@aaswitch/client";
 import { createContext, useContext, type ReactNode } from "react";
 
 const PaseoApiContext = createContext<PaseoApi | null>(null);

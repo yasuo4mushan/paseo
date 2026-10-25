@@ -3,7 +3,7 @@ import type {
   AgentSnapshotPayload,
   CreationSnapshot,
   WorkspaceDescriptorPayload,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import { CreationClient, type CreationResult } from "./index.js";
 
 const workspace: WorkspaceDescriptorPayload = {

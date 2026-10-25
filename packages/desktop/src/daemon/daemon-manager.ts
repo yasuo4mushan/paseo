@@ -11,7 +11,7 @@ import {
   isSameDaemonInstance,
   readLocalCredentialForTarget,
   type DaemonInstance,
-} from "@getpaseo/server/daemon-control";
+} from "@aaswitch/server/daemon-control";
 import {
   copyAttachmentFileToManagedStorage,
   deleteManagedAttachmentFile,

@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { AgentSnapshotPayload } from "@aaswitch/protocol/messages";
 import { connectToDaemon } from "../../utils/client.js";
 import type { CommandOptions, ListResult, OutputSchema, CommandError } from "../../output/index.js";
 import { collectMultiple } from "../../utils/command-options.js";
@@ -175,10 +175,10 @@ interface AgentLsClient {
 
 /**
  * Agent ls command semantics:
- * - `paseo agent ls`    → active non-archived agents
- * - `paseo agent ls -g` → global non-archived agents
- * - `paseo agent ls -a` → all agents, including archived and background
- * - `paseo agent ls -ag` → global agents, including archived
+ * - `aaswitch agent ls`    → active non-archived agents
+ * - `aaswitch agent ls -g` → global non-archived agents
+ * - `aaswitch agent ls -a` → all agents, including archived and background
+ * - `aaswitch agent ls -ag` → global agents, including archived
  */
 export async function runLsCommand(
   options: AgentLsOptions,

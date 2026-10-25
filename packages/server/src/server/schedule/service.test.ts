@@ -38,7 +38,7 @@ import {
   type ScheduleServiceOptions,
 } from "./service.js";
 import { ScheduleStore } from "./store.js";
-import type { ScheduleExecutionResult, StoredSchedule } from "@getpaseo/protocol/schedule/types";
+import type { ScheduleExecutionResult, StoredSchedule } from "@aaswitch/protocol/schedule/types";
 
 interface ScheduleServiceInternals {
   executeSchedule(schedule: StoredSchedule, runId: string): Promise<ScheduleExecutionResult>;

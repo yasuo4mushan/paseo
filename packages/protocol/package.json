@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/protocol",
+  "name": "@aaswitch/protocol",
   "version": "0.12.0-beta.2",
   "description": "Paseo shared protocol schemas and wire types",
   "files": [

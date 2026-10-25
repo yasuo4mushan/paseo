@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Buffer } from "buffer";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
-import { compactProviderSnapshot } from "@getpaseo/protocol/provider-snapshot-codec";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
+import { compactProviderSnapshot } from "@aaswitch/protocol/provider-snapshot-codec";
 import { createProviderSnapshotCache, type ProviderSnapshotCache } from "./provider-snapshot-cache";
 
 const SNAPSHOT_KEY_PREFIX = "@paseo/provider-snapshot/v2:";

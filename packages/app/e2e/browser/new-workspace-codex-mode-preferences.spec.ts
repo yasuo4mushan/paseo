@@ -1,6 +1,6 @@
 import { expect, type Page } from "../support/fixtures";
 import { test } from "../support/creation-fixtures";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { connectDaemonClient } from "../support/helpers/daemon-client-loader";
 import type { FormPreferences } from "@/create-agent-preferences/preferences";
 import { gotoAppShell } from "../support/helpers/app";

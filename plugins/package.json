@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/builtin-plugins",
+  "name": "@aaswitch/builtin-plugins",
   "version": "0.12.0-beta.2",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@getpaseo/plugin": "*",
+    "@aaswitch/plugin": "*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

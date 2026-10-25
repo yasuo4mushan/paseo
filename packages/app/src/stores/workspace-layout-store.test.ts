@@ -16,7 +16,7 @@ vi.mock("@react-native-async-storage/async-storage", () => {
 });
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { useSessionStore, type Agent } from "@/stores/session-store";
 import { setPanelInstanceAttributes } from "@/panels/panel-instance-attributes";
 import { createViewedTimelineSync } from "@/timeline/viewed-timeline-sync";

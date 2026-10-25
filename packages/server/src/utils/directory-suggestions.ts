@@ -2,7 +2,7 @@ import type { Dirent, Stats } from "node:fs";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import pLimit from "p-limit";
-import { scorePathMatch, type MatchScore } from "@getpaseo/protocol/search/text-match";
+import { scorePathMatch, type MatchScore } from "@aaswitch/protocol/search/text-match";
 import { isPathInsideRoot } from "./path.js";
 import { runGitCommand } from "./run-git-command.js";
 

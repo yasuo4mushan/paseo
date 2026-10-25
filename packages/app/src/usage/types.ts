@@ -1,4 +1,4 @@
-import type { ProviderUsageTone, UsageReportEntry } from "@getpaseo/protocol/messages";
+import type { ProviderUsageTone, UsageReportEntry } from "@aaswitch/protocol/messages";
 
 export type { UsageReportEntry };
 export type UsageReport = UsageReportEntry["report"];

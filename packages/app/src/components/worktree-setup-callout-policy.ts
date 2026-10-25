@@ -1,4 +1,4 @@
-import type { PaseoConfigRaw } from "@getpaseo/protocol/messages";
+import type { PaseoConfigRaw } from "@aaswitch/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 import { buildProjectSettingsRoute } from "@/utils/host-routes";
 

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { DaemonConfigStore, applyMutableProviderConfigToOverrides } from "./daemon-config-store.js";
 import { loadPersistedConfig } from "./persisted-config.js";
 import type { PersistedConfig } from "./persisted-config.js";
-import type { MutableDaemonConfig } from "@getpaseo/protocol/messages";
+import type { MutableDaemonConfig } from "@aaswitch/protocol/messages";
 
 function reloadableConfig(
   persisted: PersistedConfig,

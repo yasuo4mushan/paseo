@@ -13,7 +13,7 @@ this example. The URL is a placeholder. The `company` entry replaces an existing
 Install on a daemon with plugins enabled:
 
 ```bash
-paseo plugin install /absolute/path/to/plugin-examples/agent-configuration
+aaswitch plugin install /absolute/path/to/plugin-examples/agent-configuration
 ```
 
 The callback receives the request after earlier plugins have transformed it. The nested spreads

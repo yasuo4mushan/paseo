@@ -18,7 +18,7 @@ import { settingsStyles } from "@/styles/settings";
 import { useHubOnboardingGateStore } from "@/screens/onboarding/hub-onboarding-gate-store";
 import { resolveHostAccountPageState } from "@/screens/settings/host-account-page-state";
 
-import type { HubAccountStatus } from "@getpaseo/protocol/messages";
+import type { HubAccountStatus } from "@aaswitch/protocol/messages";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WorkspaceLabelDefinition } from "@getpaseo/protocol/workspace-labels";
+import type { WorkspaceLabelDefinition } from "@aaswitch/protocol/workspace-labels";
 import type { PrHint } from "@/git/pr-hint";
 import { DEFAULT_SIDEBAR_CHECKS_DISPLAY } from "@/components/sidebar/display-preferences/checks-display";
 import { DEFAULT_SIDEBAR_ROW_ITEMS } from "@/components/sidebar/display-preferences/row-items";

@@ -10,7 +10,7 @@ This is an npm workspace monorepo:
 
 - `packages/server` — Daemon: agent lifecycle, WebSocket API, MCP server
 - `packages/app` — Mobile + web client (Expo)
-- `packages/cli` — Docker-style CLI (`paseo run/ls/logs/wait`)
+- `packages/cli` — Docker-style CLI (`aaswitch run/ls/logs/wait`)
 - `packages/relay` — E2E encrypted relay for remote access
 - `packages/desktop` — Electron desktop wrapper
 - `packages/website` — Marketing site (paseo.sh)

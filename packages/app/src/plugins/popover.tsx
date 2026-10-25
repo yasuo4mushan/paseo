@@ -1,4 +1,4 @@
-import { PluginClientStateProvider } from "@getpaseo/plugin/client/host";
+import { PluginClientStateProvider } from "@aaswitch/plugin/client/host";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 import { StyleSheet } from "react-native-unistyles";

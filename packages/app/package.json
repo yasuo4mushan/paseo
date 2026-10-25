@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/app",
+  "name": "@aaswitch/app",
   "version": "0.12.0-beta.2",
   "private": true,
   "main": "index.ts",
@@ -39,6 +39,11 @@
     "build:mermaid-runtime": "node ./src/components/markdown/fence/mermaid/build-runtime.mjs"
   },
   "dependencies": {
+    "@aaswitch/client": "*",
+    "@aaswitch/expo-two-way-audio": "*",
+    "@aaswitch/highlight": "*",
+    "@aaswitch/plugin": "*",
+    "@aaswitch/protocol": "*",
     "@codemirror/commands": "6.10.4",
     "@codemirror/language": "6.12.4",
     "@codemirror/search": "6.7.1",
@@ -48,11 +53,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@floating-ui/react-native": "^0.10.7",
-    "@getpaseo/client": "*",
-    "@getpaseo/expo-two-way-audio": "*",
-    "@getpaseo/highlight": "*",
-    "@getpaseo/plugin": "*",
-    "@getpaseo/protocol": "*",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@gorhom/portal": "^1.0.14",
     "@marijn/find-cluster-break": "^1.0.2",

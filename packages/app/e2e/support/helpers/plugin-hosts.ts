@@ -9,7 +9,7 @@ import { connectNewWorkspaceDaemonClient } from "./new-workspace";
 import { pluginRequirements } from "./plugin-fixture";
 
 const id = "host-clients";
-const source = `import { useHosts, getPaseoClient, usePaseo } from "@getpaseo/plugin/client";
+const source = `import { useHosts, getPaseoClient, usePaseo } from "@aaswitch/plugin/client";
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 export default function contribute(plugin) {

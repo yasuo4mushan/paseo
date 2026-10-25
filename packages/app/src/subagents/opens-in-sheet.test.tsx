@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useSessionStore, type Agent } from "@/stores/session-store";

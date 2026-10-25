@@ -15,7 +15,7 @@ export const COMPACT = { width: 390, height: 844 };
 /** A plugin written against the current API: a screen, header and footer items, a command. */
 const SHOWCASE_SOURCE = `import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 
 function DeploysScreen({ theme }) {
   return <View style={{ flex: 1, padding: 24 }}><Text style={{ color: theme.colors.foreground }}>Deploys screen body</Text></View>;
@@ -81,8 +81,8 @@ export default function contribute(client) {
  */
 const BOTS_SOURCE = `import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { usePaseo } from "@getpaseo/plugin/client";
-import { SidebarRow, SidebarSeparator } from "@getpaseo/plugin/client/ui";
+import { usePaseo } from "@aaswitch/plugin/client";
+import { SidebarRow, SidebarSeparator } from "@aaswitch/plugin/client/ui";
 
 const BOTS = [
   { id: "bot-1", name: "Bot 1" },

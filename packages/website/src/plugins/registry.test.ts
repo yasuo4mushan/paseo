@@ -290,7 +290,7 @@ describe("plugin registry", () => {
     );
   });
   it("offers a registry install command", () => {
-    expect(installCommand(plugin)).toBe("paseo plugin add acme/example");
+    expect(installCommand(plugin)).toBe("aaswitch plugin add acme/example");
     expect(formatInstalls(1250)).toBe("1.3k");
   });
   it("reports bugs on the source repository's GitHub issue tracker", () => {

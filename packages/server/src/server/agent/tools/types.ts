@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderPaseoToolsPolicy } from "@aaswitch/protocol/provider-config";
 
 export class PaseoToolInputError extends Error {
   readonly status = 400;

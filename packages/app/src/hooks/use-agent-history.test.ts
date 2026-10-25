@@ -3,7 +3,7 @@ import type {
   DaemonClient,
   FetchAgentHistoryEntry,
   FetchAgentHistoryOptions,
-} from "@getpaseo/client/internal/daemon-client";
+} from "@aaswitch/client/internal/daemon-client";
 import type { AgentHistoryClient, AgentHistoryHost } from "./use-agent-history";
 import { allAgentHistoryQueryKey } from "./agent-history-query-key";
 

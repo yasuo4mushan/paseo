@@ -1,6 +1,6 @@
 import appPackage from "../../package.json";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { pluginRegistry as registry } from "./registry";
 
 const audio = { play: async () => 0 };

@@ -20,7 +20,7 @@ import {
   type CreateWorktreeOptions,
   type WorktreeConfig,
 } from "./worktree";
-import type { PaseoConfig } from "@getpaseo/protocol/paseo-config-schema";
+import type { PaseoConfig } from "@aaswitch/protocol/paseo-config-schema";
 import { getPaseoWorktreeMetadataPath, readPaseoWorktreeMetadata } from "./worktree-metadata.js";
 import {
   getCheckoutDiff,

@@ -26,7 +26,7 @@ import {
 import { spawnSync } from "node:child_process";
 import * as pty from "node-pty";
 import xterm from "@xterm/headless";
-import { renderTerminalSnapshotToAnsi } from "@getpaseo/protocol/terminal-snapshot";
+import { renderTerminalSnapshotToAnsi } from "@aaswitch/protocol/terminal-snapshot";
 import { delimiter, join } from "node:path";
 import { tmpdir } from "node:os";
 import { setImmediate as waitForImmediate, setTimeout as delay } from "node:timers/promises";
@@ -1081,7 +1081,7 @@ describe.skipIf(isPlatform("win32"))("terminal title", () => {
       fakeAppRoot,
       "app.asar",
       "node_modules",
-      "@getpaseo",
+      "@aaswitch",
       "server",
       "dist",
       "server",
@@ -1093,7 +1093,7 @@ describe.skipIf(isPlatform("win32"))("terminal title", () => {
       fakeAppRoot,
       "app.asar.unpacked",
       "node_modules",
-      "@getpaseo",
+      "@aaswitch",
       "server",
       "dist",
       "server",

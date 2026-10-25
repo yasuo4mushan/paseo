@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
-import type { WorkspaceDescriptorPayload } from "@getpaseo/protocol/messages";
+import type { WorkspaceDescriptorPayload } from "@aaswitch/protocol/messages";
 
 import { DaemonClient } from "./test-utils/daemon-client.js";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "./test-utils/paseo-daemon.js";

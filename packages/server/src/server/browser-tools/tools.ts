@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BrowserAutomationBrowserIdSchema } from "@getpaseo/protocol/browser-automation/rpc-schemas";
+import { BrowserAutomationBrowserIdSchema } from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import type { BrowserToolsBroker } from "./broker.js";
 import type { BrowserToolsResponsePayload } from "./errors.js";
 import type {

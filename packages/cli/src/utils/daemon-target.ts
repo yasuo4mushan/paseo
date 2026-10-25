@@ -1,4 +1,4 @@
-import { resolvePaseoHome } from "@getpaseo/server/daemon-control";
+import { resolvePaseoHome } from "@aaswitch/server/daemon-control";
 
 export type DaemonTarget = { kind: "instance"; home: string } | { kind: "endpoint"; host: string };
 

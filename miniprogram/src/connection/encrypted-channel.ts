@@ -1,7 +1,7 @@
 /**
  * E2EE 加密信道（客户端一侧）。
  *
- * Vendor/适配自 packages/relay/src/encrypted-channel.ts（@getpaseo/relay）：
+ * Vendor/适配自 packages/relay/src/encrypted-channel.ts（@aaswitch/relay）：
  * - createClientChannel：生成临时密钥对 → 发送 {type:"e2ee_hello", key}（带
  *   capabilities.binaryCiphertext）→ 等对端 {type:"e2ee_ready"} → open。
  * - 每 1s 重发 hello 直到 open（覆盖 daemon 数据 socket 晚接入导致的首个

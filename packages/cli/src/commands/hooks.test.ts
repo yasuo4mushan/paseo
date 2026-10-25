@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { AGENT_HOOK_PROVIDERS } from "@getpaseo/server/agent-hooks";
+import { AGENT_HOOK_PROVIDERS } from "@aaswitch/server/agent-hooks";
 import { describe, expect, it } from "vitest";
 import { runHooksCommand } from "./hooks.js";
 

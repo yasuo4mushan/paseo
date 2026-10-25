@@ -4,7 +4,7 @@ Local plugins contribute daemon RPCs, native app surfaces, workspace panels, Com
 client slash commands, timeline items, header buttons, composer pills, app themes, composer attachment sources, and settings screens.
 Paseo executes `index.server.ts` in a subprocess and `index.client.tsx` in every connected app.
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Plugins are unsandboxed: server code and preparation commands run with the daemon user's access on the daemon host, and client contributions run inside Paseo. The repository's dependencies and future updates are part of that trust decision. With `--host`, preparation runs on that remote daemon host.
+> **Trust every plugin you add.** `aaswitch plugin add` and `aaswitch plugin install` mean “I trust this codebase.” Plugins are unsandboxed: server code and preparation commands run with the daemon user's access on the daemon host, and client contributions run inside Paseo. The repository's dependencies and future updates are part of that trust decision. With `--host`, preparation runs on that remote daemon host.
 
 ## Install a directory source
 
@@ -12,13 +12,13 @@ Create a typecheckable plugin project, install its development dependencies, the
 the daemon. `init` only writes the project files; it does not run the package manager.
 
 ```bash
-paseo plugin init /absolute/path/to/my-plugin
+aaswitch plugin init /absolute/path/to/my-plugin
 cd /absolute/path/to/my-plugin
 npm install
 npm run typecheck
-paseo plugin install /absolute/path/to/my-plugin
-paseo plugin install /absolute/path/to/my-plugin --id another-runtime-id
-paseo plugin ls
+aaswitch plugin install /absolute/path/to/my-plugin
+aaswitch plugin install /absolute/path/to/my-plugin --id another-runtime-id
+aaswitch plugin ls
 ```
 
 The daemon stores directory sources under the root `plugins` object:
@@ -38,7 +38,7 @@ The daemon stores directory sources under the root `plugins` object:
 
 Installed plugins are disabled unless `pluginsEnabled` is `true`. Built-in plugins remain active.
 Changing that root field is
-runtime-safe: run `paseo reload` after editing `config.json`. Enabling starts every configured,
+runtime-safe: run `aaswitch reload` after editing `config.json`. Enabling starts every configured,
 enabled plugin; disabling tears them all down without restarting the daemon. Plugin source entries
 remain lifecycle-owned and do not reload from manual config edits.
 
@@ -57,7 +57,7 @@ my-plugin/
   shared/greeting.ts
 ```
 
-The generated `package.json` installs `@getpaseo/plugin` and the other host modules as development
+The generated `package.json` installs `@aaswitch/plugin` and the other host modules as development
 dependencies for local typechecking and tests. Paseo compiles TypeScript and TSX and supplies the
 runtime modules, so consumers do not install these packages when adding the plugin.
 
@@ -81,7 +81,7 @@ Never enable plugins on a user's behalf without explicit permission. Before aski
 target daemon's current `pluginsEnabled` value. State that plugins are trusted, unsandboxed code:
 backend code can access the daemon machine, while client contributions run inside the Paseo app.
 
-Source changes are explicit. Run `paseo plugin reload <id>` to stop and fully tear down the old
+Source changes are explicit. Run `aaswitch plugin reload <id>` to stop and fully tear down the old
 plugin before compiling and starting from disk. A failed reload stays failed; Paseo does not restore
 the old code. Use `enable`, `disable`, and `remove` to manage one plugin. Removing a directory source
 never deletes it. The global `pluginsEnabled` switch remains available.
@@ -96,7 +96,7 @@ checks cover that registry. Unlisted directories do not load.
 Desktop packaging ships the entire built-in plugin directory as an external resource,
 including declarations. The external esbuild compiler cannot read Electron's `app.asar`
 filesystem, and packaging dependencies excludes `.d.ts` files needed for import validation.
-Built-ins can import only host modules (`@getpaseo/plugin/*`, `zod`) and Node built-ins:
+Built-ins can import only host modules (`@aaswitch/plugin/*`, `zod`) and Node built-ins:
 outside the archive, nothing resolves an npm dependency, and the dist build test cannot catch
 one because it resolves through the repository's `node_modules`.
 The packaged-app smoke check requires every listed built-in to start without relying on
@@ -123,14 +123,14 @@ the bundled integration; an entry with `extends` shadows it with a custom provid
 
 ## Install from a registry
 
-`paseo plugin add owner/slug` installs the registry's reviewed artifact by default.
+`aaswitch plugin add owner/slug` installs the registry's reviewed artifact by default.
 Browse published plugins at [paseo.sh/plugins](https://paseo.sh/plugins).
 Use `git:owner/repository` or a full Git URL for a Git source. Registry installs
 keep the registry URL and ID, so update checks use its approved pin. Explicit version/ref
 selection is unavailable for registry installs; install an explicit source to select your own.
 
 Registry overviews are untrusted author content, even before installation. Render them with
-`@getpaseo/protocol/plugin-overview`: no raw HTML, HTTPS-only links and images, no relative
+`@aaswitch/protocol/plugin-overview`: no raw HTML, HTTPS-only links and images, no relative
 URLs, and isolated external links. The website adapter and corpus tests live in
 `packages/website/src/plugins/overview.tsx` and `overview.test.tsx`; the reusable corpus is
 `packages/protocol/tests/fixtures/plugin-overview.json`. A future app overview must share
@@ -152,10 +152,10 @@ GitHub repositories use `git:owner/repository` or `github:owner/repository`. Oth
 URL.
 
 ```bash
-paseo plugin install git:owner/repository
-paseo plugin install https://gitlab.com/group/repository.git
-paseo plugin install git:owner/monorepo:plugins/review
-paseo plugin install github:owner/repository --ref main
+aaswitch plugin install git:owner/repository
+aaswitch plugin install https://gitlab.com/group/repository.git
+aaswitch plugin install git:owner/monorepo:plugins/review
+aaswitch plugin install github:owner/repository --ref main
 ```
 
 Append `:relative/path` for a plugin below the repository root. `--ref` chooses the initial
@@ -219,7 +219,7 @@ of this happens on the remote daemon host.
 Server contributions can write to stdout and stderr with normal Node logging. Paseo adds `[paseo]`
 entries for loading, ready, stopping, and stopped transitions. Compilation and load failures are
 recorded as stderr entries before a subprocess exists. Inspect the recent in-memory
-tail from the host plugin settings or with `paseo plugin logs <id>`. Git preparation commands are
+tail from the host plugin settings or with `aaswitch plugin logs <id>`. Git preparation commands are
 recorded in `$PASEO_HOME/daemon.log` before a plugin exists, rather than the plugin log tail. Reload, disable, and process
 failure retain the tail; removing the plugin clears it. Daemon restarts do not retain the tail, but
 structured copies remain in `$PASEO_HOME/daemon.log`. Plugin output can contain secrets, so do not
@@ -238,9 +238,9 @@ wiring. Runtime code lives behind directory boundaries:
 
 Do not put any other code modules in the plugin root.
 
-Shared files import contract helpers and types from `@getpaseo/plugin`. Server handler files import
-`PluginHandlerContext` from `@getpaseo/plugin/server`. Client files import Paseo UI from
-`@getpaseo/plugin/client/react-native`. Its `Icon` resolves a Lucide name using the client's installed icon
+Shared files import contract helpers and types from `@aaswitch/plugin`. Server handler files import
+`PluginHandlerContext` from `@aaswitch/plugin/server`. Client files import Paseo UI from
+`@aaswitch/plugin/client/react-native`. Its `Icon` resolves a Lucide name using the client's installed icon
 set; an unknown name renders nothing so it cannot break the plugin surface.
 Its controlled modal keeps presentation metadata on `<Modal title="…" icon={…}>` and body UI in
 `<Modal.Content>`. Body layout, sheet-aware scrolling, and clipboard actions follow the
@@ -258,12 +258,12 @@ dependency; shared types must not refer to React components, hooks, Node APIs, o
 
 | Entry                                                | Owns                                                                       | May depend on          |
 | ---------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------- |
-| `@getpaseo/plugin`                                   | Shared data, schemas, RPC/settings definitions, runtime-neutral helpers    | Shared code only       |
-| `@getpaseo/plugin/server`                            | Server contexts, lifecycle contracts, and CLI process launch               | Shared and server code |
-| `@getpaseo/plugin/server/provider`, `/server/acp`    | Server provider contracts and adapters                                     | Shared and server code |
-| `@getpaseo/plugin/client`                            | Client contribution contexts, hooks, navigation, and UI contribution types | Shared and client code |
-| `@getpaseo/plugin/client/react-native`, `/client/ui` | Host-provided UI components                                                | Shared and client code |
-| `@getpaseo/plugin/client/host`                       | App-owned rendering integration; not a plugin-author entry                 | Shared and client code |
+| `@aaswitch/plugin`                                   | Shared data, schemas, RPC/settings definitions, runtime-neutral helpers    | Shared code only       |
+| `@aaswitch/plugin/server`                            | Server contexts, lifecycle contracts, and CLI process launch               | Shared and server code |
+| `@aaswitch/plugin/server/provider`, `/server/acp`    | Server provider contracts and adapters                                     | Shared and server code |
+| `@aaswitch/plugin/client`                            | Client contribution contexts, hooks, navigation, and UI contribution types | Shared and client code |
+| `@aaswitch/plugin/client/react-native`, `/client/ui` | Host-provided UI components                                                | Shared and client code |
+| `@aaswitch/plugin/client/host`                       | App-owned rendering integration; not a plugin-author entry                 | Shared and client code |
 
 Server code imports shared helpers from the root and server capabilities from `/server`. Client
 code imports shared helpers from the root and client capabilities from `/client`. Neither runtime
@@ -293,7 +293,7 @@ pattern.
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greetRpc } from "./shared/greeting";
 
@@ -305,8 +305,8 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import type { PluginClientContext, PluginSidebarItemProps } from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { Greeting } from "./client/greeting";
 
 function GreetingItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
@@ -417,8 +417,8 @@ Register a provider from `index.server.ts`. The provider connection is callback-
 of its sessions; plugin RPC is not part of the provider data path.
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
-import type { ProviderRegistration } from "@getpaseo/plugin/server/provider";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
+import type { ProviderRegistration } from "@aaswitch/plugin/server/provider";
 import { createProvider } from "./server/provider";
 
 export default function contribute(server: PluginServerContext) {
@@ -478,7 +478,7 @@ daemon launch from `connect` and the per-session env and MCP servers from `sessi
 no provider reload input.
 
 For an ACP command, register `runAcpProvider({ id, label, command })` from
-`@getpaseo/plugin/server/acp`. Its transformer hooks cover narrow vendor differences; do not translate the
+`@aaswitch/plugin/server/acp`. Its transformer hooks cover narrow vendor differences; do not translate the
 whole provider event stream. The shim uses the resolved launch for every probe and session, overlaying
 only the supplied per-session env for sessions. The direct and ACP examples live in
 `plugin-examples/provider-direct`
@@ -499,7 +499,7 @@ SVG or URL.
 
 ## Usage sources
 
-Register a usage source from `index.server.ts` with `server.registerUsageSource()`. Import `UsageSourceRegistration` and normalization helpers from `@getpaseo/plugin/server/usage`. The plugin owns account discovery, harness labels, and credential-store reads; the daemon owns account grouping and the fetch cache. Agent popovers use only the agent's own login. The host-wide Usage modal falls back across an account's logins; any success shows usage only, and all failures show every login's labeled error and remedy. Follow the [usage source discovery contract](../public-docs/plugins/reference.md#usage-sources). The resolved launch environment crosses into the trusted, unsandboxed plugin subprocess for session discovery. Usage queries never run lifecycle hooks. Inputs are validated in the plugin process and remain daemon-side. `icon` uses the same sanitized SVG file rules as provider icons.
+Register a usage source from `index.server.ts` with `server.registerUsageSource()`. Import `UsageSourceRegistration` and normalization helpers from `@aaswitch/plugin/server/usage`. The plugin owns account discovery, harness labels, and credential-store reads; the daemon owns account grouping and the fetch cache. Agent popovers use only the agent's own login. The host-wide Usage modal falls back across an account's logins; any success shows usage only, and all failures show every login's labeled error and remedy. Follow the [usage source discovery contract](../public-docs/plugins/reference.md#usage-sources). The resolved launch environment crosses into the trusted, unsandboxed plugin subprocess for session discovery. Usage queries never run lifecycle hooks. Inputs are validated in the plugin process and remain daemon-side. `icon` uses the same sanitized SVG file rules as provider icons.
 
 The daemon calls discovery for `usage.list_reports`; the client gates this RPC on `server_info.features.usageSources`. The old `provider.usage.list` RPC maps discovered reports for older clients.
 
@@ -635,7 +635,7 @@ credentials and vendor API calls stay in the daemon handler.
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { search } from "./server/issues";
 import { searchIssues } from "./shared/issues";
 
@@ -647,7 +647,7 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {

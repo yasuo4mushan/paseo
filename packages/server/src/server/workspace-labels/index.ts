@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { FileBackedWorkspaceRegistry } from "../workspace-registry.js";
 import { WorkspaceLabelCatalogStore } from "./internal/catalog-store.js";
 import { WorkspaceLabelService } from "./internal/service.js";
-import type { WorkspaceLabelDefinition } from "@getpaseo/protocol/workspace-labels";
+import type { WorkspaceLabelDefinition } from "@aaswitch/protocol/workspace-labels";
 import { WorkspaceLabelSequence } from "./internal/sequence.js";
 
 export { WorkspaceLabelError, WorkspaceLabelService } from "./internal/service.js";

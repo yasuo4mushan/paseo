@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import type { ProjectIconSource } from "@getpaseo/protocol/messages";
+import type { ProjectIconSource } from "@aaswitch/protocol/messages";
 
 import { writeFileAtomic } from "../server/atomic-file.js";
 import type { PersistedProjectRecord, ProjectRegistry } from "../server/workspace-registry.js";

@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { createPaseoApi } from "@getpaseo/client";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { createPaseoApi } from "@aaswitch/client";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { PluginHookHandlers } from "./index.js";
 
 const paseo = createPaseoApi(

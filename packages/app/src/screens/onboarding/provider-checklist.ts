@@ -1,5 +1,5 @@
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
-import { getAgentProviderDefinition } from "@getpaseo/protocol/provider-manifest";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
+import { getAgentProviderDefinition } from "@aaswitch/protocol/provider-manifest";
 
 /**
  * t29 onboarding agent checklist view-model.
