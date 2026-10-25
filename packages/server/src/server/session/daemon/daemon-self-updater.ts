@@ -1,4 +1,4 @@
-import { getErrorMessage } from "@getpaseo/protocol/error-utils";
+import { getErrorMessage } from "@aaswitch/protocol/error-utils";
 import {
   daemonInstallOriginRuntime,
   resolveNpmGlobalPrefix,

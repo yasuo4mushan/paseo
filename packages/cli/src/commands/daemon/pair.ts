@@ -1,19 +1,19 @@
 import { confirm, isCancel, log } from "@clack/prompts";
 import { Command } from "commander";
 import chalk from "chalk";
-import { generateLocalPairingOffer } from "@getpaseo/server/pairing";
-import { readDaemonInstance } from "@getpaseo/server/daemon-control";
+import { generateLocalPairingOffer } from "@aaswitch/server/pairing";
+import { readDaemonInstance } from "@aaswitch/server/daemon-control";
 import {
   readPersistedConfig,
   editPersistedConfig,
   resolveConfigFromPersisted,
-} from "@getpaseo/server/configuration";
+} from "@aaswitch/server/configuration";
 import { connectToDaemon } from "../../utils/client.js";
 import type { DaemonTarget } from "../../utils/daemon-target.js";
 import { addJsonAndDaemonHostOptions, withGlobalOptions } from "../../utils/command-options.js";
 import { formatPairingInstructions } from "../../output/pairing.js";
-import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
-import { serializeRelayConnectionUri } from "@getpaseo/protocol/daemon-endpoints";
+import { parseConnectionOfferFromUrl } from "@aaswitch/protocol/connection-offer";
+import { serializeRelayConnectionUri } from "@aaswitch/protocol/daemon-endpoints";
 
 interface PairOptions {
   daemonTarget: DaemonTarget;
@@ -171,7 +171,7 @@ export async function runPairCommand(options: PairOptions): Promise<void> {
 
   if (offline)
     output.writeStderr(
-      `Offline pairing offer. Start with: paseo daemon start --home ${JSON.stringify(target.kind === "instance" ? target.home : "")}\n`,
+      `Offline pairing offer. Start with: aaswitch daemon start --home ${JSON.stringify(target.kind === "instance" ? target.home : "")}\n`,
     );
 
   outputPairingResult(pairing, options, output);
@@ -188,12 +188,12 @@ function outputPairingResult(
         `${JSON.stringify({
           code: "RELAY_DISABLED",
           message: "Relay pairing is disabled for this daemon.",
-          action: "Run paseo daemon pair --relay --json to enable it explicitly.",
+          action: "Run aaswitch daemon pair --relay --json to enable it explicitly.",
         })}\n`,
       );
     } else {
       output.writeStderr(`${chalk.red("Relay pairing is disabled for this daemon.")}\n`);
-      output.writeStderr(`${chalk.yellow("Run paseo daemon pair --relay to enable it.")}\n`);
+      output.writeStderr(`${chalk.yellow("Run aaswitch daemon pair --relay to enable it.")}\n`);
     }
     output.setExitCode(1);
     return;

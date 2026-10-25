@@ -2,7 +2,7 @@ import { readPaseoConfigJson } from "./paseo-config-file.js";
 import {
   PaseoConfigSchema,
   type PaseoMetadataGeneration,
-} from "@getpaseo/protocol/paseo-config-schema";
+} from "@aaswitch/protocol/paseo-config-schema";
 
 export type MetadataConfigKey = "title" | "branchName" | "commitMessage" | "pullRequest";
 

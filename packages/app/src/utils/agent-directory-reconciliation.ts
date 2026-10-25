@@ -1,4 +1,4 @@
-import type { FetchAgentsEntry } from "@getpaseo/client/internal/daemon-client";
+import type { FetchAgentsEntry } from "@aaswitch/client/internal/daemon-client";
 import type { AgentDirectoryDelta } from "./agent-directory-sync";
 import { acceptAgentDirectoryUpdate } from "./agent-directory-update-policy";
 

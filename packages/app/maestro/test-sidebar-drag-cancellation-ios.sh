@@ -7,7 +7,7 @@ FLOW_TEMPLATE="$REPO_ROOT/packages/app/maestro/sidebar-drag-cancellation-regress
 FLOW_TEMPLATE_DIR="$REPO_ROOT/packages/app/maestro"
 OUT_DIR="/tmp/paseo-sidebar-drag-cancellation-$(date +%s)"
 CLIENT_EXPORTS="$REPO_ROOT/packages/client/dist/daemon-client.js"
-RELAY_EXPORTS="$REPO_ROOT/node_modules/@getpaseo/relay/dist/e2ee.js"
+RELAY_EXPORTS="$REPO_ROOT/node_modules/@aaswitch/relay/dist/e2ee.js"
 FIXTURE_ROOT=""
 PROJECT_IDS_FILE="$OUT_DIR/project-ids.json"
 

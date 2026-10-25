@@ -10,7 +10,7 @@ category: Plugins
 
 Start with a working [plugin project](/docs/plugins). Prepare its listing, publish it on npm
 or push it to GitHub, then submit it to the registry. After approval, users install the reviewed
-version with `paseo plugin add owner/slug`.
+version with `aaswitch plugin add owner/slug`.
 
 1. Prepare your [listing page](#your-listing-page) and, for a visual plugin, an
    [interface image](#icons-and-screenshots).
@@ -43,7 +43,7 @@ Use plain factual language and sentence case. Omit marketing, unsupported claims
 changelogs, contributing and license sections, and implementation details that do not help someone
 choose the plugin. The listing already provides plugin installation instructions.
 
-The publication validator rejects `paseo plugin add`, `npm install` and `npm i` anywhere in an
+The publication validator rejects `aaswitch plugin add`, `npm install` and `npm i` anywhere in an
 overview, including development or setup examples. Link to your README for those commands.
 
 Also supply a one-sentence description: use `package.json`'s `description` for npm or the manifest's
@@ -152,8 +152,8 @@ npm publish --access public
 On a test daemon, install that exact published version and exercise its contributions:
 
 ```bash
-paseo plugin install npm:@acme/paseo-review@1.0.0
-paseo plugin ls
+aaswitch plugin install npm:@acme/paseo-review@1.0.0
+aaswitch plugin ls
 ```
 
 Require `running` with no error, then [submit the package](#plugin-registry).
@@ -181,8 +181,8 @@ command. See [preparation](#plugins-with-a-build-step) for generated files or ex
 Users can install directly from Git without a registry listing:
 
 ```bash
-paseo plugin add git:acme/paseo-review
-paseo plugin add git:acme/monorepo:plugins/review
+aaswitch plugin add git:acme/paseo-review
+aaswitch plugin add git:acme/monorepo:plugins/review
 ```
 
 Use `--ref` to select a branch, tag or commit for the initial installation. Direct installation
@@ -213,7 +213,7 @@ missing images or an overview do not prevent opening the review PR.
 After approval and publication, users install your listing with:
 
 ```bash
-paseo plugin add owner/slug
+aaswitch plugin add owner/slug
 ```
 
 npm releases receive automatic update PRs. Submit Git updates manually with the desired revision.
@@ -274,7 +274,7 @@ To install the plugin, configure npm **on the daemon host, as the user running P
 3. Install the plugin:
 
    ```bash
-   paseo plugin install npm:@acme/paseo-review
+   aaswitch plugin install npm:@acme/paseo-review
    ```
 
 Paseo uses the host's npm registry settings and credentials for installation and updates.

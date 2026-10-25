@@ -11,7 +11,7 @@ import {
   windowFromReportedDuration,
   type UsageReport,
   type UsageWindow,
-} from "@getpaseo/plugin/server/usage";
+} from "@aaswitch/plugin/server/usage";
 import { z } from "zod";
 import type { CodexUsageInput } from "../shared/input.js";
 

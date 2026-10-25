@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
+import type { AgentAttachment } from "@aaswitch/protocol/messages";
 import {
   getWorkspaceNamingAttachments,
   remapDraftCwdToWorkspace,

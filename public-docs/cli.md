@@ -15,13 +15,13 @@ The Paseo CLI lets you manage agents from your terminal. It's the same interface
 ## Quick reference
 
 ```bash
-paseo run "fix the tests"            # Start an agent
-paseo ls                             # List running agents
-paseo attach <id>                    # Stream agent output
-paseo send <id> "also fix linting"   # Send follow-up task
-paseo logs <id>                      # View agent timeline
-paseo stop <id>                      # Stop an agent
-paseo usage                          # Show account quotas and balances
+aaswitch run "fix the tests"            # Start an agent
+aaswitch ls                             # List running agents
+aaswitch attach <id>                    # Stream agent output
+aaswitch send <id> "also fix linting"   # Send follow-up task
+aaswitch logs <id>                      # View agent timeline
+aaswitch stop <id>                      # Stop an agent
+aaswitch usage                          # Show account quotas and balances
 ```
 
 ## Account usage
@@ -29,14 +29,14 @@ paseo usage                          # Show account quotas and balances
 Show account quotas and balances from the host's usage sources:
 
 ```bash
-paseo usage
-paseo usage ls --refresh
-paseo usage ls --agent <agent-id>
-paseo usage inspect <report-id>
-paseo usage inspect <report-id> --refresh
+aaswitch usage
+aaswitch usage ls --refresh
+aaswitch usage ls --agent <agent-id>
+aaswitch usage inspect <report-id>
+aaswitch usage inspect <report-id> --refresh
 ```
 
-`paseo usage` is equivalent to `paseo usage ls`. The summary groups windows and balances by account, with report IDs, source and account labels, status, and fetch timestamps. Missing values appear as `-`; unavailable and failed reports include their reasons.
+`aaswitch usage` is equivalent to `aaswitch usage ls`. The summary groups windows and balances by account, with report IDs, source and account labels, status, and fetch timestamps. Missing values appear as `-`; unavailable and failed reports include their reasons.
 
 Copy the full report ID from the list into `inspect` to see reset times, balances and units, plan details, supplied forecasts, and login failures with recovery instructions. Report IDs require exact matches.
 
@@ -47,9 +47,9 @@ Queries use the host's five-minute cache when available. Add `--refresh` to bypa
 ### Usage in scripts
 
 ```bash
-paseo usage ls --json
-paseo usage inspect <report-id> --json
-paseo usage ls --quiet
+aaswitch usage ls --json
+aaswitch usage inspect <report-id> --json
+aaswitch usage ls --quiet
 ```
 
 List JSON is always an array, including `[]` when no reports are returned. Inspect JSON is one report entry. Each entry includes `id`, `sourceId`, `sourceLabel`, `account`, `fetchedAt`, and a nested `report`. Read `report.status` before accessing its data:
@@ -69,29 +69,29 @@ A completed query exits with status `0`, including when individual reports are u
 Ask the daemon to inspect the provider environment it actually uses:
 
 ```bash
-paseo provider diagnostic claude
-paseo provider diagnostic codex --json
-paseo --host devbox:6767 provider diagnostic opencode
+aaswitch provider diagnostic claude
+aaswitch provider diagnostic codex --json
+aaswitch --host devbox:6767 provider diagnostic opencode
 ```
 
 The diagnostic includes the configured command, daemon `PATH` and shell, matching binaries, resolved path, version, model count, and provider status. Use the global `--host` option for a remote daemon. This is the same diagnostic shown under **Settings → your host → Providers → provider → Diagnostic**.
 
 ## Running agents
 
-Use `paseo run` to start a new agent with a task:
+Use `aaswitch run` to start a new agent with a task:
 
 ```bash
-paseo run "implement user authentication"
-paseo run --provider codex "refactor the API layer"
-paseo run --no-wait "run the focused test suite"
-paseo run --output-schema schema.json "name this branch"
-paseo run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
-paseo run --workspace <workspace-id> "review the current diff"
-paseo run --output-schema schema.json "extract release notes"
-paseo run --output-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}' "summarize release notes"
+aaswitch run "implement user authentication"
+aaswitch run --provider codex "refactor the API layer"
+aaswitch run --no-wait "run the focused test suite"
+aaswitch run --output-schema schema.json "name this branch"
+aaswitch run --new-workspace worktree --worktree-mode branch-off --new-branch feature/x --base origin/main "implement feature X"
+aaswitch run --workspace <workspace-id> "review the current diff"
+aaswitch run --output-schema schema.json "extract release notes"
+aaswitch run --output-schema '{"type":"object","properties":{"summary":{"type":"string"}},"required":["summary"]}' "summarize release notes"
 ```
 
-From a human shell, a bare `paseo run` creates a new local workspace for the current directory. Use `--workspace <id>` to add the agent to an existing workspace, or `--new-workspace local|worktree` to explicitly create a separate workspace for the run.
+From a human shell, a bare `aaswitch run` creates a new local workspace for the current directory. Use `--workspace <id>` to add the agent to an existing workspace, or `--new-workspace local|worktree` to explicitly create a separate workspace for the run.
 
 Worktree creation accepts `--worktree-mode branch-off|checkout-branch|checkout-pr` plus the matching `--new-branch`/`--base`, `--branch`, or `--pr-number`/`--forge` options. Use `--worktree-slug` to choose the managed directory slug.
 
@@ -99,7 +99,7 @@ When an existing Paseo agent runs the same command, Paseo recognizes it through 
 
 Use `--output-schema` to return only matching JSON output. You can pass a schema file path or an inline JSON schema object. This mode cannot be used with `--no-wait`.
 
-By default, `paseo run` waits for completion. Use `--no-wait` to return immediately while the agent keeps running, the same flag `paseo send` takes.
+By default, `aaswitch run` waits for completion. Use `--no-wait` to return immediately while the agent keeps running, the same flag `aaswitch send` takes.
 
 The old `run --background` and `-d` aliases still mean `--no-wait`. They are deprecated, hidden
 from help, and print a warning to stderr. Use `--no-wait` in scripts. Workspace visibility is
@@ -112,24 +112,24 @@ Register the current directory as a project, then list the projects known to the
 
 ```bash
 cd ~/dev/my-app
-paseo project create
-paseo project ls
+aaswitch project create
+aaswitch project ls
 ```
 
-Use the project ID from `paseo project ls` to rename, reset, or delete a project:
+Use the project ID from `aaswitch project ls` to rename, reset, or delete a project:
 
 ```bash
-paseo project rename <project-id> "My app"
-paseo project rename <project-id> --reset
-paseo project delete <project-id>
+aaswitch project rename <project-id> "My app"
+aaswitch project rename <project-id> --reset
+aaswitch project delete <project-id>
 ```
 
 `--reset` restores the name derived from the project directory. Deleting a project archives its active workspaces and removes the project from Paseo. It does not delete the project directory.
 
-For a local daemon, `paseo project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `PASEO_HOST`, provide a path that the target daemon can access:
+For a local daemon, `aaswitch project create [path]` defaults to the current directory and resolves relative paths on the CLI machine. When you use the global `--host` option or `PASEO_HOST`, provide a path that the target daemon can access:
 
 ```bash
-paseo --host devbox:6767 project create /srv/repos/api
+aaswitch --host devbox:6767 project create /srv/repos/api
 ```
 
 The remote daemon interprets that path on its own machine. See [Workspaces](/docs/workspaces) for how projects group working directories and sessions.
@@ -139,9 +139,9 @@ The remote daemon interprets that path on its own machine. See [Workspaces](/doc
 Create a workspace independently when you want to prepare its files before starting an agent:
 
 ```bash
-paseo workspace create --isolation local --path ~/dev/my-app --title main
+aaswitch workspace create --isolation local --path ~/dev/my-app --title main
 
-paseo workspace create \
+aaswitch workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode branch-off \
@@ -149,14 +149,14 @@ paseo workspace create \
   --worktree-slug feature-auth \
   --base origin/main
 
-paseo workspace create \
+aaswitch workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode checkout-branch \
   --branch feature/existing \
   --worktree-slug existing-copy
 
-paseo workspace create \
+aaswitch workspace create \
   --isolation worktree \
   --path ~/dev/my-app \
   --mode checkout-pr \
@@ -169,8 +169,8 @@ caller-workspace inheritance; omission inherits when run by a Paseo agent and de
 from a human shell. Visibility is creation-only.
 
 ```bash
-paseo workspace create --isolation local --background --path /path/to/repo
-paseo run --workspace <workspace-id> --no-wait "review the checkout flow"
+aaswitch workspace create --isolation local --background --path /path/to/repo
+aaswitch run --workspace <workspace-id> --no-wait "review the checkout flow"
 ```
 
 Exact workspace and agent IDs remain accessible regardless of listing visibility.
@@ -178,12 +178,12 @@ Exact workspace and agent IDs remain accessible regardless of listing visibility
 Then list, use, rename, or archive it:
 
 ```bash
-paseo workspace ls
-paseo workspace ls --background               # Also include background workspaces
-paseo run --workspace <workspace-id> "implement authentication"
-paseo workspace rename <workspace-id> "Auth rework"
-paseo workspace rename <workspace-id> --reset   # back to the branch or directory name
-paseo workspace archive <workspace-id>
+aaswitch workspace ls
+aaswitch workspace ls --background               # Also include background workspaces
+aaswitch run --workspace <workspace-id> "implement authentication"
+aaswitch workspace rename <workspace-id> "Auth rework"
+aaswitch workspace rename <workspace-id> --reset   # back to the branch or directory name
+aaswitch workspace archive <workspace-id>
 ```
 
 Add `--forge <name>` to PR checkout when Paseo cannot infer the forge from the source checkout. See [Git worktrees](/docs/worktrees) for setup hooks and services.
@@ -193,12 +193,12 @@ Add `--forge <name>` to PR checkout when Paseo cannot infer the forge from the s
 Use the workspace ID when multiple workspaces share a directory:
 
 ```bash
-paseo terminal create --workspace <workspace-id> --name Development
-paseo terminal ls --workspace <workspace-id> --json
-paseo terminal send-keys <terminal-id> -l "echo ready"
-paseo terminal send-keys <terminal-id> Enter
-paseo terminal capture <terminal-id>
-paseo terminal kill <terminal-id>
+aaswitch terminal create --workspace <workspace-id> --name Development
+aaswitch terminal ls --workspace <workspace-id> --json
+aaswitch terminal send-keys <terminal-id> -l "echo ready"
+aaswitch terminal send-keys <terminal-id> Enter
+aaswitch terminal capture <terminal-id>
+aaswitch terminal kill <terminal-id>
 ```
 
 Creation defaults to the workspace directory. Add `--cwd <absolute-path>` to change the process directory while keeping that workspace as the owner. Unknown and archived workspace IDs fail.
@@ -212,9 +212,9 @@ Create and list results include `id`, `name`, `cwd`, and `workspaceId`. Use `--j
 List, start, and stop the scripts configured in a workspace's `paseo.json`:
 
 ```bash
-paseo script ls
-paseo script start web
-paseo script stop web
+aaswitch script ls
+aaswitch script start web
+aaswitch script stop web
 ```
 
 By default, Paseo selects the workspace whose directory is the current directory. Pass `--cwd <path>` to select a different directory, or `--workspace <workspace-id>` when a directory has multiple workspaces. Use the global `--host` option to target another daemon. These commands also accept standard output options such as `--json`.
@@ -223,28 +223,28 @@ The output includes each script's lifecycle and supervised terminal ID. Services
 
 ## Plugins
 
-> **Trust every plugin you add.** `paseo plugin add` and `paseo plugin install` mean “I trust this codebase.” Plugin server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Paseo. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
+> **Trust every plugin you add.** `aaswitch plugin add` and `aaswitch plugin install` mean “I trust this codebase.” Plugin server code and Git preparation commands run unsandboxed with the daemon user's access on the daemon host; client contributions run inside Paseo. Dependencies and future updates are part of that decision. With the global `--host` option, commands run on the remote daemon host.
 
 Create and manage trusted plugins on a daemon:
 
 ```bash
-paseo plugin init ./plugin
-paseo plugin install ./plugin
-paseo plugin add owner/slug
-paseo plugin add git:owner/repository
-paseo plugin add https://gitlab.com/group/repository.git --ref main
-paseo plugin add git:owner/monorepo:plugins/review
-paseo plugin ls [id]
-paseo plugin update my-plugin
-paseo plugin update --all
-paseo plugin reload my-plugin
-paseo plugin logs my-plugin
-paseo plugin disable my-plugin
-paseo plugin enable my-plugin
-paseo plugin remove my-plugin
+aaswitch plugin init ./plugin
+aaswitch plugin install ./plugin
+aaswitch plugin add owner/slug
+aaswitch plugin add git:owner/repository
+aaswitch plugin add https://gitlab.com/group/repository.git --ref main
+aaswitch plugin add git:owner/monorepo:plugins/review
+aaswitch plugin ls [id]
+aaswitch plugin update my-plugin
+aaswitch plugin update --all
+aaswitch plugin reload my-plugin
+aaswitch plugin logs my-plugin
+aaswitch plugin disable my-plugin
+aaswitch plugin enable my-plugin
+aaswitch plugin remove my-plugin
 ```
 
-`paseo plugin reload <id>` reports the result of the reload itself: it waits while the daemon stops
+`aaswitch plugin reload <id>` reports the result of the reload itself: it waits while the daemon stops
 and starts the plugin, however long that takes, and it queues behind the daemon's other plugin work.
 Cancelling the command or losing the connection does not stop the daemon's work, and no listing or
 log entry settles what a cancelled reload did — the [Plugin reference](/docs/plugins/reference)
@@ -254,28 +254,28 @@ outstanding one, then stops and starts the plugin once more.
 Bare `owner/slug` installs a reviewed registry listing. Use `git:owner/repository` for GitHub
 source, or `./plugin` for a local directory. Append `:<directory>` for a plugin in a monorepo.
 
-`paseo plugin ls [id]` does not contact the remote. `paseo plugin logs <id>` returns the
+`aaswitch plugin ls [id]` does not contact the remote. `aaswitch plugin logs <id>` returns the
 plugin's recent daemon-side stdout and stderr. Add `--json` for structured entries, or run
-`paseo --host <target> plugin logs <id>` for another daemon. See the
+`aaswitch --host <target> plugin logs <id>` for another daemon. See the
 [Plugin reference](/docs/plugins/reference) for installation, trust, lifecycle, and log-retention
 behavior.
 
 ## Listing agents
 
 ```bash
-paseo ls                    # Non-archived agents in active workspaces
-paseo ls -a                 # Also include archived agents
-paseo ls -g                 # Non-archived agents across all workspaces
-paseo ls -a -g --json       # All agents, including archived, as JSON
-paseo ls --background       # Also include agents in background workspaces
+aaswitch ls                    # Non-archived agents in active workspaces
+aaswitch ls -a                 # Also include archived agents
+aaswitch ls -g                 # Non-archived agents across all workspaces
+aaswitch ls -a -g --json       # All agents, including archived, as JSON
+aaswitch ls --background       # Also include agents in background workspaces
 ```
 
 ## Streaming output
 
-Use `paseo attach` to stream an agent's output in real-time:
+Use `aaswitch attach` to stream an agent's output in real-time:
 
 ```bash
-paseo attach abc123   # Attach to agent (Ctrl+C to detach)
+aaswitch attach abc123   # Attach to agent (Ctrl+C to detach)
 ```
 
 Agent IDs can be shortened, `abc` works if it's unambiguous.
@@ -284,13 +284,13 @@ Agent IDs can be shortened, `abc` works if it's unambiguous.
 
 Send follow-up tasks to a running or idle agent:
 
-Use the recipient's agent ID from `paseo ls`, or [copy it from the agent's tab](/docs/orchestration-workflows#send-a-prompt-to-another-agent).
+Use the recipient's agent ID from `aaswitch ls`, or [copy it from the agent's tab](/docs/orchestration-workflows#send-a-prompt-to-another-agent).
 
 ```bash
-paseo send <id> "now run the tests"
-paseo send <id> --image screenshot.png "what's wrong here?"
-paseo send <id> --no-wait "run this task"
-paseo send <id> --behavior interrupt "stop and do this instead"
+aaswitch send <id> "now run the tests"
+aaswitch send <id> --image screenshot.png "what's wrong here?"
+aaswitch send <id> --no-wait "run this task"
+aaswitch send <id> --behavior interrupt "stop and do this instead"
 ```
 
 Agent-originated sends (`PASEO_AGENT_ID` set) default to steering the running turn. Other sends default to interrupting it. Use `--behavior steer` or `--behavior interrupt` to override the default. Steering uses the same fallback as the client: if steering is unavailable, the running turn is interrupted and replaced.
@@ -298,10 +298,10 @@ Agent-originated sends (`PASEO_AGENT_ID` set) default to steering the running tu
 ## Viewing logs
 
 ```bash
-paseo logs <id>                  # Full timeline
-paseo logs <id> -f               # Follow (streaming)
-paseo logs <id> --tail 10        # Last 10 entries
-paseo logs <id> --filter tools   # Only tool calls
+aaswitch logs <id>                  # Full timeline
+aaswitch logs <id> -f               # Follow (streaming)
+aaswitch logs <id> --tail 10        # Last 10 entries
+aaswitch logs <id> --filter tools   # Only tool calls
 ```
 
 ## Waiting for agents
@@ -309,8 +309,8 @@ paseo logs <id> --filter tools   # Only tool calls
 Block until an agent finishes its current task:
 
 ```bash
-paseo wait <id>
-paseo wait <id> --timeout 60   # 60 second timeout
+aaswitch wait <id>
+aaswitch wait <id> --timeout 60   # 60 second timeout
 ```
 
 Useful in scripts or when one agent needs to wait for another.
@@ -320,9 +320,9 @@ Useful in scripts or when one agent needs to wait for another.
 Run an agent on a cron schedule. The CLI also accepts simple cadence presets and compiles them to cron. See [Schedules from the CLI](/docs/schedules-cli) for the full reference.
 
 ```bash
-paseo schedule create --every 30m --cwd ~/dev/my-app "Continue the refactor and leave a note."
-paseo schedule ls
-paseo schedule pause <id>
+aaswitch schedule create --every 30m --cwd ~/dev/my-app "Continue the refactor and leave a note."
+aaswitch schedule ls
+aaswitch schedule pause <id>
 ```
 
 ## Permissions
@@ -330,9 +330,9 @@ paseo schedule pause <id>
 Agents may request permission for certain actions. Manage these from the CLI:
 
 ```bash
-paseo permit ls                # List pending requests
-paseo permit allow <id>        # Allow all pending for agent
-paseo permit deny <id> --all   # Deny all pending
+aaswitch permit ls                # List pending requests
+aaswitch permit allow <id>        # Allow all pending for agent
+aaswitch permit deny <id> --all   # Deny all pending
 ```
 
 ## Agent modes
@@ -340,10 +340,10 @@ paseo permit deny <id> --all   # Deny all pending
 Change an agent's operational mode (provider-specific):
 
 ```bash
-paseo agent mode <id> --list   # Show available modes
-paseo agent mode <id> bypass   # Set bypass mode
-paseo agent mode <id> plan     # Set plan mode
-paseo agent detach <id>        # Make a subagent top-level
+aaswitch agent mode <id> --list   # Show available modes
+aaswitch agent mode <id> bypass   # Set bypass mode
+aaswitch agent mode <id> plan     # Set plan mode
+aaswitch agent detach <id>        # Make a subagent top-level
 ```
 
 Detaching is an explicit lifecycle action, not a creation flag. The agent keeps running; only its relationship to its parent changes.
@@ -353,12 +353,12 @@ Detaching is an explicit lifecycle action, not a creation flag. The agent keeps 
 Define an instance once, then start its saved configuration:
 
 ```bash
-paseo daemon config set daemon.listen 127.0.0.1:6799 --home ~/paseo-test
-paseo daemon config set daemon.relay.enabled false --home ~/paseo-test
-paseo daemon start --home ~/paseo-test
-paseo project ls --home ~/paseo-test
-paseo daemon restart --home ~/paseo-test
-paseo daemon stop --home ~/paseo-test
+aaswitch daemon config set daemon.listen 127.0.0.1:6799 --home ~/paseo-test
+aaswitch daemon config set daemon.relay.enabled false --home ~/paseo-test
+aaswitch daemon start --home ~/paseo-test
+aaswitch project ls --home ~/paseo-test
+aaswitch daemon restart --home ~/paseo-test
+aaswitch daemon stop --home ~/paseo-test
 ```
 
 `start` runs in the background and reports the actual listening address and supervisor PID. It accepts only home selection and `--timeout <seconds>` (default 600). If waiting times out, the supervisor remains running: use the printed status, log, and stop instructions. A worker that exits before becoming ready makes startup fail.
@@ -378,7 +378,7 @@ The root aliases `start`, `status`, `restart`, `reload`, and `pair` use the same
 Use environment overrides with the foreground deployment command:
 
 ```bash
-PASEO_LISTEN=127.0.0.1:6799 PASEO_RELAY_ENABLED=false paseo daemon run --home ~/paseo-test
+PASEO_LISTEN=127.0.0.1:6799 PASEO_RELAY_ENABLED=false aaswitch daemon run --home ~/paseo-test
 ```
 
 It stays attached until the supervisor exits or you cancel, without a readiness timeout. Worker restart retains these launch inputs. Stop and relaunch the deployment to change them. If the home already has a live supervisor, `run` returns `already_running` without owning or launching a foreground process.
@@ -403,26 +403,26 @@ Local-only `start`, `daemon run`, `config`, `onboard`, and `set-password` reject
 ## Hub
 
 ```bash
-paseo hub login [url]          # Approve and store organization-scoped CLI access
-paseo hub init                 # Create and optionally deploy a starter trigger here
-paseo hub connect [url]        # Enroll this daemon using CLI access
-paseo hub projects             # List legacy projects in the authenticated organization
-paseo hub status               # Show the current Hub relationship
-paseo hub permissions list     # Show what this Hub may do on this daemon
-paseo hub permissions grant hub.execute    # Let Hub automations run agents here
-paseo hub permissions revoke hub.execute   # Take it back
-paseo hub disconnect           # End it
-paseo hub deploy               # Validate and install .paseo/triggers/*.yml
-paseo hub deploy --dry-run     # Validate without installing
-paseo hub deploy -p <project>   # Deploy an existing legacy project bundle
-paseo hub logout               # Remove the active stored CLI login
+aaswitch hub login [url]          # Approve and store organization-scoped CLI access
+aaswitch hub init                 # Create and optionally deploy a starter trigger here
+aaswitch hub connect [url]        # Enroll this daemon using CLI access
+aaswitch hub projects             # List legacy projects in the authenticated organization
+aaswitch hub status               # Show the current Hub relationship
+aaswitch hub permissions list     # Show what this Hub may do on this daemon
+aaswitch hub permissions grant hub.execute    # Let Hub automations run agents here
+aaswitch hub permissions revoke hub.execute   # Take it back
+aaswitch hub disconnect           # End it
+aaswitch hub deploy               # Validate and install .paseo/triggers/*.yml
+aaswitch hub deploy --dry-run     # Validate without installing
+aaswitch hub deploy -p <project>   # Deploy an existing legacy project bundle
+aaswitch hub logout               # Remove the active stored CLI login
 ```
 
 Run deploy from the repository root. By default it reads every direct `.paseo/triggers/*.yml` file in deterministic path order. It validates all triggers before installing them one at a time. If an installation fails after earlier ones succeeded, the error lists the installed files. `--dry-run` only validates; it does not create or activate revisions.
 
 Pass `-p, --project <slug>` for an existing legacy bundle: `.paseo/hub.yml`, direct `.paseo/workflows/*.yml` files, and referenced workflow partials. See [Deploy from the CLI](/docs/hub/configuration#deploy-from-the-cli).
 
-`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `PASEO_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `paseo hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
+`login` opens the Hub approval page and stores a durable organization-scoped CLI credential under `PASEO_HOME`. In an interactive terminal it offers to connect this daemon, then separately asks whether to allow Hub automations to run agents. Connection defaults to yes; execution permission defaults to no. It then links to Hub's **Triggers** page and prints `aaswitch hub init` for setup as code. `--json` and non-TTY login remain login-only and never prompt. The stored login is separate from the daemon relationship created by `connect`.
 
 `init` requires a TTY. It signs in and connects the daemon as needed, then lists the organization's app connections that can back a starter trigger. One usable connection is selected automatically; with several, you choose a **Trigger connection**. If none is ready, setup sends you to **Hub → Apps** and stops before selecting an agent or writing files.
 
@@ -443,9 +443,9 @@ The global `--host` option accepts either a local target (`host:port`, a unix so
 Get an offer URL from the daemon you want to control:
 
 ```bash
-paseo daemon pair          # prints the QR and link when relay is enabled
-paseo daemon pair --relay  # enables relay without prompting
-paseo daemon pair --json   # structured output; never prompts
+aaswitch daemon pair          # prints the QR and link when relay is enabled
+aaswitch daemon pair --relay  # enables relay without prompting
+aaswitch daemon pair --json   # structured output; never prompts
 ```
 
 Relay is off for new installations. A disabled relay returns a `RELAY_DISABLED` error; pass `--relay` to provide explicit consent. For a stopped home, pairing is labelled offline; `--relay` saves relay enablement and the offer includes a start instruction. A live but unreachable home never falls back to an offline identity. Relay pairing is end-to-end encrypted. See [Security](/docs/security).
@@ -453,8 +453,8 @@ Relay is off for new installations. A disabled relay returns a `RELAY_DISABLED` 
 Use it from anywhere:
 
 ```bash
-paseo --host 'https://app.paseo.sh/#offer=eyJ2IjoyLC...' ls
-paseo --host "$OFFER_URL" run "fix the failing tests"
+aaswitch --host 'https://app.paseo.sh/#offer=eyJ2IjoyLC...' ls
+aaswitch --host "$OFFER_URL" run "fix the failing tests"
 ```
 
 You can also set it once via `PASEO_HOST` instead of passing `--host` on every command. An explicit flag overrides the environment variable.
@@ -465,9 +465,9 @@ The CLI is designed to be used by agents themselves. You can instruct an agent t
 
 ```bash
 # Agent A spawns Agent B and waits for it
-agent_id=$(paseo run --no-wait --quiet --title api-agent "implement the API")
-paseo wait "$agent_id"
-paseo logs "$agent_id" --tail 5
+agent_id=$(aaswitch run --no-wait --quiet --title api-agent "implement the API")
+aaswitch wait "$agent_id"
+aaswitch logs "$agent_id" --tail 5
 ```
 
 Because Agent A's ID is present in the environment, Agent B is created as its subagent in the same workspace unless `--workspace` is specified.
@@ -477,9 +477,9 @@ Simple implement + verify loop:
 ```bash
 # Requires jq
 while true; do
-  paseo run --provider codex "make the tests pass" >/dev/null
+  aaswitch run --provider codex "make the tests pass" >/dev/null
 
-  verdict=$(paseo run --provider claude --output-schema '{"type":"object","properties":{"criteria_met":{"type":"boolean"}},"required":["criteria_met"],"additionalProperties":false}' "ensure tests all pass")
+  verdict=$(aaswitch run --provider claude --output-schema '{"type":"object","properties":{"criteria_met":{"type":"boolean"}},"required":["criteria_met"],"additionalProperties":false}' "ensure tests all pass")
   if echo "$verdict" | jq -e '.criteria_met == true' >/dev/null; then
     echo "criteria met"
     break
@@ -494,9 +494,9 @@ This pattern enables hierarchical task decomposition, a lead agent can break dow
 Most commands support multiple output formats for scripting:
 
 ```bash
-paseo ls --json                # JSON output
-paseo ls --format yaml         # YAML output
-paseo ls -q                    # IDs only (quiet)
+aaswitch ls --json                # JSON output
+aaswitch ls --format yaml         # YAML output
+aaswitch ls -q                    # IDs only (quiet)
 ```
 
 ## Global options

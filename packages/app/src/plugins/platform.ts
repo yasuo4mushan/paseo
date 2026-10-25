@@ -1,4 +1,4 @@
-import type { PluginHostProps } from "@getpaseo/plugin/client";
+import type { PluginHostProps } from "@aaswitch/plugin/client";
 import { Platform } from "react-native";
 
 /** The platform plugins see in `layout.platform`. */

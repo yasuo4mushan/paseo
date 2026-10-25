@@ -1,4 +1,4 @@
-import type { WorkspaceScriptPayload } from "@getpaseo/protocol/messages";
+import type { WorkspaceScriptPayload } from "@aaswitch/protocol/messages";
 import type { Theme } from "@/styles/theme";
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
+import type { ToolCallDetail } from "@aaswitch/protocol/agent-types";
 import type { StreamItem, ToolCallItem } from "@/types/stream";
 import {
   prepareToolCallHistory,

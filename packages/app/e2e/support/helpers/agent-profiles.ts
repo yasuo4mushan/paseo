@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import type { AgentProfile } from "@getpaseo/protocol/messages";
+import type { AgentProfile } from "@aaswitch/protocol/messages";
 import { buildSettingsHostSectionRoute } from "@/utils/host-routes";
 import { gotoAppShell, openSettings } from "./app";
 import { connectDaemonClient } from "./daemon-client-loader";

@@ -9,7 +9,7 @@ import {
   toneFromUsedPct,
   windowFromUsedPct,
   type UsageReport,
-} from "@getpaseo/plugin/server/usage";
+} from "@aaswitch/plugin/server/usage";
 import type { Input } from "../shared/input.js";
 
 const authSchema = z

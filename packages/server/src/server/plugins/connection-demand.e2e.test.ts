@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, test } from "vitest";
-import { createPaseoApi } from "@getpaseo/client";
+import { createPaseoApi } from "@aaswitch/client";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 
@@ -12,7 +12,7 @@ test("an RPC-only plugin receives no agent, project or provider data", async () 
   await writeFile(
     path.join(directory, "index.server.ts"),
     `
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 export default function contribute(server) {
   const counts = {};

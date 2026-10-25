@@ -7,9 +7,9 @@ import type {
   JsonValue,
   ProviderOptions,
   ToolPolicy,
-} from "@getpaseo/protocol/agent-types";
-import type { AgentMessage } from "@getpaseo/protocol/agent-message";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/agent-types";
+import type { AgentMessage } from "@aaswitch/protocol/agent-message";
+import type { AgentAttachment } from "@aaswitch/protocol/messages";
 import type { PaseoToolCatalog } from "./tools/types.js";
 
 export type {

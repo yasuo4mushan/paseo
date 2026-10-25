@@ -1,7 +1,7 @@
 import os from "node:os";
 import type pino from "pino";
 
-import type { HubAccountStatus } from "@getpaseo/protocol/messages";
+import type { HubAccountStatus } from "@aaswitch/protocol/messages";
 import { normalizeHubBaseUrl } from "./config.js";
 import {
   readPersistedConfig,

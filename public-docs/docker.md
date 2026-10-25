@@ -41,7 +41,7 @@ The image:
 
 The image does not bundle agent CLIs such as Claude Code, Codex, OpenCode, Copilot, Pi, or Muse Code. Add the agents you use with a small child image.
 
-Host-side CLI commands select the container explicitly, for example `paseo project ls --host 127.0.0.1:6767`. Without an endpoint selector the CLI looks for a local home’s supervisor. Container environment settings are deployment overrides; worker restart preserves them. Your container manager owns full supervisor replacement.
+Host-side CLI commands select the container explicitly, for example `aaswitch project ls --host 127.0.0.1:6767`. Without an endpoint selector the CLI looks for a local home’s supervisor. Container environment settings are deployment overrides; worker restart preserves them. Your container manager owns full supervisor replacement.
 
 ## Docker Compose
 
@@ -91,8 +91,8 @@ Leave the child image user as root. The base entrypoint uses root only for first
 You can authenticate agents either by passing provider environment variables or by running the provider login flow inside the container:
 
 ```bash
-docker exec -it --user paseo paseo codex
-docker exec -it --user paseo paseo claude
+docker exec -it --user paseo aaswitch codex
+docker exec -it --user paseo aaswitch claude
 ```
 
 Agent credentials persist in `/home/paseo`.

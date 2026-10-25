@@ -1,5 +1,5 @@
 import { type Command, Option } from "commander";
-import type { ActiveTurnBehavior } from "@getpaseo/protocol/messages";
+import type { ActiveTurnBehavior } from "@aaswitch/protocol/messages";
 import { collectMultiple } from "../../utils/command-options.js";
 import { connectToDaemon } from "../../utils/client.js";
 import type {
@@ -129,7 +129,7 @@ async function resolvePromptInput(options: {
       code: "MISSING_PROMPT",
       message: "A prompt is required",
       details:
-        "Usage: paseo agent send [options] <id> [prompt] | --prompt <text> | --prompt-file <path>",
+        "Usage: aaswitch agent send [options] <id> [prompt] | --prompt <text> | --prompt-file <path>",
     };
     throw error;
   }
@@ -181,7 +181,7 @@ export async function runSendCommand(
     const error: CommandError = {
       code: "MISSING_AGENT_ID",
       message: "Agent ID is required",
-      details: "Usage: paseo agent send [options] <id> [prompt]",
+      details: "Usage: aaswitch agent send [options] <id> [prompt]",
     };
     throw error;
   }

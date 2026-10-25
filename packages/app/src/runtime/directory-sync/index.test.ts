@@ -9,8 +9,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import type {
   DaemonClient,
   WorkspaceLabelListPayload,
-} from "@getpaseo/client/internal/daemon-client";
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+} from "@aaswitch/client/internal/daemon-client";
+import type { SessionOutboundMessage } from "@aaswitch/protocol/messages";
 import {
   normalizeProjectDescriptor,
   normalizeWorkspaceDescriptor,

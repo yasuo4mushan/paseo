@@ -1,16 +1,16 @@
-import { UsageScopeSchema, type UsageScope } from "@getpaseo/plugin/server/usage";
+import { UsageScopeSchema, type UsageScope } from "@aaswitch/plugin/server/usage";
 import type {
   ProviderConnectRequest,
   ProviderCatalogOptions,
   ProviderEvent,
   ProviderInput,
   ProviderStatusRequest,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 import {
   ProviderEventSchema,
   ProviderInputSchema,
   ProviderLaunchSchema,
-} from "@getpaseo/plugin/server/provider";
+} from "@aaswitch/plugin/server/provider";
 import { z } from "zod";
 
 export interface PluginProviderMetadata {

@@ -806,7 +806,7 @@ function SdkAutomationExample() {
     <pre className="overflow-x-auto font-mono text-[11px] leading-5 text-white/60">
       <span className="text-purple-300">import</span> {"{"} createPaseoClient {"}"}{" "}
       <span className="text-purple-300">from</span>{" "}
-      <span className="text-emerald-300/80">{'"@getpaseo/client"'}</span>;{"\n\n"}
+      <span className="text-emerald-300/80">{'"@aaswitch/client"'}</span>;{"\n\n"}
       <span className="text-purple-300">const</span> client ={" "}
       <span className="text-sky-300">createPaseoClient</span>({"{"}
       {"\n"} url: <span className="text-emerald-300/80">{'"ws://127.0.0.1:6767/ws"'}</span>,{"\n"}
@@ -1076,7 +1076,7 @@ function ServerInstallButton() {
       trigger={SERVER_INSTALL_TRIGGER}
       title="Run agents on a remote machine"
       description="For headless machines you want to connect to from the Paseo apps. The desktop app already includes a built-in daemon"
-      command="npm install -g @getpaseo/cli && paseo"
+      command="npm install -g aaswitch && paseo"
       footnote={SERVER_INSTALL_FOOTNOTE}
     />
   );

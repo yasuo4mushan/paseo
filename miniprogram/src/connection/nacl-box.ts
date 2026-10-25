@@ -1,7 +1,7 @@
 /**
  * E2EE 加密原语（tweetnacl Box：X25519 密钥交换 + XSalsa20-Poly1305）。
  *
- * Vendor/适配自 packages/relay/src/crypto.ts（@getpaseo/relay），语义保持一致：
+ * Vendor/适配自 packages/relay/src/crypto.ts（@aaswitch/relay），语义保持一致：
  * - generateKeyPair / exportPublicKey / importPublicKey
  * - deriveSharedKey（nacl.scalarMult 做 all-zero 校验后 nacl.box.before）
  * - encrypt/decrypt（bundle 格式 [nonce 24B][ciphertext]）

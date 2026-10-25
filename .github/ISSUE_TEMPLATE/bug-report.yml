@@ -57,7 +57,7 @@ body:
     id: paseo-version
     attributes:
       label: Paseo version
-      description: Settings → About in the app, or `paseo --version` from the CLI.
+      description: Settings → About in the app, or `aaswitch --version` from the CLI.
       placeholder: "0.1.71"
     validations:
       required: true

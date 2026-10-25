@@ -8,7 +8,7 @@ import type {
   BrowserAutomationExecuteResponse,
   BrowserAutomationExecuteRequest,
   BrowserAutomationNetworkLogEntry,
-} from "@getpaseo/protocol/browser-automation/rpc-schemas";
+} from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import { waitForActionableTarget, type ActionabilityResult } from "./actionability.js";
 import { BrowserSnapshotEngine } from "./snapshot-engine.js";
 import {

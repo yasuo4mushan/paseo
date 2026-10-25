@@ -7,7 +7,7 @@ import {
   type DaemonClientConfig,
   type ConnectionState,
   type FetchAgentsOptions,
-} from "@getpaseo/client/internal/daemon-client";
+} from "@aaswitch/client/internal/daemon-client";
 import {
   connectionFromListen,
   createRemoteSshHostConnection,
@@ -29,7 +29,7 @@ import {
   shouldUseTlsForDefaultHostedRelay,
 } from "@/utils/daemon-endpoints";
 import { resolveAppVersion } from "@/utils/app-version";
-import { ConnectionOfferSchema, type ConnectionOffer } from "@getpaseo/protocol/connection-offer";
+import { ConnectionOfferSchema, type ConnectionOffer } from "@aaswitch/protocol/connection-offer";
 import { HostConfirmations, type HostConfirmationRequest } from "./host-confirmation";
 import { shouldUseDesktopDaemon } from "@/desktop/daemon/desktop-daemon";
 import { isWeb } from "@/constants/platform";
@@ -48,8 +48,8 @@ import {
 } from "@/desktop/daemon/desktop-daemon-transport";
 import { getDesktopHost } from "@/desktop/host";
 import { readDesktopManagedLocalCredential } from "@/desktop/daemon/local-credential";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
-import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@getpaseo/protocol/browser-automation/rpc-schemas";
+import { CLIENT_CAPS } from "@aaswitch/protocol/client-capabilities";
+import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import {
   useSessionStore,
   toDaemonServerInfo,
@@ -1921,7 +1921,7 @@ export class HostRuntimeStore {
   }): Promise<{ profile: HostProfile; serverId: string; hostname: string | null }> {
     return this.probeAndUpsertConnection({
       label: input.label,
-      // The daemon hashes and compares the password verbatim (`paseo daemon
+      // The daemon hashes and compares the password verbatim (`aaswitch daemon
       // set-password` keeps what it reads), so whitespace is significant here.
       password: input.password ? input.password : undefined,
       connection: createRemoteSshHostConnection(input),

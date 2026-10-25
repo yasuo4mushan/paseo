@@ -33,7 +33,7 @@ describe("DefaultNpmGlobalPaseoCli", () => {
     const dir = mkdtempSync(path.join(tmpdir(), "paseo-npm-global-"));
     tempDirs.push(dir);
     const root = path.join(dir, "prefix", "lib");
-    const packagePath = path.join(root, "node_modules", "@getpaseo", "cli");
+    const packagePath = path.join(root, "node_modules", "aaswitch");
     const checkoutCli = path.join(dir, "checkout", "packages", "cli");
     if (options.linked) {
       mkdirSync(checkoutCli, { recursive: true });
@@ -46,11 +46,11 @@ describe("DefaultNpmGlobalPaseoCli", () => {
       name: "lib",
       path: root,
       dependencies: {
-        "@getpaseo/cli": {
+        aaswitch: {
           version: "0.1.15",
           resolved: options.linked
             ? `file:${path.relative(root, checkoutCli)}`
-            : "https://registry.npmjs.org/@getpaseo/cli/-/cli-0.1.15.tgz",
+            : "https://registry.npmjs.org/aaswitch/-/cli-0.1.15.tgz",
           path: packagePath,
         },
       },
@@ -91,7 +91,7 @@ describe("DefaultNpmGlobalPaseoCli", () => {
     expect(calls).toEqual([
       {
         command: "npm",
-        args: ["-g", "ls", "@getpaseo/cli", "--json", "--depth=0", "--long"],
+        args: ["-g", "ls", "aaswitch", "--json", "--depth=0", "--long"],
         timeout: 10_000,
         maxBuffer: 10 * 1024 * 1024,
       },
@@ -118,7 +118,7 @@ describe("DefaultNpmGlobalPaseoCli", () => {
     expect(calls).toEqual([
       {
         command: "npm",
-        args: ["install", "-g", "@getpaseo/cli@latest"],
+        args: ["install", "-g", "aaswitch@latest"],
         timeout: 300_000,
         maxBuffer: 10 * 1024 * 1024,
       },
@@ -143,7 +143,7 @@ describe("DefaultNpmGlobalPaseoCli", () => {
     }));
 
     await expect(cli.inspect()).rejects.toThrow(
-      "@getpaseo/cli is not installed with npm -g on this host",
+      "aaswitch is not installed with npm -g on this host",
     );
   });
 });

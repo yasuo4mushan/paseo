@@ -1,4 +1,4 @@
-import type { AgentAttachment, ForgeSearchItem } from "@getpaseo/protocol/messages";
+import type { AgentAttachment, ForgeSearchItem } from "@aaswitch/protocol/messages";
 
 export function buildForgeAttachmentFromSearchItem(
   item: ForgeSearchItem | null,

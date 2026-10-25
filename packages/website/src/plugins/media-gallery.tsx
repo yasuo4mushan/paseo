@@ -1,5 +1,5 @@
-import { pluginOverviewPolicy, pluginOverviewUrl } from "@getpaseo/protocol/plugin-overview";
-import { pluginMediaKind } from "@getpaseo/protocol/plugin-registry";
+import { pluginOverviewPolicy, pluginOverviewUrl } from "@aaswitch/protocol/plugin-overview";
+import { pluginMediaKind } from "@aaswitch/protocol/plugin-registry";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import {
   type CSSProperties,

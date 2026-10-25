@@ -1,9 +1,9 @@
 import { ipcMain } from "electron";
-import { BrowserAutomationExecuteRequestSchema } from "@getpaseo/protocol/browser-automation/rpc-schemas";
+import { BrowserAutomationExecuteRequestSchema } from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import type {
   BrowserAutomationConsoleLogEntry,
   BrowserAutomationDialogEvent,
-} from "@getpaseo/protocol/browser-automation/rpc-schemas";
+} from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import type { TabContents, BrowserRegistry, TabImage } from "./service.js";
 import type { IsolatedKeyboardInputEvent } from "./trusted-input.js";
 import { CdpSessionQueue } from "./cdp-session-queue.js";

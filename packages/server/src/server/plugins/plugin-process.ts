@@ -5,9 +5,9 @@ import {
   type PluginProcessMessage,
   type PluginProcessRequest,
 } from "./plugin-process-protocol.js";
-import type { UsageSourceRegistration } from "@getpaseo/plugin/server/usage";
-import type { SettingsDefinition, PluginRpcContract } from "@getpaseo/plugin";
-import type { PluginHandlerContext, PluginServerContribution } from "@getpaseo/plugin/server";
+import type { UsageSourceRegistration } from "@aaswitch/plugin/server/usage";
+import type { SettingsDefinition, PluginRpcContract } from "@aaswitch/plugin";
+import type { PluginHandlerContext, PluginServerContribution } from "@aaswitch/plugin/server";
 import { fileURLToPath } from "node:url";
 import type { ZodType } from "zod";
 import {
@@ -15,9 +15,9 @@ import {
   type ProviderConnection,
   type ProviderRegistration,
   ProviderStatusSchema,
-} from "@getpaseo/plugin/server/provider";
-import { createPaseoApi, type PaseoApi } from "@getpaseo/client";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+} from "@aaswitch/plugin/server/provider";
+import { createPaseoApi, type PaseoApi } from "@aaswitch/client";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { createPluginDaemonTransportFactory } from "./daemon-transport.js";
 import { createPluginClientId } from "./plugin-session-identity.js";
 

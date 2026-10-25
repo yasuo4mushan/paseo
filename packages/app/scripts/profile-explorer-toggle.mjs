@@ -37,7 +37,7 @@ function resolvePaseoWorkspaceId() {
     env: { ...process.env, FORCE_COLOR: "0" },
   });
   const jsonStart = output.indexOf("[\n");
-  if (jsonStart < 0) throw new Error("Could not parse `paseo workspace ls --json`");
+  if (jsonStart < 0) throw new Error("Could not parse `aaswitch workspace ls --json`");
   const workspaces = JSON.parse(output.slice(jsonStart));
   const candidates = workspaces.filter((workspace) => workspace.cwd === workspaceCwd);
   const workspace = candidates.find((candidate) => candidate.name === "Paseo") ?? candidates[0];

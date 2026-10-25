@@ -8,7 +8,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { UserComposerAttachment } from "@/attachments/types";
 import type { ForgeSearchClient } from "@/git/use-forge-search-query";
-import type { ForgeSearchItem, ForgeSearchResponse } from "@getpaseo/protocol/messages";
+import type { ForgeSearchItem, ForgeSearchResponse } from "@aaswitch/protocol/messages";
 import { useComposerForgeAutoAttach } from "./forge-auto-attach";
 
 type ForgeSearchPayload = ForgeSearchResponse["payload"];

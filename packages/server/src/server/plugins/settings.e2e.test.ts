@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, onTestFinished, test } from "vitest";
 import { z } from "zod";
-import { defineRpc, settingsRpc } from "@getpaseo/plugin";
+import { defineRpc, settingsRpc } from "@aaswitch/plugin";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 
@@ -31,7 +31,7 @@ export async function reportStartup(settings) {
   );
   await writeFile(
     path.join(directory, "index.server.ts"),
-    `import { defineSettings } from "@getpaseo/plugin";
+    `import { defineSettings } from "@aaswitch/plugin";
 import { z } from "zod";
 import { reportStartup } from "./server/report";
 export default function(server) {
@@ -110,7 +110,7 @@ test("two clients share settings, observe changes, and preserve values through p
     );
     await writeFile(
       path.join(directory, "index.server.ts"),
-      `import { defineRpc, defineSettings } from "@getpaseo/plugin";
+      `import { defineRpc, defineSettings } from "@aaswitch/plugin";
 import { z } from "zod";
 const serverRead = defineRpc({ name: "settings-test.server-read", input: z.object({}), output: z.json() });
 const serverChanges = defineRpc({ name: "settings-test.server-changes", input: z.object({}), output: z.object({ count: z.number().int() }) });

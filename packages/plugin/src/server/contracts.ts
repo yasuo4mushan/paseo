@@ -1,4 +1,4 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { PaseoApi } from "@aaswitch/client";
 import type { ZodType, input as ZodInput, output as ZodOutput } from "zod";
 import type { PluginRpcContract } from "../rpc.js";
 import type { PluginCleanup } from "../contracts.js";

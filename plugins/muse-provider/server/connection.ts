@@ -1,5 +1,5 @@
-import type { ProviderLaunch } from "@getpaseo/plugin/server/provider";
-import { spawnProcess, terminateProcess } from "@getpaseo/plugin/server";
+import type { ProviderLaunch } from "@aaswitch/plugin/server/provider";
+import { spawnProcess, terminateProcess } from "@aaswitch/plugin/server";
 import { randomBytes } from "node:crypto";
 import { createInterface } from "node:readline";
 import { setTimeout as delay } from "node:timers/promises";

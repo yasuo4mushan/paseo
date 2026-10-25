@@ -74,7 +74,7 @@ try {
 
 // POSIX executable probing executes --version; Windows resolves executables differently.
 if (process.platform !== "win32") {
-  const root = await mkdtemp(join(tmpdir(), "paseo status slow provider "));
+  const root = await mkdtemp(join(tmpdir(), "aaswitch status slow provider "));
   const home = join(root, "daemon");
   const workDir = join(root, "work");
   const provider = join(root, "slow-provider");

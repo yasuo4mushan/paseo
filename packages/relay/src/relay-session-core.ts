@@ -21,7 +21,7 @@ export const CURRENT_RELAY_VERSION: RelayProtocolVersion = "2";
 
 /**
  * Largest message the relay will forward. Mirrors
- * MAX_RELAY_WEBSOCKET_MESSAGE_BYTES in @getpaseo/protocol, duplicated here so
+ * MAX_RELAY_WEBSOCKET_MESSAGE_BYTES in @aaswitch/protocol, duplicated here so
  * the relay package stays installable without workspace dependencies.
  */
 export const MAX_RELAY_FRAME_BYTES = 32 * 1024 * 1024;

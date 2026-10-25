@@ -63,9 +63,9 @@ describe("nacl-box 原语", () => {
   });
 });
 
-describe("与官方 @getpaseo/relay 加密原语互通", () => {
+describe("与官方 @aaswitch/relay 加密原语互通", () => {
   it.skipIf(official === null)("官方公钥可被 vendor 实现导入并派生共享密钥", () => {
-    if (!official) throw new Error("official @getpaseo/relay not found");
+    if (!official) throw new Error("official @aaswitch/relay not found");
     const officialPair = official.generateKeyPair();
     const officialPublicB64 = official.exportPublicKey(officialPair.publicKey);
     // 小程序侧从 offer 的 key 参数导入官方 daemon 公钥

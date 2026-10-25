@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { connectToDaemon } from "../../utils/client.js";
-import type { AgentDeepLinkTarget } from "@getpaseo/protocol/agent-deep-link";
+import type { AgentDeepLinkTarget } from "@aaswitch/protocol/agent-deep-link";
 import { openDesktopWithAgent } from "../open.js";
 import type {
   CommandError,
@@ -64,7 +64,7 @@ async function resolveAgentTarget(
       const error: CommandError = {
         code: "AGENT_NOT_FOUND",
         message: `Agent not found: ${agentId}`,
-        details: 'Use "paseo ls" to list available agents',
+        details: 'Use "aaswitch ls" to list available agents',
       };
       throw error;
     }

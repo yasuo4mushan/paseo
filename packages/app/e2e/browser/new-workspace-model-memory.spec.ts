@@ -1,7 +1,7 @@
 import { mkdtemp, rename, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { test, expect } from "../support/fixtures";
 import { seedModelProvider } from "../support/helpers/agent-profiles";
 import { connectDaemonClient } from "../support/helpers/daemon-client-loader";

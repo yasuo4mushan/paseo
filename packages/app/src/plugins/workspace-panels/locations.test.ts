@@ -1,6 +1,6 @@
 import appPackage from "../../../package.json";
 import { describe, expect, it, vi } from "vitest";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { pluginRegistry } from "../registry";
 import { panelTargetSupportsHost, resolvePluginPanelOpenLocation } from "./locations";
 

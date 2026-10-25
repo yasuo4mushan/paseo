@@ -2,7 +2,7 @@ import {
   PluginRegistryIdSchema,
   PluginRegistryIndexSchema,
   PublishedPluginDetailSchema,
-} from "@getpaseo/protocol/plugin-registry";
+} from "@aaswitch/protocol/plugin-registry";
 import { getBlockingColdCache, type WebsiteCacheContext } from "../github-cache";
 import { handlePluginThumbnailRequest } from "./thumbnails";
 import { CATEGORIES } from "./categories";

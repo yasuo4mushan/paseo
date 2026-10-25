@@ -605,9 +605,9 @@ describe("PluginService", () => {
       );
       await writeFile(
         path.join(repository, pluginPath, "index.server.ts"),
-        `import { defineSettings } from "@getpaseo/plugin";
+        `import { defineSettings } from "@aaswitch/plugin";
 import { z } from "zod";
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 export default function contribute(server: PluginServerContext) {
   server.registerSettings(defineSettings({ id: "preferences", scope: "host", version: 1, schema: z.object({ message: z.string().default("default") }) }));
   return () => {};
@@ -1462,7 +1462,7 @@ export default function contribute() {
       );
       expect(prepared.installation).toMatchObject({ identity: { pluginPath: "nested" } });
       await service.removePlugin("prepared");
-      expect(registry.requests).not.toContain("/@getpaseo/plugin");
+      expect(registry.requests).not.toContain("/@aaswitch/plugin");
       await expect(service.installSource({ source: "npm:missing-plugin" })).rejects.toThrow();
       await expect(
         service.installSource({ source: "npm:paseo-fixture-plugin", ref: "main" }),

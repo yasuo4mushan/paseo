@@ -1,6 +1,6 @@
 import path from "path";
 import type { Command } from "commander";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { connectToDaemon, getDaemonHost } from "../../utils/client.js";
 import { resolveRepositoryDirectory } from "./repository-directory.js";
 import type {
@@ -58,7 +58,7 @@ export async function runArchiveCommandWithDeps(
     const error: CommandError = {
       code: "MISSING_WORKTREE_NAME",
       message: "Worktree name is required",
-      details: "Usage: paseo worktree archive <name>",
+      details: "Usage: aaswitch worktree archive <name>",
     };
     throw error;
   }
@@ -72,7 +72,7 @@ export async function runArchiveCommandWithDeps(
     const error: CommandError = {
       code: "DAEMON_NOT_RUNNING",
       message: `Cannot connect to daemon at ${host}: ${message}`,
-      details: "Start the daemon with: paseo daemon start",
+      details: "Start the daemon with: aaswitch daemon start",
     };
     throw error;
   }
@@ -99,7 +99,7 @@ export async function runArchiveCommandWithDeps(
       const error: CommandError = {
         code: "WORKTREE_NOT_FOUND",
         message: `Worktree not found: ${nameArg}`,
-        details: 'Use "paseo worktree ls" to list available worktrees',
+        details: 'Use "aaswitch worktree ls" to list available worktrees',
       };
       throw error;
     }

@@ -10,9 +10,9 @@ describe("cli-install-path", () => {
         platform: "darwin",
         isPackaged: true,
         executablePath: "/Applications/Paseo.app/Contents/MacOS/Paseo",
-        shimPath: "/Applications/Paseo.app/Contents/Resources/bin/paseo",
+        shimPath: "/Applications/Paseo.app/Contents/Resources/bin/aaswitch",
       }),
-    ).toBe("/Applications/Paseo.app/Contents/Resources/bin/paseo");
+    ).toBe("/Applications/Paseo.app/Contents/Resources/bin/aaswitch");
   });
 
   it("prefers the original AppImage path on linux", () => {
@@ -21,7 +21,7 @@ describe("cli-install-path", () => {
         platform: "linux",
         isPackaged: true,
         executablePath: "/tmp/.mount_paseo123/paseo",
-        shimPath: "/tmp/.mount_paseo123/resources/bin/paseo",
+        shimPath: "/tmp/.mount_paseo123/resources/bin/aaswitch",
         appImagePath: "/home/user/Applications/Paseo.AppImage",
       }),
     ).toBe("/home/user/Applications/Paseo.AppImage");
@@ -33,9 +33,9 @@ describe("cli-install-path", () => {
         platform: "linux",
         isPackaged: true,
         executablePath: "/opt/Paseo/Paseo",
-        shimPath: "/opt/Paseo/resources/bin/paseo",
+        shimPath: "/opt/Paseo/resources/bin/aaswitch",
       }),
-    ).toBe("/opt/Paseo/resources/bin/paseo");
+    ).toBe("/opt/Paseo/resources/bin/aaswitch");
   });
 
   it("falls back to the shim on windows and in development", () => {
@@ -53,15 +53,14 @@ describe("cli-install-path", () => {
         platform: "linux",
         isPackaged: false,
         executablePath: "/opt/Paseo/paseo",
-        shimPath: "/opt/Paseo/resources/bin/paseo",
+        shimPath: "/opt/Paseo/resources/bin/aaswitch",
       }),
-    ).toBe("/opt/Paseo/resources/bin/paseo");
+    ).toBe("/opt/Paseo/resources/bin/aaswitch");
   });
 });
 
 describe("CLI executable selection", () => {
-  const resolveWorkspaceCli = () =>
-    createRequire(import.meta.url).resolve("@getpaseo/cli/bin/paseo");
+  const resolveWorkspaceCli = () => createRequire(import.meta.url).resolve("aaswitch/bin/aaswitch");
 
   it("uses the workspace CLI for an unpackaged Electron launcher", () => {
     expect(
@@ -90,6 +89,6 @@ describe("CLI executable selection", () => {
         executablePath: "/Applications/Paseo.app/Contents/MacOS/Paseo",
         resolveWorkspaceCli,
       }),
-    ).toBe(path.join("/Applications/Paseo.app", "Contents", "Resources", "bin", "paseo"));
+    ).toBe(path.join("/Applications/Paseo.app", "Contents", "Resources", "bin", "aaswitch"));
   });
 });

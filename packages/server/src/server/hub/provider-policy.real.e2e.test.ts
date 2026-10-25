@@ -3,8 +3,8 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { AgentStreamEvent } from "@getpaseo/protocol/agent-types";
-import type { HubExecutionAgentCreateResponse } from "@getpaseo/protocol/messages";
+import type { AgentStreamEvent } from "@aaswitch/protocol/agent-types";
+import type { HubExecutionAgentCreateResponse } from "@aaswitch/protocol/messages";
 import pino from "pino";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 

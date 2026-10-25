@@ -11,7 +11,7 @@ category: Hub
 The shortest path is one command:
 
 ```sh
-npx @getpaseo/hub
+npx @aaswitch/hub
 ```
 
 Open <http://localhost:3000>. A fresh Hub creates its embedded database and authentication secret, then guides you through creating the operator account and the GitHub, Slack, or Discord apps you want.
@@ -25,7 +25,7 @@ Without `DATABASE_URL`, Hub stores an embedded PGlite database and its generated
 Set a different location explicitly with:
 
 ```sh
-PASEO_HUB_DATA_DIR=/path/to/paseo-hub-data npx @getpaseo/hub
+PASEO_HUB_DATA_DIR=/path/to/paseo-hub-data npx @aaswitch/hub
 ```
 
 Embedded mode supports one Hub process per data directory. It is intended for a personal or single-process Hub. Back up the whole data directory before upgrading or moving it.
@@ -39,7 +39,7 @@ GitHub event triggers use webhooks and need a public HTTPS address. Repository a
 When Hub is available at a stable public origin, set it before starting:
 
 ```sh
-PASEO_HUB_APP_URL=https://hub.example.com npx @getpaseo/hub
+PASEO_HUB_APP_URL=https://hub.example.com npx @aaswitch/hub
 ```
 
 Changing the public origin requires updating callback and webhook settings in the provider apps. The **Apps** page generates the URLs for the origin Hub is currently using.
@@ -50,7 +50,7 @@ Set `DATABASE_URL` to use PostgreSQL instead of the embedded database:
 
 ```sh
 DATABASE_URL=postgres://paseo:password@localhost:5432/paseo_hub \
-  npx @getpaseo/hub
+  npx @aaswitch/hub
 ```
 
 Use PostgreSQL for a durable server deployment, more than one Hub process, or an existing database backup and operations setup. Migrations run automatically at startup. Hub does not start listening when a migration fails.

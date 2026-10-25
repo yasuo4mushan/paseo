@@ -15,8 +15,8 @@ import {
   resolvePaseoCliExecutablePath,
   type TerminalSession,
 } from "./terminal.js";
-import type { TerminalState } from "@getpaseo/protocol/messages";
-import type { TerminalActivity } from "@getpaseo/protocol/terminal-activity";
+import type { TerminalState } from "@aaswitch/protocol/messages";
+import type { TerminalActivity } from "@aaswitch/protocol/terminal-activity";
 import type {
   TerminalWorkerRequest,
   TerminalWorkerToParentMessage,

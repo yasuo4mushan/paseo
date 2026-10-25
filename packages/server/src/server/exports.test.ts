@@ -23,8 +23,8 @@ test("keeps daemon-client APIs out of the server public entry", async () => {
 test.each([
   ["desktop daemon management", "../../../desktop/src/daemon/daemon-manager.ts"],
   ["supervisor", "../../scripts/supervisor-entrypoint.ts"],
-  ["daemon control", "@getpaseo/server/daemon-control"],
-  ["configuration without the session admission resolver", "@getpaseo/server/configuration"],
+  ["daemon control", "@aaswitch/server/daemon-control"],
+  ["configuration without the session admission resolver", "@aaswitch/server/configuration"],
 ])("%s does not load the daemon runtime or wire schemas", async (_name, entry) => {
   const inputs = await runtimeDependencies(entry);
   expect(inputs.filter((file) => /\/(?:bootstrap|messages)\.[jt]s$/.test(file))).toEqual([]);
@@ -60,7 +60,7 @@ async function runtimeDependencies(entry: string): Promise<string[]> {
         name: "external-vendors",
         setup(builder) {
           builder.onResolve({ filter: /^[^./]/ }, ({ path }) => {
-            if (!isAbsolute(path) && !path.startsWith("@getpaseo/")) {
+            if (!isAbsolute(path) && !path.startsWith("@aaswitch/")) {
               return { path, external: true };
             }
           });

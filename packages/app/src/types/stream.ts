@@ -1,12 +1,12 @@
-import type { AgentMessage } from "@getpaseo/protocol/agent-message";
+import type { AgentMessage } from "@aaswitch/protocol/agent-message";
 import type {
   AgentProvider,
   AgentTimelineItem,
   JsonValue,
   ToolCallDetail,
-} from "@getpaseo/protocol/agent-types";
-import { timelineItemIdentity } from "@getpaseo/protocol/timeline-identity";
-import type { AgentAttachment, AgentStreamEventPayload } from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/agent-types";
+import { timelineItemIdentity } from "@aaswitch/protocol/timeline-identity";
+import type { AgentAttachment, AgentStreamEventPayload } from "@aaswitch/protocol/messages";
 import type { AttachmentMetadata } from "@/attachments/types";
 import { extractTaskEntriesFromToolCall } from "../utils/tool-call-parsers";
 

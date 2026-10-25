@@ -2,7 +2,7 @@ import equal from "fast-deep-equal";
 import type {
   ScriptStatusUpdateMessage,
   SessionOutboundMessage,
-} from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/messages";
 import {
   normalizeProjectDescriptor,
   normalizeWorkspaceDescriptor,

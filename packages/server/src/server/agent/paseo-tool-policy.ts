@@ -1,4 +1,4 @@
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderPaseoToolsPolicy } from "@aaswitch/protocol/provider-config";
 
 interface ProviderPaseoToolSettings {
   paseoTools?: ProviderPaseoToolsPolicy;

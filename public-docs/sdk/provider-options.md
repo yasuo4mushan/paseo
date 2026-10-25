@@ -56,7 +56,7 @@ Provider options are not a host boundary. They constrain the agent CLI, which ru
 Confine writes to one directory, cut off network access, and stop approval prompts so the run is unattended:
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createPaseoClient } from "@aaswitch/client";
 
 const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
@@ -100,7 +100,7 @@ await client.close();
 Turn on Claude's own sandbox, restrict writes to the project, deny reads of credential directories, and allow only two domains:
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createPaseoClient } from "@aaswitch/client";
 
 const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();
@@ -152,7 +152,7 @@ await client.close();
 Allow reads and edits, deny anything that reaches outside the project, and gate shell commands by pattern:
 
 ```ts
-import { createPaseoClient } from "@getpaseo/client";
+import { createPaseoClient } from "@aaswitch/client";
 
 const client = createPaseoClient({ url: "ws://127.0.0.1:6767/ws" });
 await client.connect();

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { ProjectIconSource } from "@getpaseo/protocol/messages";
+import type { ProjectIconSource } from "@aaswitch/protocol/messages";
 import {
   createPersistedProjectRecord,
   type PersistedProjectRecord,

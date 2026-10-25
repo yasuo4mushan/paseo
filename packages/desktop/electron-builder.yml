@@ -1,6 +1,7 @@
 npmRebuild: false
-# aaswitch is the user-facing brand (t14). Internal npm names, the `paseo`
-# binary, and the `paseo://` deep-link scheme intentionally stay Paseo-based.
+# aaswitch is the user-facing brand (t14); the npm scope and the `aaswitch`
+# binary follow it (t33). The `paseo://` deep-link scheme intentionally stays
+# Paseo-based.
 appId: cn.aaswitch.desktop
 productName: aaswitch
 executableName: aaswitch
@@ -15,20 +16,29 @@ directories:
 files:
   - dist/**/*
   - "!**/*.map"
-  - "!node_modules/@getpaseo/*/src/**"
-  - "!node_modules/@getpaseo/**/*.test.*"
-  - "!node_modules/@getpaseo/**/*.spec.*"
-  - "!node_modules/@getpaseo/server/dist/server/web-ui/**"
-  - "!node_modules/@getpaseo/server/dist/server/builtin-plugins/**"
+  - "!node_modules/@aaswitch/*/src/**"
+  - "!node_modules/@aaswitch/**/*.test.*"
+  - "!node_modules/@aaswitch/**/*.spec.*"
+  - "!node_modules/@aaswitch/server/dist/server/web-ui/**"
+  - "!node_modules/@aaswitch/server/dist/server/builtin-plugins/**"
   # Workspace packages are symlinked, so anything a dev generates inside them
   # lands in the asar. CI never has these; a local .debug run adds gigabytes.
-  - "!node_modules/@getpaseo/*/.debug/**"
-  - "!node_modules/@getpaseo/*/.tasks/**"
-  - "!node_modules/@getpaseo/*/conversations/**"
-  - "!node_modules/@getpaseo/*/test-results/**"
+  # The CLI publishes as the bare `aaswitch` package, so it needs its own
+  # exclusions outside the @aaswitch scope globs.
+  - "!node_modules/@aaswitch/*/.debug/**"
+  - "!node_modules/@aaswitch/*/.tasks/**"
+  - "!node_modules/@aaswitch/*/conversations/**"
+  - "!node_modules/@aaswitch/*/test-results/**"
+  - "!node_modules/aaswitch/src/**"
+  - "!node_modules/aaswitch/**/*.test.*"
+  - "!node_modules/aaswitch/**/*.spec.*"
+  - "!node_modules/aaswitch/.debug/**"
+  - "!node_modules/aaswitch/.tasks/**"
+  - "!node_modules/aaswitch/conversations/**"
+  - "!node_modules/aaswitch/test-results/**"
 asarUnpack:
   - dist/daemon/node-entrypoint-runner.js
-  - node_modules/@getpaseo/server/dist/server/terminal/shell-integration/**/*
+  - node_modules/@aaswitch/server/dist/server/terminal/shell-integration/**/*
 extraResources:
   # Preserve physical compiler inputs, including .d.ts files omitted from packaged node_modules.
   - from: ../server/dist/server/builtin-plugins
@@ -51,8 +61,8 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.inherit.plist
   extraResources:
-    - from: bin/paseo
-      to: bin/paseo
+    - from: bin/aaswitch
+      to: bin/aaswitch
     - from: assets/icon.png
       to: icon.png
   target:
@@ -65,8 +75,8 @@ linux:
   maintainer: "Mohamed Boudra <hello@moboudra.com>"
   vendor: "aaswitch"
   extraResources:
-    - from: bin/paseo
-      to: bin/paseo
+    - from: bin/aaswitch
+      to: bin/aaswitch
     - from: assets/icon.png
       to: icon.png
   target:
@@ -84,15 +94,15 @@ appImage:
   # Keep the AppImage filename stable across versions (no ${version}) so
   # electron-updater overwrites the file in place instead of renaming it to a new
   # versioned path. A rename orphans the old binary, breaks desktop shortcuts, and
-  # dangles the ~/.local/bin/paseo CLI symlink, which points at $APPIMAGE. The
+  # dangles the ~/.local/bin/aaswitch CLI symlink, which points at $APPIMAGE. The
   # version stays discoverable via the release tag and the in-app version.
   artifactName: "aaswitch-${arch}.${ext}"
 win:
   artifactName: "aaswitch-Setup-${version}-${arch}.${ext}"
   icon: assets/icon.ico
   extraResources:
-    - from: bin/paseo.cmd
-      to: bin/paseo.cmd
+    - from: bin/aaswitch.cmd
+      to: bin/aaswitch.cmd
   target:
     - target: nsis
       arch:

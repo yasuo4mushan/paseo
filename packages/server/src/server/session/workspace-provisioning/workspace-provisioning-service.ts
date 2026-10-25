@@ -1,7 +1,7 @@
 import type { PluginLifecycle } from "../../plugins/lifecycle/index.js";
 import { describeHookWorkspace } from "../../plugins/lifecycle/index.js";
 import { basename, resolve } from "node:path";
-import type { ProjectCheckoutLitePayload } from "@getpaseo/protocol/messages";
+import type { ProjectCheckoutLitePayload } from "@aaswitch/protocol/messages";
 import type { Logger } from "pino";
 import {
   generateWorkspaceId,

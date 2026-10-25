@@ -8,7 +8,7 @@ import {
   encodeFileTransferFrame,
   FileTransferOpcode,
   type FileTransferFrame,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@aaswitch/protocol/binary-frames/index";
 import { FileUploadStore } from "./index.js";
 
 const tempDirs: string[] = [];

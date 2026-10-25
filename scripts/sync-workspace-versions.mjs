@@ -43,7 +43,7 @@ for (const workspacePath of workspacePaths) {
     changed = true;
   }
 
-  if (pkg.name === "@getpaseo/desktop") {
+  if (pkg.name === "@aaswitch/desktop") {
     for (const [field, value] of Object.entries(sharedMetadata)) {
       const currentValue = JSON.stringify(pkg[field]);
       const nextValue = JSON.stringify(value);
@@ -66,7 +66,9 @@ for (const workspacePath of workspacePaths) {
     }
 
     for (const name of Object.keys(deps)) {
-      if (!name.startsWith("@getpaseo/")) {
+      // The CLI publishes as the bare `aaswitch` package; everything else is
+      // scoped under @aaswitch/.
+      if (!name.startsWith("@aaswitch/") && name !== "aaswitch") {
         continue;
       }
       if (name === pkg.name) {

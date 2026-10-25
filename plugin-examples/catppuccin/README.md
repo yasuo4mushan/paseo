@@ -20,7 +20,7 @@ Register it in `$PASEO_HOME/config.json`:
 }
 ```
 
-Then run `paseo reload` and pick **Catppuccin Mocha** in Settings → Appearance.
+Then run `aaswitch reload` and pick **Catppuccin Mocha** in Settings → Appearance.
 
 The colors come straight from the [Catppuccin Mocha](https://catppuccin.com/palette/) palette:
 `base`, `text`, `surface0`, `surface1`, `mauve`, `subtext0`, and `overlay0`. Paseo expands them

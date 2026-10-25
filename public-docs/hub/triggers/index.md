@@ -52,7 +52,7 @@ run.agent.mode: Mode 'default' is not available for provider 'opencode'
 
 The check needs the daemon connected. A new trigger, or a change of daemon, working directory, or agent, cannot be saved while its daemon is offline; the refusal names the daemon. Editing the prompt, filters, or limits of an existing trigger saves either way.
 
-The same checks run wherever a trigger is authored: the dashboard form, its YAML mode, `POST /api/v1/triggers/install`, `paseo hub init`, and `paseo hub deploy`.
+The same checks run wherever a trigger is authored: the dashboard form, its YAML mode, `POST /api/v1/triggers/install`, `aaswitch hub init`, and `aaswitch hub deploy`.
 
 ## Continue the same agent
 

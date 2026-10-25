@@ -5,7 +5,7 @@ import {
   DEFAULT_SSH_DAEMON_PORT,
   validatePort,
   validateSshHost,
-} from "@getpaseo/protocol/ssh-transport";
+} from "@aaswitch/protocol/ssh-transport";
 import { BrowserWindow } from "electron";
 import { WebSocket, type RawData } from "ws";
 

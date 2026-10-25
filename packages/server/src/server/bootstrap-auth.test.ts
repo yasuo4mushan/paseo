@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
-import { DaemonAuthenticationError, DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { DaemonAuthenticationError, DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { readLocalCredentialForTarget } from "./local-credential.js";
 
 const originalEnv = { ...process.env };

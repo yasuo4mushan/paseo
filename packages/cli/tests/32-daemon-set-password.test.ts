@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Command } from "commander";
-import { isBearerTokenValidAsync } from "@getpaseo/server/auth";
+import { isBearerTokenValidAsync } from "@aaswitch/server/auth";
 import { runLocalPaseo } from "./helpers/local-cli.ts";
 import {
   runSetPasswordCommand,
@@ -54,7 +54,7 @@ try {
     assert.strictEqual(result.configPath, join(paseoHome, "config.json"));
     assert.strictEqual(
       result.restartCommand,
-      `paseo daemon restart --home ${JSON.stringify(paseoHome)}`,
+      `aaswitch daemon restart --home ${JSON.stringify(paseoHome)}`,
     );
     assert.strictEqual(config.daemon.listen, "127.0.0.1:9999");
     assert.strictEqual(config.daemon.relay.enabled, false);

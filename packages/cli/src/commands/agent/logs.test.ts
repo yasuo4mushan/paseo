@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
+import type { AgentTimelineItem } from "@aaswitch/protocol/agent-types";
 import { createFollowTranscriptWriter, formatAgentActivityTranscript } from "./logs.js";
 
 function collect(items: readonly AgentTimelineItem[], turnId?: string): string {

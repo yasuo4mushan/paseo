@@ -17,7 +17,7 @@ const COMPACT = { width: 390, height: 844 };
 function clientSource(workspaceId: string, agentId: string): string {
   return `import React from "react";
 import { Text, View, Pressable } from "react-native";
-import { useWorkspace, useRpc, usePaseo } from "@getpaseo/plugin/client";
+import { useWorkspace, useRpc, usePaseo } from "@aaswitch/plugin/client";
 import { useQuery } from "@tanstack/react-query";
 import { summary } from "./shared/rpc";
 
@@ -123,7 +123,7 @@ async function installShowcase(workspaceId: string, agentId: string) {
   await writeFile(path.join(directory, "index.client.tsx"), clientSource(workspaceId, agentId));
   await writeFile(
     path.join(directory, "shared/rpc.ts"),
-    `import { defineRpc } from "@getpaseo/plugin"; import { z } from "zod"; export const summary = defineRpc({ name: "summary", input: z.object({}), output: z.object({ message: z.string() }) });`,
+    `import { defineRpc } from "@aaswitch/plugin"; import { z } from "zod"; export const summary = defineRpc({ name: "summary", input: z.object({}), output: z.object({ message: z.string() }) });`,
   );
   await writeFile(
     path.join(directory, "index.server.ts"),

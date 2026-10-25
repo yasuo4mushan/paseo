@@ -2,7 +2,7 @@ import {
   PaseoConfigRawSchema,
   normalizeLifecycleCommands,
   type PaseoConfigRaw,
-} from "@getpaseo/protocol/paseo-config-schema";
+} from "@aaswitch/protocol/paseo-config-schema";
 import { READ_ONLY_GIT_ENV } from "../../checkout-git-utils.js";
 import { runGitCommand } from "../../../utils/run-git-command.js";
 

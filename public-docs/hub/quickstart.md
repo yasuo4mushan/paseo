@@ -8,14 +8,14 @@ category: Hub
 
 # Hub quickstart
 
-Run Hub on your machine, connect it to Slack without a public server, and answer a mention with an agent in your repository. Hub's browser setup hands off to your terminal, and `paseo hub init` writes and deploys a starter trigger for you.
+Run Hub on your machine, connect it to Slack without a public server, and answer a mention with an agent in your repository. Hub's browser setup hands off to your terminal, and `aaswitch hub init` writes and deploys a starter trigger for you.
 
 You need [Paseo installed and running](/docs), Node.js, and a Slack workspace where you can create an app.
 
 ## 1. Start Hub
 
 ```sh
-npx @getpaseo/hub
+npx @aaswitch/hub
 ```
 
 Open the address it prints, normally <http://localhost:3000>, and create the operator account Hub asks for.
@@ -41,7 +41,7 @@ GitHub and Discord can wait. Their setup stays available under **Apps**.
 **Connect a daemon** shows one command with this Hub's address already in it:
 
 ```sh
-paseo hub login http://localhost:3000
+aaswitch hub login http://localhost:3000
 ```
 
 Run it on the machine where your code lives, in the repository the agent should work in. Run the initializer below from that directory so it becomes the trigger's working directory.
@@ -50,12 +50,12 @@ Approve the login in the browser tab that opens. Leave the Hub tab open: it watc
 
 ## 4. Create the starter trigger
 
-After approving login, answer **Yes** to **Connect this daemon to Paseo Hub?** and **Allow Hub automations to run agents on this daemon?**. Execution permission defaults to no, so enable it explicitly for this setup. If you answered no, Home shows the daemon as connected but unable to run agents, with the command that fixes it: `paseo hub permissions grant hub.execute`.
+After approving login, answer **Yes** to **Connect this daemon to Paseo Hub?** and **Allow Hub automations to run agents on this daemon?**. Execution permission defaults to no, so enable it explicitly for this setup. If you answered no, Home shows the daemon as connected but unable to run agents, with the command that fixes it: `aaswitch hub permissions grant hub.execute`.
 
 Then run:
 
 ```sh
-paseo hub init
+aaswitch hub init
 ```
 
 Choose **Custom endpoint** and confirm `http://localhost:3000`. Setup reuses your login and daemon connection, then lists the app connections ready for this trigger. With one Slack workspace connected, it selects that connection automatically. With several usable connections, choose the **Trigger connection**. If none is ready, setup sends you to **Hub → Apps** and stops before selecting an agent or writing files.
@@ -78,7 +78,7 @@ Setup validates the trigger and writes:
     └── slack-help.yml
 ```
 
-If `slack-help.yml` already exists, setup asks before replacing that file. Other files remain in place. If you decline deployment, run `paseo hub deploy` from this repository when ready.
+If `slack-help.yml` already exists, setup asks before replacing that file. Other files remain in place. If you decline deployment, run `aaswitch hub deploy` from this repository when ready.
 
 ## 5. Mention the bot
 

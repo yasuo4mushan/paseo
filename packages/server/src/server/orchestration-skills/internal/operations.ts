@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AgentSkillSelection } from "@getpaseo/protocol/messages";
+import type { AgentSkillSelection } from "@aaswitch/protocol/messages";
 import {
   isLegacyCodexCopy,
   listFilesRecursive,

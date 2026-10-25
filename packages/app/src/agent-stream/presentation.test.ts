@@ -8,7 +8,7 @@ import {
   type ToolCallItem,
   type UserMessageItem,
 } from "@/types/stream";
-import type { AgentStreamEventPayload } from "@getpaseo/protocol/messages";
+import type { AgentStreamEventPayload } from "@aaswitch/protocol/messages";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
 import { buildAgentStreamRenderModel } from "./model";

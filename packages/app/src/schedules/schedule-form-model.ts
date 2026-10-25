@@ -3,8 +3,8 @@ import type {
   AgentModelDefinition,
   AgentProvider,
   ProviderSnapshotEntry,
-} from "@getpaseo/protocol/agent-types";
-import type { ScheduleCadence, ScheduleSummary } from "@getpaseo/protocol/schedule/types";
+} from "@aaswitch/protocol/agent-types";
+import type { ScheduleCadence, ScheduleSummary } from "@aaswitch/protocol/schedule/types";
 import type { FormPreferences } from "@/create-agent-preferences/preferences";
 import { formatThinkingOptionLabel } from "@/agent-controls/labels";
 import {

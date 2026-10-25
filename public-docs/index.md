@@ -21,8 +21,8 @@ The desktop app bundles its own daemon and starts it automatically, no separate 
 For headless machines, dev boxes, or any setup where you want the daemon running without the desktop UI:
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g aaswitch
+aaswitch
 ```
 
 Paseo starts the daemon locally, then asks whether to enable the end-to-end encrypted relay and print a pairing QR code. If you decline, enter the daemon address manually over TCP, Tailscale, or another VPN.

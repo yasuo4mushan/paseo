@@ -15,7 +15,7 @@ import os from "node:os";
 import { generateLocalPairingOffer } from "../pairing-offer.js";
 import { createTestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 import { FILE_EXPLORER_STREAM_CHUNK_BYTES } from "../file-explorer/service.js";
-import { createClientChannel, type Transport } from "@getpaseo/relay/e2ee";
+import { createClientChannel, type Transport } from "@aaswitch/relay/e2ee";
 import {
   deriveSharedKey,
   decrypt,
@@ -23,10 +23,10 @@ import {
   exportPublicKey,
   generateKeyPair,
   importPublicKey,
-} from "@getpaseo/relay";
-import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
-import { ConnectionOfferSchema } from "@getpaseo/protocol/connection-offer";
-import { WSOutboundMessageSchema } from "@getpaseo/protocol/messages";
+} from "@aaswitch/relay";
+import { buildRelayWebSocketUrl } from "@aaswitch/protocol/daemon-endpoints";
+import { ConnectionOfferSchema } from "@aaswitch/protocol/connection-offer";
+import { WSOutboundMessageSchema } from "@aaswitch/protocol/messages";
 
 const nodeMajor = Number((process.versions.node ?? "0").split(".")[0] ?? "0");
 const shouldRunRelayE2e = process.env.FORCE_RELAY_E2E === "1" || nodeMajor < 25;

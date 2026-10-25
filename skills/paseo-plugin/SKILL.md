@@ -54,7 +54,7 @@ Pick the contribution that matches the request. Each row names the registration,
 Use an absolute path on the daemon machine. `init` writes files but does not install packages.
 
 ```bash
-paseo plugin init /absolute/path/to/my-plugin
+aaswitch plugin init /absolute/path/to/my-plugin
 cd /absolute/path/to/my-plugin
 npm install
 ```
@@ -107,7 +107,7 @@ Default-export one contribution function from each entry and return cleanup:
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 
 export default function contribute(client: PluginClientContext) {
   // Register components and client callbacks here.
@@ -117,7 +117,7 @@ export default function contribute(client: PluginClientContext) {
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 
 export default function contribute(server: PluginServerContext) {
   // Register daemon-side RPC handlers here.
@@ -141,7 +141,7 @@ import {
   type PluginClientContext,
   type PluginWorkspacePanelProps,
   useWorkspace,
-} from "@getpaseo/plugin/client";
+} from "@aaswitch/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -195,15 +195,15 @@ capabilities.
 
 ## Add a screen and a sidebar item
 
-Plugin screens use React Native primitives and work across desktop, browser, iOS, and Android. A sidebar item, in the header or the footer, is a component: render one or more `SidebarRow`s from `@getpaseo/plugin/client/ui`, with `SidebarSeparator` between groups, and call `openScreen` or `openPopover` from them. A screen's `title` is a string or a function of its `params`; its component receives the `params` it was opened with. Color text from `theme.colors` and pad from `layout.compact`.
+Plugin screens use React Native primitives and work across desktop, browser, iOS, and Android. A sidebar item, in the header or the footer, is a component: render one or more `SidebarRow`s from `@aaswitch/plugin/client/ui`, with `SidebarSeparator` between groups, and call `openScreen` or `openPopover` from them. A screen's `title` is a string or a function of its `params`; its component receives the `params` it was opened with. Color text from `theme.colors` and pad from `layout.compact`.
 
 ```tsx
 import type {
   PluginClientContext,
   PluginScreenProps,
   PluginSidebarItemProps,
-} from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+} from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -260,7 +260,7 @@ Icons are Lucide icon names. `theme` is a typed `PluginTheme` on every screen an
 Before writing imports, classify each module as shared, client, or server. Follow the
 [SDK import boundaries](https://paseo.sh/docs/plugins/reference.md#runtime-modules), including
 transitive and type dependencies. The root is shared-only; hooks and client contexts belong to
-`@getpaseo/plugin/client`, server contexts to `/server`, and host UI to `/client/react-native` or `/client/ui`.
+`@aaswitch/plugin/client`, server contexts to `/server`, and host UI to `/client/react-native` or `/client/ui`.
 Install dependencies locally for typechecking; Paseo supplies host runtime modules. JSX uses the
 automatic runtime. Do not import `/client/host` from plugin code.
 
@@ -293,7 +293,7 @@ Use the existing Paseo SDK for normal Paseo operations. Use plugin RPC only for 
 `usePaseo()` borrows the selected host's current connection. Never create another client inside a surface. It is the plugin's one client in every surface: release your subscriptions in your cleanup; plugin teardown ends the rest.
 
 ```tsx
-import { usePaseo } from "@getpaseo/plugin/client";
+import { usePaseo } from "@aaswitch/plugin/client";
 
 function PullRequestAction() {
   const paseo = usePaseo();
@@ -328,7 +328,7 @@ call it from client code with `useRpc()`:
 
 ```ts
 // shared/greeting.ts
-import { defineRpc } from "@getpaseo/plugin";
+import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 const greeting = defineRpc({
@@ -340,7 +340,7 @@ const greeting = defineRpc({
 
 ```ts
 // server/greeting.ts
-import type { RpcInput } from "@getpaseo/plugin";
+import type { RpcInput } from "@aaswitch/plugin";
 import { greeting } from "../shared/greeting";
 
 export async function createGreeting({ name }: RpcInput<typeof greeting>) {
@@ -350,7 +350,7 @@ export async function createGreeting({ name }: RpcInput<typeof greeting>) {
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greeting } from "./shared/greeting";
 
@@ -362,7 +362,7 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // client/greeting.tsx
-import { useRpc } from "@getpaseo/plugin/client";
+import { useRpc } from "@aaswitch/plugin/client";
 import { greeting } from "../shared/greeting";
 
 function Greeting() {
@@ -384,9 +384,9 @@ Backend contributions can use normal Node logging. `console.log()` writes to the
 Inspect recent output after install, reload, an RPC failure, or a subprocess crash:
 
 ```bash
-paseo plugin logs my-plugin
-paseo plugin logs my-plugin --json
-paseo plugin logs my-plugin --host <url>
+aaswitch plugin logs my-plugin
+aaswitch plugin logs my-plugin --json
+aaswitch plugin logs my-plugin --host <url>
 ```
 
 The same tail is available from **Settings → Plugins → Logs**. It includes initialization, handler,
@@ -401,7 +401,7 @@ the client:
 
 ```ts
 // shared/issues.ts
-import { defineAttachmentSource, defineRpc } from "@getpaseo/plugin";
+import { defineAttachmentSource, defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 const searchIssues = defineRpc({
@@ -434,7 +434,7 @@ const issues = defineAttachmentSource({
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { searchIssues } from "./shared/issues";
 
 export default function contribute(server: PluginServerContext) {
@@ -445,7 +445,7 @@ export default function contribute(server: PluginServerContext) {
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { issues } from "./shared/issues";
 
 export default function contribute(client: PluginClientContext) {
@@ -480,7 +480,7 @@ The callback receives the same context as the matching Command Center item plus 
 A pill is a per-agent button in the composer track bar next to Tasks and Subagents. Add and remove pills from the client entry lifecycle. `addComposerPill` exists on `PluginClientContext`.
 
 ```tsx
-import type { PluginButtonRegistration, PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginButtonRegistration, PluginClientContext } from "@aaswitch/plugin/client";
 
 export function contributeClient(client: PluginClientContext) {
   const pills = new Map<string, PluginButtonRegistration>();
@@ -567,7 +567,7 @@ client.addTimelineRenderer({
 });
 ```
 
-Transformers run while the render model is built, on fetched history and on every live update, so `phase` is `"streaming"` for a loading thought or running tool call. Identity comes from the source item, so a streaming item keeps its mounted component; set an output `id` when one source explodes into several items. Transformers must be synchronous and deterministic, `data` must be JSON, and a transformer that throws is logged and skipped. Use `useRevealedText(text, phase)` from `@getpaseo/plugin/client/react-native` to pace streaming text. `plugin-examples/inline-thinking` replaces the thinking row with inline text; `plugin-examples/timeline-items` replaces a Pi todo tool call with a task card.
+Transformers run while the render model is built, on fetched history and on every live update, so `phase` is `"streaming"` for a loading thought or running tool call. Identity comes from the source item, so a streaming item keeps its mounted component; set an output `id` when one source explodes into several items. Transformers must be synchronous and deterministic, `data` must be JSON, and a transformer that throws is logged and skipped. Use `useRevealedText(text, phase)` from `@aaswitch/plugin/client/react-native` to pace streaming text. `plugin-examples/inline-thinking` replaces the thinking row with inline text; `plugin-examples/timeline-items` replaces a Pi todo tool call with a task card.
 
 ## Append a timeline row from the daemon
 
@@ -618,7 +618,7 @@ Plugins are installed per daemon and are trusted, unsandboxed code. Backend code
 
 ### Check the global switch before installing
 
-Identify the target daemon and inspect its root `pluginsEnabled` value in `config.json`. For the local daemon, `paseo daemon status --json` reports its `home`; the file is `<home>/config.json`. Treat a missing field as `false`. Do not infer the global value from a plugin's `disabled` status, because an individual plugin can also be disabled.
+Identify the target daemon and inspect its root `pluginsEnabled` value in `config.json`. For the local daemon, `aaswitch daemon status --json` reports its `home`; the file is `<home>/config.json`. Treat a missing field as `false`. Do not infer the global value from a plugin's `disabled` status, because an individual plugin can also be disabled.
 
 If `pluginsEnabled` is already `true`, continue without asking the user to enable it.
 
@@ -629,13 +629,13 @@ If it is false or absent, stop and ask the user for explicit permission before e
 Do not continue unless the user agrees. After permission:
 
 1. Preserve the rest of `config.json` and set the root `pluginsEnabled` field to `true`.
-2. Run `paseo reload --json` against that daemon.
+2. Run `aaswitch reload --json` against that daemon.
 3. Require `pluginsEnabled` in `appliedPaths`, or accept an empty `appliedPaths` only after re-reading the file and confirming the live plugin catalog is enabled.
-4. Run `paseo plugin ls` and verify the intended plugin reaches `running` after installation.
+4. Run `aaswitch plugin ls` and verify the intended plugin reaches `running` after installation.
 
-If the user asks to disable the global switch, set `pluginsEnabled` to `false`, run `paseo reload --json`, and verify configured plugins report `disabled`.
+If the user asks to disable the global switch, set `pluginsEnabled` to `false`, run `aaswitch reload --json`, and verify configured plugins report `disabled`.
 
-Do not edit a local config when the target is a remote daemon. Perform the edit on the daemon machine, or ask the user to use **Settings → Plugins → Enable plugins**. `paseo reload --host <url>` reloads the remote daemon's own file but does not edit it.
+Do not edit a local config when the target is a remote daemon. Perform the edit on the daemon machine, or ask the user to use **Settings → Plugins → Enable plugins**. `aaswitch reload --host <url>` reloads the remote daemon's own file but does not edit it.
 
 When the same screen or sidebar item exists on several connected hosts, Paseo shows it once. The screen header has a host picker; a sidebar item uses the host of the screen on display, else the host last picked in one of the plugin's screens. The selected host owns the bundle, SDK calls, RPCs, and query cache. An offline selected host does not fall through to another host. Attachment sources stay scoped to the composer's host.
 
@@ -686,19 +686,19 @@ When editing a plugin, typecheck its source before install or reload:
 
 ```bash
 npm run typecheck
-paseo plugin install /absolute/path/to/plugin
-paseo plugin install /absolute/path/to/plugin --id another-runtime-id
-paseo plugin install npm:@acme/paseo-review
-paseo plugin install npm:@acme/paseo-review@1.2.0
-paseo plugin install github:owner/repository
-paseo plugin install github:owner/repository --ref main
-paseo plugin update my-plugin
-paseo plugin ls
-paseo plugin reload my-plugin
-paseo plugin logs my-plugin
-paseo plugin disable my-plugin
-paseo plugin enable my-plugin
-paseo plugin remove my-plugin
+aaswitch plugin install /absolute/path/to/plugin
+aaswitch plugin install /absolute/path/to/plugin --id another-runtime-id
+aaswitch plugin install npm:@acme/paseo-review
+aaswitch plugin install npm:@acme/paseo-review@1.2.0
+aaswitch plugin install github:owner/repository
+aaswitch plugin install github:owner/repository --ref main
+aaswitch plugin update my-plugin
+aaswitch plugin ls
+aaswitch plugin reload my-plugin
+aaswitch plugin logs my-plugin
+aaswitch plugin disable my-plugin
+aaswitch plugin enable my-plugin
+aaswitch plugin remove my-plugin
 ```
 
 For npm, ensure npm is on the daemon's `PATH`; use that host's registry configuration and credentials. Install selectors choose
@@ -706,7 +706,7 @@ content once; they do not pin updates. `install` and `add` are aliases. Follow t
 [publishing guide](https://paseo.sh/docs/plugins/publishing.md) for Paseo's package contents and
 preparation requirements; standard npm publishing commands apply.
 
-Use `--host <url>` when managing a daemon other than the CLI default. A Git source that must install or generate something declares `build` in `paseo-plugin.json` as a list of argv arrays; Paseo runs them without a shell on install and update and keeps the old version if one fails. Plugin source edits require `paseo plugin reload`; config changes to the global switch require `paseo reload`. A failed plugin reload stays failed; inspect `paseo plugin ls` for the load error and `paseo plugin logs <id>` for subprocess output, fix the source, typecheck, and reload again. `remove` keeps local source directories and deletes managed Git/npm installations.
+Use `--host <url>` when managing a daemon other than the CLI default. A Git source that must install or generate something declares `build` in `paseo-plugin.json` as a list of argv arrays; Paseo runs them without a shell on install and update and keeps the old version if one fails. Plugin source edits require `aaswitch plugin reload`; config changes to the global switch require `aaswitch reload`. A failed plugin reload stays failed; inspect `aaswitch plugin ls` for the load error and `aaswitch plugin logs <id>` for subprocess output, fix the source, typecheck, and reload again. `remove` keeps local source directories and deletes managed Git/npm installations.
 
 Do not restart the daemon to load source changes. Restarting it can kill the agent performing the work.
 
@@ -718,7 +718,7 @@ After a change:
 
 1. Run `npm run typecheck`.
 2. Install or reload the exact runtime ID.
-3. Run `paseo plugin ls` and require `running` with no error.
+3. Run `aaswitch plugin ls` and require `running` with no error.
 4. Confirm the contribution on the intended host. Open the Command Center with **⌘K** (macOS) or **Ctrl+K** (Windows/Linux). Type `/` in the composer for slash commands. For timeline work, run an agent turn that produces the source item and watch it while it streams, not only after it completes. For UI work, check a wide desktop window and a compact/mobile client, and switch theme to confirm text still uses `foreground` / `foregroundMuted`.
 5. Exercise the changed action or RPC, including its error state.
 
@@ -726,9 +726,9 @@ Common failures:
 
 - Missing sidebar item: wrong host, plugin not `running`, the item is hidden in Settings > Sidebar, or its component throws (an invalid Lucide icon name throws).
 - Unavailable client module: client bundles can use only the host-provided modules listed above.
-- RPC rejection: input or output failed its Zod schema, or the handler threw. Inspect `paseo plugin logs <id>` for handler output.
-- Plugin exits or reload fails: inspect `paseo plugin ls` for status and `paseo plugin logs <id>` for initialization, cleanup, or crash output.
-- Stale UI: source was edited without `paseo plugin reload <id>`.
+- RPC rejection: input or output failed its Zod schema, or the handler threw. Inspect `aaswitch plugin logs <id>` for handler output.
+- Plugin exits or reload fails: inspect `aaswitch plugin ls` for status and `aaswitch plugin logs <id>` for initialization, cleanup, or crash output.
+- Stale UI: source was edited without `aaswitch plugin reload <id>`.
 - Timeline item shows "Plugin timeline item unavailable": no renderer registered for that `kind` and `version`, the renderer schema rejected `data`, or the plugin is not running on that host.
 - Transformer has no effect: `query.itemType` does not match the source type, the transform returned `undefined`, or it threw and was skipped; check the app console for `[Plugins] Timeline transformer failed`.
 - Slash command not offered: name collides with a built-in or another plugin, the context is `agent` on a draft, or the composer has attachments.

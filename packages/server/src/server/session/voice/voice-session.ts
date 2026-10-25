@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import type pino from "pino";
-import { getErrorMessage } from "@getpaseo/protocol/error-utils";
+import { getErrorMessage } from "@aaswitch/protocol/error-utils";
 import type { SessionInboundMessage, SessionOutboundMessage } from "../../messages.js";
 import { TTSManager } from "../../agent/tts-manager.js";
 import { STTManager } from "../../agent/stt-manager.js";

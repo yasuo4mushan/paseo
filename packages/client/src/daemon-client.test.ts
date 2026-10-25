@@ -9,18 +9,18 @@ import {
   type DaemonTransport,
   type Logger,
 } from "./daemon-client";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
-import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@getpaseo/protocol/browser-automation/rpc-schemas";
+import { CLIENT_CAPS } from "@aaswitch/protocol/client-capabilities";
+import { BROWSER_AUTOMATION_COMMAND_NAMES } from "@aaswitch/protocol/browser-automation/rpc-schemas";
 import {
   decodeFileTransferFrame,
   encodeFileTransferFrame,
   FileTransferOpcode,
-} from "@getpaseo/protocol/binary-frames/index";
+} from "@aaswitch/protocol/binary-frames/index";
 import {
   encodeTerminalSnapshotPayload,
   encodeTerminalStreamFrame,
   TerminalStreamOpcode,
-} from "@getpaseo/protocol/terminal-stream-protocol";
+} from "@aaswitch/protocol/terminal-stream-protocol";
 
 expectTypeOf<"getGitDiff" extends keyof DaemonClient ? true : false>().toEqualTypeOf<false>();
 expectTypeOf<

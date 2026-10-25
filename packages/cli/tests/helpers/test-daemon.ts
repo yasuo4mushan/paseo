@@ -166,7 +166,7 @@ export async function createTempDirs(): Promise<{ paseoHome: string; workDir: st
 }
 
 /**
- * Wait for daemon to be ready by running `paseo agent ls`
+ * Wait for daemon to be ready by running `aaswitch agent ls`
  * This connects via WebSocket and ensures the daemon is responsive
  */
 async function probeDaemonReady(
@@ -340,7 +340,7 @@ export async function startTestDaemon(options?: {
 }
 
 /**
- * Run a paseo CLI command against a test daemon
+ * Run a aaswitch CLI command against a test daemon
  *
  * This is a helper that sets the correct environment variables
  * to point at the test daemon.
@@ -398,7 +398,7 @@ export async function runPaseoCli(
       if (proc.pid) {
         signalProcessTree(proc.pid, "SIGKILL");
       }
-      reject(new Error(`CLI command timed out after ${timeout}ms: paseo ${args.join(" ")}`));
+      reject(new Error(`CLI command timed out after ${timeout}ms: aaswitch ${args.join(" ")}`));
     }, timeout);
 
     proc.on("exit", (code) => {
@@ -428,7 +428,7 @@ export async function createE2ETestContext(options?: {
   env?: NodeJS.ProcessEnv;
 }): Promise<
   TestDaemonContext & {
-    /** Run a paseo CLI command against this daemon */
+    /** Run a aaswitch CLI command against this daemon */
     paseo: (
       args: string[],
       opts?: { timeout?: number; cwd?: string; env?: NodeJS.ProcessEnv },

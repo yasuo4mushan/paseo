@@ -1,6 +1,6 @@
 import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { resolvePaseoHome } from "@getpaseo/server/daemon-control";
+import { resolvePaseoHome } from "@aaswitch/server/daemon-control";
 
 const ATTACHMENTS_DIRNAME = "desktop-attachments";
 const ATTACHMENT_ID_PATTERN = /^[A-Za-z0-9_-]+$/;

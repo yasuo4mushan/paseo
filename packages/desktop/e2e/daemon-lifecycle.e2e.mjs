@@ -7,12 +7,12 @@ import path from "node:path";
 import net from "node:net";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { _electron as electron, expect } from "playwright/test";
-import { savePersistedConfig } from "@getpaseo/server/configuration";
+import { savePersistedConfig } from "@aaswitch/server/configuration";
 import {
   startDaemonInstance,
   stopDaemonInstance,
   readDaemonInstance,
-} from "@getpaseo/server/daemon-control";
+} from "@aaswitch/server/daemon-control";
 
 const repo = fileURLToPath(new URL("../../..", import.meta.url));
 const root = await mkdtemp(path.join(tmpdir(), "paseo desktop lifecycle "));

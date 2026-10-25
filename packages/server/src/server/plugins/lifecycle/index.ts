@@ -1,18 +1,18 @@
 import type { AgentStreamEvent, AgentTimelineItem } from "../../agent/agent-sdk-types.js";
 import { z } from "zod";
-import { CreateAgentRequestMessageSchema } from "@getpaseo/protocol/messages";
+import { CreateAgentRequestMessageSchema } from "@aaswitch/protocol/messages";
 import type {
   PluginHookAgent,
   PluginHookContext,
   PluginLifecycleRegistration,
-} from "@getpaseo/plugin/server";
-import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+} from "@aaswitch/plugin/server";
+import { PARENT_AGENT_ID_LABEL } from "@aaswitch/protocol/agent-labels";
 import type {
   PluginBeforeRequests,
   PluginHookWorkspace,
   PluginLifecycleEvents,
-} from "@getpaseo/plugin/server";
-import { WorkspaceCreateRequestSchema } from "@getpaseo/protocol/messages";
+} from "@aaswitch/plugin/server";
+import { WorkspaceCreateRequestSchema } from "@aaswitch/protocol/messages";
 import type { PersistedWorkspaceRecord } from "../../workspace-registry.js";
 
 export const lifecycleEventNames = [
@@ -204,12 +204,12 @@ export class PluginHookHandlers implements PluginLifecycleRegistration {
       if (kind === "before") {
         if (
           !beforeHookNames.includes(
-            name as keyof import("@getpaseo/plugin/server").PluginBeforeRequests,
+            name as keyof import("@aaswitch/plugin/server").PluginBeforeRequests,
           )
         ) {
           throw new Error(`Unknown before hook: ${name}`);
         }
-        const hookName = name as keyof import("@getpaseo/plugin/server").PluginBeforeRequests;
+        const hookName = name as keyof import("@aaswitch/plugin/server").PluginBeforeRequests;
         let request = validateBeforeRequest(hookName, input);
         for (const handler of this.transforms.get(name) ?? []) {
           controller.signal.throwIfAborted();

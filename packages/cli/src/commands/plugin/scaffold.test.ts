@@ -115,7 +115,7 @@ describe("plugin scaffold", () => {
         ],
         scripts: { typecheck: "tsc --noEmit" },
         devDependencies: {
-          "@getpaseo/plugin": cliPackageJson.version,
+          "@aaswitch/plugin": cliPackageJson.version,
           "@tanstack/react-query": "^5.90.11",
           "@types/react": "~19.2.0",
           react: "19.1.0",
@@ -168,7 +168,7 @@ describe("plugin scaffold", () => {
     await Promise.all([
       writeFile(
         path.join(directory, "shared", "inspect.ts"),
-        `import { defineRpc } from "@getpaseo/plugin";
+        `import { defineRpc } from "@aaswitch/plugin";
 import { z } from "zod";
 
 export const inspect = defineRpc({
@@ -180,8 +180,8 @@ export const inspect = defineRpc({
       ),
       writeFile(
         path.join(directory, "server", "inspect.ts"),
-        `import type { PluginHandlerContext } from "@getpaseo/plugin/server";
-import type { RpcInput } from "@getpaseo/plugin";
+        `import type { PluginHandlerContext } from "@aaswitch/plugin/server";
+import type { RpcInput } from "@aaswitch/plugin";
 import { inspect } from "../shared/inspect";
 
 export async function inspectConfig(
@@ -196,8 +196,8 @@ export async function inspectConfig(
         path.join(directory, "client", "main.tsx"),
         `import React from "react";
 import { Text } from "react-native";
-import { Icon, Modal, useToast } from "@getpaseo/plugin/client/react-native";
-import { type PluginAgentPanelProps, type PluginClientContext, type PluginSurfaceProps, useAgent, usePaseo, useWorkspace } from "@getpaseo/plugin/client";
+import { Icon, Modal, useToast } from "@aaswitch/plugin/client/react-native";
+import { type PluginAgentPanelProps, type PluginClientContext, type PluginSurfaceProps, useAgent, usePaseo, useWorkspace } from "@aaswitch/plugin/client";
 import { inspect } from "../shared/inspect";
 
 export function Surface({ navigation }: PluginSurfaceProps) {
@@ -268,7 +268,7 @@ export function contributeClient(client: PluginClientContext) {
       ),
       writeFile(
         path.join(directory, "index.client.tsx"),
-        `import type { PluginClientContext } from "@getpaseo/plugin/client";
+        `import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { AgentPanel, contributeClient, Surface } from "./client/main";
 import { inspect } from "./shared/inspect";
 
@@ -298,7 +298,7 @@ export default function contribute(client: PluginClientContext) {
       ),
       writeFile(
         path.join(directory, "index.server.ts"),
-        `import type { PluginServerContext } from "@getpaseo/plugin/server";
+        `import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { inspectConfig } from "./server/inspect";
 import { inspect } from "./shared/inspect";
 
@@ -321,7 +321,7 @@ export default function contribute(server: PluginServerContext) {
     await writeFile(
       path.join(directory, "index.client.tsx"),
       `
-import type { PluginClientContext, PluginComposerPillProps } from "@getpaseo/plugin/client";
+import type { PluginClientContext, PluginComposerPillProps } from "@aaswitch/plugin/client";
 
 export default function contribute(client: PluginClientContext) {
   const oldPill = {

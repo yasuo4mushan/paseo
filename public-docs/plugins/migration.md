@@ -84,20 +84,20 @@ Use this table as the complete registration checklist.
 | `plugin.addTheme(theme)` in the old root entry                                                | `client.addTheme(theme)` in `index.client.tsx`                                                                              |
 | `plugin.addTimelineTransformer(transformer)` in the old root entry                            | `client.addTimelineTransformer(transformer)` in `index.client.tsx`                                                          |
 | `plugin.addTimelineRenderer(renderer)` in the old root entry                                  | `client.addTimelineRenderer(renderer)` in `index.client.tsx`                                                                |
-| `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin/server"` in shared files | `import { defineRpc, defineAttachmentSource } from "@getpaseo/plugin"`                                                      |
-| `ZodOutput<typeof contract.input>` handler parameter types                                    | `RpcInput<typeof contract>` from `@getpaseo/plugin`; `RpcOutput` for return types                                           |
+| `import { defineRpc, defineAttachmentSource } from "@aaswitch/plugin/server"` in shared files | `import { defineRpc, defineAttachmentSource } from "@aaswitch/plugin"`                                                      |
+| `ZodOutput<typeof contract.input>` handler parameter types                                    | `RpcInput<typeof contract>` from `@aaswitch/plugin`; `RpcOutput` for return types                                           |
 
 Register the screen that replaces an `addSidebarItem` under that item's `id` to keep saved links
 working. A `/plugin/<plugin>/sidebar/<id>` link, and the older `/plugin/<plugin>/<id>`, opens the
 `addSidebarItem` with that `id`, or else the screen with that `id`.
 
-Import `PluginClientContext` from `@getpaseo/plugin/client` and `PluginServerContext` from
-`@getpaseo/plugin/server`. Remove imports of the old context type. Client registrations return idempotent removal functions, except header buttons and composer pills, which return `{ update, remove }` handles. Preserve any remover the plugin calls before teardown; Paseo removes outstanding
+Import `PluginClientContext` from `@aaswitch/plugin/client` and `PluginServerContext` from
+`@aaswitch/plugin/server`. Remove imports of the old context type. Client registrations return idempotent removal functions, except header buttons and composer pills, which return `{ update, remove }` handles. Preserve any remover the plugin calls before teardown; Paseo removes outstanding
 registrations after the entry cleanup runs.
 
 ### Composer pills
 
-Update the plugin project's `@getpaseo/plugin` dependency, then run `npm run typecheck`.
+Update the plugin project's `@aaswitch/plugin` dependency, then run `npm run typecheck`.
 The old contribution is missing the required `button` field, `PluginComposerPillProps` is no longer
 exported, and calling the new registration as a function is a TypeScript error. A project pinned
 to the old SDK still checks against the old contract; installing or reloading a plugin does not
@@ -132,9 +132,9 @@ show chevrons. See [buttons](./reference.md#button-descriptor) for menus, popove
 ## 4. Separate imports
 
 Move hooks (`usePaseo`, `useRpc`, `useSettings`, `useAgent`, `useWorkspace`) and client contribution
-types from `@getpaseo/plugin` to `@getpaseo/plugin/client`. Move `Icon` to
-`@getpaseo/plugin/client/react-native`. Import server contexts and lifecycle contracts from
-`@getpaseo/plugin/server`. Shared helpers (`defineRpc`, `defineSettings`, `defineAttachmentSource`),
+types from `@aaswitch/plugin` to `@aaswitch/plugin/client`. Move `Icon` to
+`@aaswitch/plugin/client/react-native`. Import server contexts and lifecycle contracts from
+`@aaswitch/plugin/server`. Shared helpers (`defineRpc`, `defineSettings`, `defineAttachmentSource`),
 schemas, and plain data types stay on the root. These rules include type imports. See
 [Runtime modules](reference#runtime-modules) for the complete contract.
 
@@ -142,10 +142,10 @@ Move the remaining SDK subpaths under their runtime owner:
 
 | Old entry                       | 0.8 entry                              |
 | ------------------------------- | -------------------------------------- |
-| `@getpaseo/plugin/react-native` | `@getpaseo/plugin/client/react-native` |
-| `@getpaseo/plugin/ui`           | `@getpaseo/plugin/client/ui`           |
-| `@getpaseo/plugin/provider`     | `@getpaseo/plugin/server/provider`     |
-| `@getpaseo/plugin/acp`          | `@getpaseo/plugin/server/acp`          |
+| `@aaswitch/plugin/react-native` | `@aaswitch/plugin/client/react-native` |
+| `@aaswitch/plugin/ui`           | `@aaswitch/plugin/client/ui`           |
+| `@aaswitch/plugin/provider`     | `@aaswitch/plugin/server/provider`     |
+| `@aaswitch/plugin/acp`          | `@aaswitch/plugin/server/acp`          |
 
 The old entries and the pre-0.8 `@paseo/plugin` scope are removed. `/client/host` is private to
 Paseo's app integration and is never a plugin-author import.
@@ -184,7 +184,7 @@ local-plugin/
 
 ```ts
 // index.ts
-import type { PluginContext } from "@getpaseo/plugin";
+import type { PluginContext } from "@aaswitch/plugin";
 import { contributeClient, ExamplePanel } from "./main.client";
 import { increment } from "./increment.server";
 import { incrementRpc } from "./increment.shared";
@@ -226,7 +226,7 @@ local-plugin/
 
 ```tsx
 // index.client.tsx
-import type { PluginClientContext } from "@getpaseo/plugin/client";
+import type { PluginClientContext } from "@aaswitch/plugin/client";
 import { contributeClient, ExamplePanel } from "./client/main";
 
 export default function contribute(client: PluginClientContext) {
@@ -253,7 +253,7 @@ export default function contribute(client: PluginClientContext) {
 
 ```ts
 // index.server.ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { increment } from "./server/increment";
 import { incrementRpc } from "./shared/increment";
 
@@ -292,7 +292,7 @@ After migrating the entries and imports, add the minimum runtime version to `pas
 
 Keep your existing ID and build commands. Missing `requirements.paseo` means `<0.8.0`, so Paseo 0.8 and later
 reject the plugin even if its files have been moved. Adding the field alone does not migrate the
-code. Update the local `@getpaseo/plugin` development dependency to the version you target and
+code. Update the local `@aaswitch/plugin` development dependency to the version you target and
 reinstall dependencies before typechecking.
 
 See [requirements](reference#requirements) for range and prerelease semantics.
@@ -303,8 +303,8 @@ Run:
 
 ```bash
 npm run typecheck
-paseo plugin reload <plugin-id>
-paseo plugin ls
+aaswitch plugin reload <plugin-id>
+aaswitch plugin ls
 ```
 
 Require `running` with no error. Exercise every contribution. For plugins with RPCs, call the client

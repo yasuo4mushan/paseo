@@ -91,8 +91,8 @@ Paseo 会运行一个名为 daemon 的本地服务，用来管理你的 coding a
 安装 CLI 并启动 Paseo：
 
 ```bash
-npm install -g @getpaseo/cli
-paseo
+npm install -g aaswitch
+aaswitch
 ```
 
 终端中会显示一个二维码。你可以从任意客户端连接。这个方式适合服务器和远程机器。
@@ -107,15 +107,15 @@ paseo
 你能在 app 中完成的事情，也都可以在终端中完成。
 
 ```bash
-paseo run --provider claude/opus-4.6 "implement user authentication"
-paseo run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
+aaswitch run --provider claude/opus-4.6 "implement user authentication"
+aaswitch run --provider codex/gpt-5.4 --worktree feature-x "implement feature X"
 
-paseo ls                           # 列出正在运行的 agents
-paseo attach abc123                # 实时流式查看输出
-paseo send abc123 "also add tests" # 发送后续任务
+aaswitch ls                           # 列出正在运行的 agents
+aaswitch attach abc123                # 实时流式查看输出
+aaswitch send abc123 "also add tests" # 发送后续任务
 
 # 在远程 daemon 上运行
-paseo --host workstation.local:6767 run "run the full test suite"
+aaswitch --host workstation.local:6767 run "run the full test suite"
 ```
 
 更多内容见[完整 CLI 参考](https://paseo.sh/docs/cli)。
@@ -140,7 +140,7 @@ Monorepo 包结构速览：
 
 - `packages/server`：Paseo daemon（agent 进程编排、WebSocket API、MCP server）
 - `packages/app`：Expo 客户端（iOS、Android、Web）
-- `packages/cli`：用于 daemon 和 agent 工作流的 `paseo` CLI
+- `packages/cli`：用于 daemon 和 agent 工作流的 `aaswitch` CLI
 - `packages/desktop`：Electron 桌面 app
 - `packages/relay`：用于远程连接的 relay 包
 - `packages/website`：营销站点和文档（`paseo.sh`）
@@ -181,7 +181,7 @@ Paseo 由一个人开发，靠使用它的人来资助。你可以通过 [GitHub
 PASEO_RELAY_ENDPOINT=127.0.0.1:8080 \
 PASEO_RELAY_PUBLIC_ENDPOINT=relay.example.com:443 \
 PASEO_RELAY_USE_TLS=true \
-paseo daemon start
+aaswitch daemon start
 ```
 
 等价配置：

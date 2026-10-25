@@ -33,7 +33,7 @@ import { DictationOverlay } from "@/components/dictation-controls";
 import { DictationHoldButton } from "@/composer/input/dictation-hold/dictation-hold-button";
 import type { DictationHoldButtonProps } from "@/composer/input/dictation-hold/types";
 import { RealtimeVoiceOverlay } from "@/components/realtime-voice-overlay";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { useSessionStore } from "@/stores/session-store";
 import { useVoiceOptional } from "@/contexts/voice-context";
 import { useToast } from "@/contexts/toast-context";

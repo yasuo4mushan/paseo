@@ -34,7 +34,7 @@ function createTempDir(prefix) {
 }
 
 async function assertBuiltinPluginsStarted(listen) {
-  const { DaemonClient } = await import("@getpaseo/client/internal/daemon-client");
+  const { DaemonClient } = await import("@aaswitch/client/internal/daemon-client");
   const { builtinPlugins } =
     await import("../../server/dist/server/server/plugins/builtin/index.js");
   const client = new DaemonClient({
@@ -79,14 +79,14 @@ function getExecutablePath(appPath) {
 
 function getCliShimPath(appPath) {
   if (process.platform === "darwin") {
-    return path.join(appPath, "Contents", "Resources", "bin", "paseo");
+    return path.join(appPath, "Contents", "Resources", "bin", "aaswitch");
   }
 
   if (process.platform === "win32") {
     return path.join(appPath, "resources", "bin", "paseo.cmd");
   }
 
-  return path.join(appPath, "resources", "bin", "paseo");
+  return path.join(appPath, "resources", "bin", "aaswitch");
 }
 
 function getMacMainExecutablePath(appPath) {

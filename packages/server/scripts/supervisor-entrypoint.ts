@@ -86,7 +86,7 @@ function resolveWorkerExecArgv(workerEntry: string, devMode: boolean): string[] 
 }
 
 function resolvePackagedNodeEntrypointRunnerPath(currentScriptPath: string): string | null {
-  const packageMarker = `${path.sep}node_modules${path.sep}@getpaseo${path.sep}server${path.sep}`;
+  const packageMarker = `${path.sep}node_modules${path.sep}@aaswitch${path.sep}server${path.sep}`;
   const markerIndex = currentScriptPath.lastIndexOf(packageMarker);
   if (markerIndex === -1) {
     return null;

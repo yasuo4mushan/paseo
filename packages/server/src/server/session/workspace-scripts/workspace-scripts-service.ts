@@ -26,7 +26,7 @@ import {
   readPaseoConfigForProjection,
 } from "../../script-status-projection.js";
 import { deriveProjectServiceSlug, deriveProjectSlug } from "../../workspace-git-metadata.js";
-import type { PaseoServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { PaseoServicePortAllocation } from "@aaswitch/protocol/paseo-config-schema";
 
 type WorkspaceScriptsPayload = WorkspaceDescriptorPayload["scripts"];
 

@@ -2,7 +2,7 @@ import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import type { Page } from "@playwright/test";
-import type { UsageReportEntry } from "@getpaseo/protocol/messages";
+import type { UsageReportEntry } from "@aaswitch/protocol/messages";
 import { expect, test } from "../support/fixtures";
 import { gotoAppShell } from "../support/helpers/app";
 import { addConnectedHostAndReload } from "../support/helpers/hosts";

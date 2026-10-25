@@ -24,7 +24,7 @@ contributions run on every Paseo client connected to that daemon, including mobi
 Browse [published plugins](https://paseo.sh/plugins), then install one on your daemon:
 
 ```bash
-paseo plugin add owner/slug
+aaswitch plugin add owner/slug
 ```
 
 Or paste `owner/slug` into **Settings → Plugins → Plugin source** and select **Install plugin**.
@@ -38,7 +38,7 @@ This guide scaffolds a plugin, runs it, and adds a workspace panel to it.
 Use an absolute path on the daemon machine:
 
 ```bash
-paseo plugin init /absolute/path/to/workspace-plugin
+aaswitch plugin init /absolute/path/to/workspace-plugin
 cd /absolute/path/to/workspace-plugin
 npm install
 ```
@@ -67,8 +67,8 @@ Each entry default-exports one function that registers contributions and returns
 function. `index.client.tsx` registers the screen and the sidebar item that opens it:
 
 ```tsx
-import type { PluginClientContext, PluginSidebarItemProps } from "@getpaseo/plugin/client";
-import { SidebarRow } from "@getpaseo/plugin/client/ui";
+import type { PluginClientContext, PluginSidebarItemProps } from "@aaswitch/plugin/client";
+import { SidebarRow } from "@aaswitch/plugin/client/ui";
 import { GreetingScreen } from "./client/greeting";
 
 function GreetingItem({ currentScreen, openScreen }: PluginSidebarItemProps) {
@@ -91,7 +91,7 @@ export default function contribute(client: PluginClientContext) {
 `index.server.ts` registers the handler for the contract in `shared/greeting.ts`:
 
 ```ts
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { createGreeting } from "./server/greeting";
 import { greetingRpc } from "./shared/greeting";
 
@@ -120,15 +120,15 @@ means you trust that codebase, its dependencies, and its future updates.
 
 Turn on **Enable plugins** under **Settings → Plugins** on the daemon you are installing into. It is
 the global switch for every plugin on that daemon. It is also the root `pluginsEnabled` field in the
-daemon's `config.json`; after editing the file, apply it with `paseo reload --json`. An automated
+daemon's `config.json`; after editing the file, apply it with `aaswitch reload --json`. An automated
 tool must read the current value and get your explicit permission before turning it on.
 
 Then typecheck and install:
 
 ```bash
 npm run typecheck
-paseo plugin install /absolute/path/to/workspace-plugin
-paseo plugin ls
+aaswitch plugin install /absolute/path/to/workspace-plugin
+aaswitch plugin ls
 ```
 
 Or install the directory from the app:
@@ -145,12 +145,12 @@ management actions remain available.
 Each installed plugin row shows its status and description. Use its switch to enable or disable it,
 and open its three-dot menu for settings, logs, reload, and removal.
 
-`paseo plugin ls` should report the plugin as `running`. Open Paseo, choose **Greeting** in the
+`aaswitch plugin ls` should report the plugin as `running`. Open Paseo, choose **Greeting** in the
 sidebar, and press **Create greeting**. The message comes back from the daemon subprocess through
 the RPC.
 
 If the sidebar item is missing, check that **Enable plugins** is on, the plugin is `running`, and
-the client is viewing the host you installed into. `paseo plugin logs workspace-plugin` shows the
+the client is viewing the host you installed into. `aaswitch plugin logs workspace-plugin` shows the
 daemon-side output, including load errors.
 
 ## Add a workspace panel
@@ -158,7 +158,7 @@ daemon-side output, including load errors.
 A workspace panel opens as a tab next to agents, terminals, and files. Create `client/overview.tsx`:
 
 ```tsx
-import { type PluginWorkspacePanelProps, useWorkspace } from "@getpaseo/plugin/client";
+import { type PluginWorkspacePanelProps, useWorkspace } from "@aaswitch/plugin/client";
 import { useMemo } from "react";
 import { Text, View } from "react-native";
 
@@ -230,11 +230,11 @@ Source changes take effect only when you reload the plugin:
 
 ```bash
 npm run typecheck
-paseo plugin reload workspace-plugin
+aaswitch plugin reload workspace-plugin
 ```
 
 A reload stops the old plugin, runs its cleanup, compiles the current source, and starts it again.
-A failed reload stays failed and reports its error in `paseo plugin ls`; fix the source and reload
+A failed reload stays failed and reports its error in `aaswitch plugin ls`; fix the source and reload
 again.
 
 Open a workspace, press **⌘K** on macOS or **Ctrl+K** on Windows and Linux, and choose **Open
@@ -245,7 +245,7 @@ workspace overview**. The panel opens as a workspace tab.
 Install a trusted npm plugin using npm on the daemon host:
 
 ```bash
-paseo plugin install npm:@acme/paseo-review@1.2.0
+aaswitch plugin install npm:@acme/paseo-review@1.2.0
 ```
 
 Or paste the same identifier into **Settings → Plugins → Plugin source** and select **Install
@@ -259,19 +259,19 @@ See [plugin sources](/docs/plugins/reference#plugin-sources) for identifier synt
 Plugins published in a Git repository install by explicit Git shorthand or URL:
 
 ```bash
-paseo plugin add git:owner/repository
-paseo plugin add https://gitlab.com/group/repository.git
-paseo plugin add git:owner/monorepo:plugins/workspace
-paseo plugin add git:owner/repository --ref main
+aaswitch plugin add git:owner/repository
+aaswitch plugin add https://gitlab.com/group/repository.git
+aaswitch plugin add git:owner/monorepo:plugins/workspace
+aaswitch plugin add git:owner/repository --ref main
 ```
 
 Append `:relative/path` when the plugin lives below the repository root. `--ref` selects the initial
 Git content once; omitting it installs the default HEAD. See the [source reference](/docs/plugins/reference#plugin-sources) for exact syntax.
 
 ```bash
-paseo plugin ls
-paseo plugin update workspace-plugin
-paseo plugin update --all
+aaswitch plugin ls
+aaswitch plugin update workspace-plugin
+aaswitch plugin update --all
 ```
 
 `ls` reports source identity and the current installed revision without contacting the remote.
@@ -293,8 +293,8 @@ Read the recent output by opening the plugin's three-dot menu under **Settings �
 selecting **Logs**, or use the CLI:
 
 ```bash
-paseo plugin logs workspace-plugin
-paseo plugin logs workspace-plugin --json
+aaswitch plugin logs workspace-plugin
+aaswitch plugin logs workspace-plugin --json
 ```
 
 The tail includes `[paseo]` loading, ready, stopping, and stopped entries, plus compilation and load

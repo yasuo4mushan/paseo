@@ -3,20 +3,20 @@
 Install on a Paseo host with npm source installation support and npm available:
 
 ```sh
-paseo plugin install npm:@getpaseo/plugin-example-modal-ui@0.1.1
+aaswitch plugin install npm:@aaswitch/plugin-example-modal-ui@0.1.1
 ```
 
 In host **Settings → Plugins**, paste the same `npm:` identifier into **Plugin source**.
 Enable plugins, then open **Modal examples** from the sidebar or a workspace tab.
 Choose **Open Form**, type into **Paste here**, and watch the **Input:** text update.
 The installed plugin ID is `modal-ui-example`. Host Settings shows the package identity and
-installed version. With reviewed-update support, run `paseo plugin update modal-ui-example --check`
-to check for a newer version, then `paseo plugin update modal-ui-example` to review and approve it.
+installed version. With reviewed-update support, run `aaswitch plugin update modal-ui-example --check`
+to check for a newer version, then `aaswitch plugin update modal-ui-example` to review and approve it.
 An explicit install version selects the initial content; later updates still check the latest release.
 
 The package ships the existing TypeScript entry and client sources. Paseo compiles them through
 its directory plugin loader; no package build or preparation command is required. React,
-React Native, and `@getpaseo/plugin` are peer contracts supplied by the host. npm is needed for
+React Native, and `@aaswitch/plugin` are peer contracts supplied by the host. npm is needed for
 installation, not loading or reloading. You can also install this directory while developing.
 See the [source reference](https://paseo.sh/docs/plugins/reference#plugin-sources)
 for supported identifiers and preparation rules.

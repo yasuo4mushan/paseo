@@ -1,4 +1,4 @@
-import type { JsonValue } from "@getpaseo/protocol/agent-types";
+import type { JsonValue } from "@aaswitch/protocol/agent-types";
 import { z } from "zod";
 
 export const PROVIDER_PROTOCOL_VERSION = 1 as const;

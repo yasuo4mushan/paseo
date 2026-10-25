@@ -55,7 +55,7 @@ The heart of Paseo. A Node.js process that:
 All paths are under `packages/server/src/`.
 
 Desktop and CLI import server capabilities through explicit package subpaths such as
-`@getpaseo/server/daemon-control`, `/configuration`, and `/process`. The root export
+`@aaswitch/server/daemon-control`, `/configuration`, and `/process`. The root export
 loads daemon bootstrap eagerly, even when a caller only uses a path or process helper.
 Keep process-management and configuration dependencies independent of bootstrap and
 WebSocket message schemas. Shared configuration schemas belong in protocol leaf modules;
@@ -93,15 +93,15 @@ not retain non-Git directories.
 
 The source of truth for WebSocket messages, binary frame codecs, endpoint parsing,
 agent timeline types, provider config schemas, and other values shared by daemon
-and clients. Server, app, CLI, and `@getpaseo/client` all depend on this package;
+and clients. Server, app, CLI, and `@aaswitch/client` all depend on this package;
 it does not depend on the server.
 
 ### `packages/client` — Daemon client library and SDK facade
 
 Owns the low-level daemon WebSocket driver plus the higher-level `PaseoClient`
 facade. App and CLI may import the low-level driver from
-`@getpaseo/client/internal/daemon-client` during migration, while new SDK-shaped
-code imports from `@getpaseo/client`.
+`@aaswitch/client/internal/daemon-client` during migration, while new SDK-shaped
+code imports from `@aaswitch/client`.
 
 `PaseoApi` is the capability-only boundary over workspaces, agents, terminals, providers, and config.
 `PaseoClient` adds connection lifecycle. App plugin surfaces borrow an API over their selected
@@ -151,20 +151,20 @@ traffic. Workspace assignments stay on the workspace directory sequence.
 
 ### `packages/cli` — Command-line client
 
-Commander.js CLI with Docker-style commands. Common agent operations are also exposed at the top level (e.g. `paseo ls`, `paseo run`).
+Commander.js CLI with Docker-style commands. Common agent operations are also exposed at the top level (e.g. `aaswitch ls`, `aaswitch run`).
 
-- `paseo agent ls/run/import/attach/logs/stop/delete/send/inspect/wait/archive/reload/update/mode`
-- `paseo daemon start/run/stop/restart/status/reload/config/pair/set-password`
-- `paseo terminal ls/create/capture/send-keys/kill`
-- `paseo script ls/start/stop`
-- `paseo schedule create/ls/inspect/update/pause/resume/run-once/logs/delete`
-- `paseo heartbeat create/update/delete`
-- `paseo project create/ls/rename/delete`
-- `paseo workspace create/ls/rename/archive`
-- `paseo permit allow/deny/ls`
-- `paseo provider ls/models`
-- hidden legacy `paseo worktree create/ls/archive` compatibility alias
-- `paseo speech …`
+- `aaswitch agent ls/run/import/attach/logs/stop/delete/send/inspect/wait/archive/reload/update/mode`
+- `aaswitch daemon start/run/stop/restart/status/reload/config/pair/set-password`
+- `aaswitch terminal ls/create/capture/send-keys/kill`
+- `aaswitch script ls/start/stop`
+- `aaswitch schedule create/ls/inspect/update/pause/resume/run-once/logs/delete`
+- `aaswitch heartbeat create/update/delete`
+- `aaswitch project create/ls/rename/delete`
+- `aaswitch workspace create/ls/rename/archive`
+- `aaswitch permit allow/deny/ls`
+- `aaswitch provider ls/models`
+- hidden legacy `aaswitch worktree create/ls/archive` compatibility alias
+- `aaswitch speech …`
 
 Communicates with the daemon via the same WebSocket protocol as the app.
 
@@ -482,6 +482,6 @@ Worker restart retains supervisor arguments/environment and rereads the configur
 
 ## Deployment models
 
-1. **Local daemon** (default): `paseo daemon start` on `127.0.0.1:6767`
+1. **Local daemon** (default): `aaswitch daemon start` on `127.0.0.1:6767`
 2. **Managed desktop**: Electron uses the server package’s local-instance lifecycle capability for sanitized launch, published readiness, and captured-PID stop. Only a matching `{pid, startedAt}` from a spawn in the current Desktop session authorizes automatic stop or binary replacement. Preexisting instances, including legacy `desktopManaged` records, are attach-only. Keep-running survivors attach in the next session. Explicit attached Stop requires a confirmation naming the captured home/PID. Ordinary Restart uses the worker RPC on every app platform.
 3. **Remote + relay**: Daemon behind firewall, relay bridges with E2E encryption

@@ -183,7 +183,7 @@ in
         Declarative content for `$PASEO_HOME/config.json`. Rendered to JSON
         and installed on every service start.
 
-        Runtime mutations to `config.json` (e.g. via `paseo daemon set-password`
+        Runtime mutations to `config.json` (e.g. via `aaswitch daemon set-password`
         or the mobile app toggling MCP injection / provider overrides) are
         overwritten on the next restart. Pick one: manage via this option, or
         manage via the CLI — not both.

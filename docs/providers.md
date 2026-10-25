@@ -6,7 +6,7 @@ server integrations.
 ## Plugin providers
 
 Keep a bundled provider in `plugins/<id>/` and register it through
-`@getpaseo/plugin/server/provider`. Antigravity and Muse Code follow this pattern. Built-in loading and SDK
+`@aaswitch/plugin/server/provider`. Antigravity and Muse Code follow this pattern. Built-in loading and SDK
 import rules belong to [plugins.md](plugins.md#built-in-plugins); the
 [public provider guide](../public-docs/plugins/providers.md) covers the provider contract.
 
@@ -528,16 +528,16 @@ Start the daemon if not already running, then:
 
 ```bash
 # Launch an agent with your provider
-paseo run --provider my-provider
+aaswitch run --provider my-provider
 
 # Launch with a specific model and mode
-paseo run --provider my-provider --model some-model --mode default
+aaswitch run --provider my-provider --model some-model --mode default
 
 # List running agents
-paseo ls -a -g
+aaswitch ls -a -g
 
 # Check if the provider reports models
-paseo models --provider my-provider
+aaswitch models --provider my-provider
 ```
 
 ### E2E test patterns

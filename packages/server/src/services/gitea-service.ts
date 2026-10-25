@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { CHECK_TRAIT_ACTION_REQUIRED, CHECK_TRAIT_WARNING } from "@getpaseo/protocol/check-traits";
-import { mapGiteaCommitState } from "@getpaseo/protocol/gitea-status";
+import { CHECK_TRAIT_ACTION_REQUIRED, CHECK_TRAIT_WARNING } from "@aaswitch/protocol/check-traits";
+import { mapGiteaCommitState } from "@aaswitch/protocol/gitea-status";
 import pLimit from "p-limit";
-import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@getpaseo/protocol/git-remote";
+import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@aaswitch/protocol/git-remote";
 import { findExecutable } from "../executable-resolution/executable-resolution.js";
 import { runGitCommand } from "../utils/run-git-command.js";
 import {

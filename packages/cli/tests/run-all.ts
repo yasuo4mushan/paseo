@@ -104,7 +104,7 @@ async function writeJsonSummary({
     JSON.stringify(
       {
         suite: "cli-local",
-        command: "npm run test:local --workspace=@getpaseo/cli",
+        command: "npm run test:local --workspace=aaswitch",
         counts: {
           passed,
           failed,

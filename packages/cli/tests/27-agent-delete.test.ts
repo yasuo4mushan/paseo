@@ -98,11 +98,11 @@ try {
   }
 
   {
-    console.log("Test 7: paseo --help shows delete command");
+    console.log("Test 7: aaswitch --help shows delete command");
     const result = await runCli(["--help"]);
-    assert.strictEqual(result.exitCode, 0, "paseo --help should exit 0");
+    assert.strictEqual(result.exitCode, 0, "aaswitch --help should exit 0");
     assert(result.stdout.includes("delete"), "help should mention delete command");
-    console.log("✓ paseo --help shows delete command\n");
+    console.log("✓ aaswitch --help shows delete command\n");
   }
 
   {
@@ -129,7 +129,7 @@ try {
       assert.notStrictEqual(result.exitCode, 0, "delete should fail for an unknown ID");
       const { error } = JSON.parse(result.stderr);
       assert.strictEqual(error.code, "AGENT_NOT_FOUND", result.stderr);
-      assert.match(error.details, /paseo ls/);
+      assert.match(error.details, /aaswitch ls/);
     } finally {
       await daemon.stop();
     }

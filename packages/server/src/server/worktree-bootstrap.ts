@@ -30,7 +30,7 @@ import {
   requirePlannedWorkspaceServicePort,
   refreshWorkspaceServicePort,
 } from "./workspace-service-port-registry.js";
-import type { PaseoServicePortAllocation } from "@getpaseo/protocol/paseo-config-schema";
+import type { PaseoServicePortAllocation } from "@aaswitch/protocol/paseo-config-schema";
 
 export interface WorktreeBootstrapTerminalResult {
   name: string | null;

@@ -11,7 +11,7 @@ import {
   type DaemonTestContext,
 } from "../test-utils/index.js";
 import { createWorktree as createWorktreePrimitive } from "../../utils/worktree.js";
-import type { PullRequestMergeable } from "@getpaseo/protocol/messages";
+import type { PullRequestMergeable } from "@aaswitch/protocol/messages";
 
 const GhPrViewSchema = z.object({
   state: z.string(),

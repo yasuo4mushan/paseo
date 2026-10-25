@@ -1,5 +1,5 @@
-import type { OwnedSubscription, SubscriptionObserver } from "@getpaseo/client";
-import type { SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { OwnedSubscription, SubscriptionObserver } from "@aaswitch/client";
+import type { SessionOutboundMessage } from "@aaswitch/protocol/messages";
 
 /** Public observation dependency for the directory/host runtime tests. */
 export function subscriptionFixture<T>(

@@ -4,8 +4,8 @@ import {
   formatResolvedCommand,
   profileTakesPrompt,
   substitutePrompt,
-} from "@getpaseo/protocol/terminal-profiles";
-import type { TerminalProfile } from "@getpaseo/protocol/messages";
+} from "@aaswitch/protocol/terminal-profiles";
+import type { TerminalProfile } from "@aaswitch/protocol/messages";
 import { resolveLaunchProfile, type LaunchTarget } from "./target";
 
 export interface TerminalComposerState {

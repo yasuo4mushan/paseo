@@ -1,12 +1,12 @@
-import { MAX_RELAY_WEBSOCKET_MESSAGE_BYTES } from "@getpaseo/protocol/websocket-message-limit";
+import { MAX_RELAY_WEBSOCKET_MESSAGE_BYTES } from "@aaswitch/protocol/websocket-message-limit";
 import { resolve, dirname, basename } from "path";
 import { existsSync, realpathSync } from "fs";
 import { open as openFile, readFile, stat as statFile } from "fs/promises";
 import { setImmediate } from "node:timers/promises";
 import { TTLCache } from "@isaacs/ttlcache";
-import type { CheckoutCommit, CheckoutCommitFile } from "@getpaseo/protocol/messages";
-import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@getpaseo/protocol/git-remote";
-import { maxBase64EncryptedPlaintextByteLength } from "@getpaseo/relay";
+import type { CheckoutCommit, CheckoutCommitFile } from "@aaswitch/protocol/messages";
+import { parseGitHubRemoteIdentity, parseGitRemoteLocation } from "@aaswitch/protocol/git-remote";
+import { maxBase64EncryptedPlaintextByteLength } from "@aaswitch/relay";
 import type { Logger } from "pino";
 import type { ParsedDiffFile } from "../server/utils/diff-highlighter.js";
 import {

@@ -59,9 +59,9 @@ describe("runCli", () => {
       createCliParseArgv({
         argv: [],
         cwd: process.cwd(),
-        nodeArgv: ["node", "paseo"],
+        nodeArgv: ["node", "aaswitch"],
       }),
-    ).toEqual(["node", "paseo", "onboard"]);
+    ).toEqual(["node", "aaswitch", "onboard"]);
   });
 
   it("routes explicit root relay flags to onboard", () => {
@@ -69,16 +69,16 @@ describe("runCli", () => {
       createCliParseArgv({
         argv: ["--relay"],
         cwd: process.cwd(),
-        nodeArgv: ["node", "paseo"],
+        nodeArgv: ["node", "aaswitch"],
       }),
-    ).toEqual(["node", "paseo", "onboard", "--relay"]);
+    ).toEqual(["node", "aaswitch", "onboard", "--relay"]);
     expect(
       createCliParseArgv({
         argv: ["--no-relay"],
         cwd: process.cwd(),
-        nodeArgv: ["node", "paseo"],
+        nodeArgv: ["node", "aaswitch"],
       }),
-    ).toEqual(["node", "paseo", "onboard", "--no-relay"]);
+    ).toEqual(["node", "aaswitch", "onboard", "--no-relay"]);
   });
 
   it("preserves known CLI command argv", () => {
@@ -86,9 +86,9 @@ describe("runCli", () => {
       createCliParseArgv({
         argv: ["daemon", "set-password"],
         cwd: process.cwd(),
-        nodeArgv: ["node", "paseo"],
+        nodeArgv: ["node", "aaswitch"],
       }),
-    ).toEqual(["node", "paseo", "daemon", "set-password"]);
+    ).toEqual(["node", "aaswitch", "daemon", "set-password"]);
   });
 
   it("preserves the hooks command argv", () => {
@@ -96,9 +96,9 @@ describe("runCli", () => {
       createCliParseArgv({
         argv: ["hooks", "claude", "UserPromptSubmit"],
         cwd: process.cwd(),
-        nodeArgv: ["node", "paseo"],
+        nodeArgv: ["node", "aaswitch"],
       }),
-    ).toEqual(["node", "paseo", "hooks", "claude", "UserPromptSubmit"]);
+    ).toEqual(["node", "aaswitch", "hooks", "claude", "UserPromptSubmit"]);
   });
 
   it("finishes the command quietly when stdout is closed before it writes its output", async () => {
@@ -124,7 +124,7 @@ describe("runCli", () => {
         createCliParseArgv({
           argv: ["repository"],
           cwd: root,
-          nodeArgv: ["node", "paseo"],
+          nodeArgv: ["node", "aaswitch"],
         }),
       ).toEqual({
         kind: "open-project",

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
 import {
   buildProviderChecklistRows,
   checklistStateLabelKey,

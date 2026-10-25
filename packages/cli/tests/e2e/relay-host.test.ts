@@ -4,10 +4,10 @@ import { createRequire } from "node:module";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildRelayWebSocketUrl } from "@getpaseo/protocol/daemon-endpoints";
-import { parseConnectionOfferFromUrl } from "@getpaseo/protocol/connection-offer";
-import { generateLocalPairingOffer } from "@getpaseo/server/pairing";
-import { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import { buildRelayWebSocketUrl } from "@aaswitch/protocol/daemon-endpoints";
+import { parseConnectionOfferFromUrl } from "@aaswitch/protocol/connection-offer";
+import { generateLocalPairingOffer } from "@aaswitch/server/pairing";
+import { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { WebSocket } from "ws";
 import { getAvailablePort } from "../helpers/network.ts";
 import { createE2ETestContext } from "../helpers/test-daemon.ts";
@@ -210,7 +210,7 @@ async function waitForDaemonRelayRegistered(offerUrl: string, timeoutMs = 30_000
     }
   }, SHUTDOWN_TIMEOUT_MS);
 
-  it("runs `paseo --host <offer-url> ls` over the relay and matches direct ls output", async () => {
+  it("runs `aaswitch --host <offer-url> ls` over the relay and matches direct ls output", async () => {
     if (!ctx) throw new Error("test context not initialized");
 
     const direct = await ctx.paseo(["ls", "--json"]);

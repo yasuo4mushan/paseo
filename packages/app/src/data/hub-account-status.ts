@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { HubAccountStatus } from "@getpaseo/protocol/messages";
+import type { HubAccountStatus } from "@aaswitch/protocol/messages";
 import { i18n } from "@/i18n/i18next";
 import { useFetchQuery } from "@/data/query";
 import { useHostRuntimeClient, useHostRuntimeIsConnected } from "@/runtime/host-runtime";

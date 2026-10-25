@@ -1,4 +1,4 @@
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { test, expect, type Page } from "../support/fixtures";
 import {
   closeModelPicker,

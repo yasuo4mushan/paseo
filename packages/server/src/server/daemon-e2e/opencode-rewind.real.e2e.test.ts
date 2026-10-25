@@ -5,7 +5,7 @@ import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
 
 import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
-import type { AgentLifecycleStatus } from "@getpaseo/protocol/agent-lifecycle";
+import type { AgentLifecycleStatus } from "@aaswitch/protocol/agent-lifecycle";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestPaseoDaemon, type TestPaseoDaemon } from "../test-utils/paseo-daemon.js";
 import {

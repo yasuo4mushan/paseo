@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { getElectronHost } from "@/desktop/electron/host";
 import type { BrowserKeyboardPolicy } from "@/desktop/browser/shortcuts";
-import type { SessionInboundMessage, SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { SessionInboundMessage, SessionOutboundMessage } from "@aaswitch/protocol/messages";
 
 type BrowserAutomationExecuteRequest = Extract<
   SessionOutboundMessage,

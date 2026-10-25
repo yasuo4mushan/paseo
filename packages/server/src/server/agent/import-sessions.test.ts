@@ -8,8 +8,8 @@ import type {
   ManagedImportableProviderSession,
 } from "./agent-manager.js";
 import { AgentStorage, type StoredAgentRecord } from "./agent-storage.js";
-import type { FetchRecentProviderSessionsRequestMessage } from "@getpaseo/protocol/messages";
-import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+import type { FetchRecentProviderSessionsRequestMessage } from "@aaswitch/protocol/messages";
+import { PARENT_AGENT_ID_LABEL } from "@aaswitch/protocol/agent-labels";
 import type { AgentTimelineItem } from "./agent-sdk-types.js";
 import { createPersistedWorkspaceRecord } from "../workspace-registry.js";
 import type { WorkspaceProvisioningService } from "../session/workspace-provisioning/workspace-provisioning-service.js";

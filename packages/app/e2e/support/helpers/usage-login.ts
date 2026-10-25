@@ -1,7 +1,7 @@
 import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { UsageReport } from "@getpaseo/protocol/messages";
+import type { UsageReport } from "@aaswitch/protocol/messages";
 import { expect, type Page } from "@playwright/test";
 import { expectPinnedUsage, pinRow, usageItem } from "./usage-sidebar-item";
 import { connectNewWorkspaceDaemonClient } from "./new-workspace";

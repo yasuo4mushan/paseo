@@ -1,9 +1,9 @@
-import { AgentSnapshotPayloadSchema } from "@getpaseo/protocol/messages";
-import type { AgentSnapshotPayload, SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import { AgentSnapshotPayloadSchema } from "@aaswitch/protocol/messages";
+import type { AgentSnapshotPayload, SessionOutboundMessage } from "@aaswitch/protocol/messages";
 import {
   deriveAgentStateBucket,
   getWorkspaceStateBucketPriority,
-} from "@getpaseo/protocol/agent-state-bucket";
+} from "@aaswitch/protocol/agent-state-bucket";
 
 type AgentEntry = Extract<
   SessionOutboundMessage,

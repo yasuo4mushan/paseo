@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { runArchiveCommandWithDeps } from "./archive.js";
 
 const daemonTarget = { kind: "endpoint" as const, host: "example.test:12345" };

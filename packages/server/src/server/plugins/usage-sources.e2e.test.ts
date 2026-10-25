@@ -79,7 +79,7 @@ test("lists built-in and subprocess usage; validates input and isolates fetch er
 
 test("a packaged daemon serves usage from external built-in resources", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "paseo-builtin-asar-"));
-  const packagePath = path.join("node_modules", "@getpaseo", "server", "dist", "server");
+  const packagePath = path.join("node_modules", "@aaswitch", "server", "dist", "server");
   const resourceRoot = path.join(root, "builtin-plugins");
   // An archive is a file, so the external compiler cannot traverse paths beneath it.
   // Actual Electron archive packaging is covered by the packaged-app smoke check.

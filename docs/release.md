@@ -102,7 +102,7 @@ pointers. The npm invariant is:
 
 - A beta release moves only `beta`; `latest` remains on the newest stable.
 - A stable release moves both `latest` and `beta` to that stable version. This
-  keeps users who install `@getpaseo/cli@beta` on the newest Paseo release after
+  keeps users who install `aaswitch@beta` on the newest Paseo release after
   a beta is promoted or superseded by a direct stable release.
 
 ## Release version decision
@@ -151,7 +151,7 @@ republish the packages:
 ```bash
 PASEO_VERSION=$(node -p "require('./package.json').version")
 for package in highlight relay protocol client plugin server cli; do
-  npm dist-tag add "@getpaseo/$package@$PASEO_VERSION" beta
+  npm dist-tag add "@aaswitch/$package@$PASEO_VERSION" beta
 done
 ```
 
@@ -188,7 +188,7 @@ npm run release:promote          # Promote X.Y.Z-beta.N to stable X.Y.Z
 ```
 
 - Beta tags are published GitHub prereleases like `v0.1.41-beta.1`
-- Betas publish npm packages with `--tag beta`, so `npm install @getpaseo/cli@beta` opts in while plain `npm install @getpaseo/cli` stays on `latest`
+- Betas publish npm packages with `--tag beta`, so `npm install aaswitch@beta` opts in while plain `npm install aaswitch` stays on `latest`
 - Betas publish desktop assets and APKs for testing. They also build iOS, upload it to TestFlight, add it to the `Paseo Beta` external group, and submit it for Beta App Review. They do not submit mobile builds to the production stores.
 - `release:promote` creates a fresh stable tag like `v0.1.41`; the final release never reuses the beta tag
 - Desktop assets now come from the Electron package at `packages/desktop`
@@ -501,7 +501,7 @@ intentionally unavailable to desktop updater clients.
 
 ## Notes
 
-- `version:all:*` bumps root + syncs workspace versions and `@getpaseo/*` dependency versions
+- `version:all:*` bumps root + syncs workspace versions and `@aaswitch/*` dependency versions
 - The npm `version` lifecycle regenerates F-Droid changelog files from `CHANGELOG.md` for stable releases only (`npm run fdroid:changelogs`) and stages them, so the release tag carries them. Betas are a no-op. A stable run **aborts the release** if `CHANGELOG.md` has no entry for the version being cut — commit the changelog entry first. See [docs/android.md](android.md) for why these files are generated per ABI.
 - `release:prepare` refreshes workspace `node_modules` links to prevent stale types
 - `npm run dev:desktop` and `npm run build:desktop` target the Electron desktop package in `packages/desktop`

@@ -42,8 +42,8 @@ Open **Settings → your host → Providers**, tap the provider, then tap **Diag
 From a terminal or agent, request the same diagnostic from the affected daemon:
 
 ```bash
-paseo provider diagnostic <provider>
-paseo --host <host:port> provider diagnostic <provider> --json
+aaswitch provider diagnostic <provider>
+aaswitch --host <host:port> provider diagnostic <provider> --json
 ```
 
 Use the global `--host` option when the affected daemon is not the CLI's default local daemon.
@@ -102,12 +102,12 @@ Desktop app log location:
 Reload the file after editing:
 
 ```bash
-paseo reload
+aaswitch reload
 ```
 
 Paseo applies runtime-safe settings and names any paths that require a restart. Invalid JSON or a schema error applies nothing; fix the reported error and run the command again. If a launch environment variable or flag owns a changed setting, reload reports it separately.
 
-Run `paseo daemon restart` only when reload requests it. In the app, open **Settings → your host → Overview** and use **Restart daemon**. Running agents keep going, and clients reconnect automatically.
+Run `aaswitch daemon restart` only when reload requests it. In the app, open **Settings → your host → Overview** and use **Restart daemon**. Running agents keep going, and clients reconnect automatically.
 
 ## Still stuck?
 

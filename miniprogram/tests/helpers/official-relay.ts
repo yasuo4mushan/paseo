@@ -1,5 +1,5 @@
 /**
- * 解析主仓 node_modules 里的官方 @getpaseo/relay（互通测试的对端）。
+ * 解析主仓 node_modules 里的官方 @aaswitch/relay（互通测试的对端）。
  *
  * miniprogram/ 不在主仓 npm workspaces 里（刻意为之，避免污染主仓依赖），
  * 因此这里按优先级探测官方实现的位置：
@@ -73,7 +73,7 @@ let cached: OfficialRelay | null | undefined;
 export function loadOfficialRelay(): OfficialRelay | null {
   if (cached !== undefined) return cached;
   for (const dir of candidateDirs()) {
-    const e2eePath = path.join(dir, "node_modules", "@getpaseo", "relay", "dist", "e2ee.js");
+    const e2eePath = path.join(dir, "node_modules", "@aaswitch", "relay", "dist", "e2ee.js");
     if (!existsSync(e2eePath)) continue;
     const requireFromFile = createRequire(path.join(dir, "package.json"));
     const mod = requireFromFile(e2eePath) as unknown;

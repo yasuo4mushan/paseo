@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import pino from "pino";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
+import { CLIENT_CAPS } from "@aaswitch/protocol/client-capabilities";
 import { createDaemonTestContext } from "../test-utils/daemon-test-context.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createMessageCollector } from "../test-utils/message-collector.js";

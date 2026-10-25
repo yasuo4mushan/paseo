@@ -1,4 +1,4 @@
-import type { AgentMode, AgentModelDefinition } from "@getpaseo/protocol/agent-types";
+import type { AgentMode, AgentModelDefinition } from "@aaswitch/protocol/agent-types";
 import { useShallow } from "zustand/shallow";
 import { formatAgentModeLabel } from "@/agent-controls/labels";
 import { formatTokenCount } from "@/components/context-window-meter.utils";

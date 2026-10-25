@@ -3,12 +3,12 @@ import { expandUserPath } from "../../classify.js";
 import { createInterface } from "node:readline/promises";
 import { reviewPluginUpdates, type UpdateOutcome } from "./update.js";
 import { Command } from "commander";
-import type { PluginListItem, PluginLogEntry } from "@getpaseo/protocol/messages";
+import type { PluginListItem, PluginLogEntry } from "@aaswitch/protocol/messages";
 import {
   formatPluginSourceReference,
   parsePluginSourceReference,
   formatPluginIdentity,
-} from "@getpaseo/protocol/plugin-source-reference";
+} from "@aaswitch/protocol/plugin-source-reference";
 import type { CommandOptions, ListResult, OutputSchema, SingleResult } from "../../output/index.js";
 import { withOutput } from "../../output/index.js";
 import { addJsonAndDaemonHostOptions, addJsonOption } from "../../utils/command-options.js";

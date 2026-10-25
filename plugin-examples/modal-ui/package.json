@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/plugin-example-modal-ui",
+  "name": "@aaswitch/plugin-example-modal-ui",
   "version": "0.1.1",
   "description": "Interactive Paseo plugin example for modal forms, scrolling, and clipboard actions",
   "homepage": "https://paseo.sh/docs/plugins",
@@ -22,7 +22,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "peerDependencies": {
-    "@getpaseo/plugin": ">=0.8.0",
+    "@aaswitch/plugin": ">=0.8.0",
     "react": ">=19",
     "react-native": ">=0.81"
   }

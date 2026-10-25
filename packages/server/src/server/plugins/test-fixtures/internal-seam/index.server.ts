@@ -1,5 +1,5 @@
-import { defineRpc } from "@getpaseo/plugin";
-import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { defineRpc } from "@aaswitch/plugin";
+import type { PluginServerContext } from "@aaswitch/plugin/server";
 import { z } from "zod";
 
 const state = defineRpc({

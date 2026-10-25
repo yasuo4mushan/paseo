@@ -40,14 +40,14 @@ const sherpaEnvModule =
 // paths. Analyze them at their real importer so nft retains the package exports,
 // manifests and workspace symlinks used by Node's resolution.
 const runtimeDependencies = new Map([
-  ["packages/cli/dist/commands/daemon/local-daemon.js", ["@getpaseo/server"]],
-  [terminalModule, ["@getpaseo/cli/bin/paseo", "node-pty/package.json"]],
+  ["packages/cli/dist/commands/daemon/local-daemon.js", ["@aaswitch/server"]],
+  [terminalModule, ["aaswitch/bin/aaswitch", "node-pty/package.json"]],
   [sherpaModule, ["sherpa-onnx-node"]],
   [sherpaEnvModule, [`${sherpaPlatformPackageName()}/package.json`]],
   ...(traceDesktop
     ? [
-        ["packages/desktop/dist/daemon/runtime-paths.js", ["@getpaseo/server"]],
-        ["packages/desktop/dist/integrations/cli-install/paths.js", ["@getpaseo/cli/bin/paseo"]],
+        ["packages/desktop/dist/daemon/runtime-paths.js", ["@aaswitch/server"]],
+        ["packages/desktop/dist/integrations/cli-install/paths.js", ["aaswitch/bin/aaswitch"]],
       ]
     : []),
 ]);

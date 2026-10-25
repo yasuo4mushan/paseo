@@ -13,7 +13,7 @@ import {
 import type { AgentClient, AgentProvider } from "../agent/agent-sdk-types.js";
 import { createTestAgentClients } from "./fake-agent-client.js";
 import type { PushNotificationSender } from "../push/index.js";
-import type { AgentProfile } from "@getpaseo/protocol/messages";
+import type { AgentProfile } from "@aaswitch/protocol/messages";
 
 interface TestPaseoDaemonOptions {
   daemonVersion?: string;

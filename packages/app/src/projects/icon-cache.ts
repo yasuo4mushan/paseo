@@ -1,5 +1,5 @@
-import type { ProjectIcon } from "@getpaseo/protocol/messages";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { ProjectIcon } from "@aaswitch/protocol/messages";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { projectIconCacheStorage } from "./icon-cache-storage";
 import type { ProjectIconTarget } from "./icon-target";
 

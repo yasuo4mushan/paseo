@@ -3,7 +3,7 @@ import {
   resolvePaseoHome,
   type DaemonInstance,
   readLocalCredentialForTarget,
-} from "@getpaseo/server/daemon-control";
+} from "@aaswitch/server/daemon-control";
 import { describeDaemonTarget, type DaemonTarget } from "./daemon-target.js";
 export type { DaemonTarget } from "./daemon-target.js";
 import {
@@ -12,13 +12,13 @@ import {
   normalizeHostPort,
   parseConnectionUri,
   shouldUseTlsForDefaultHostedRelay,
-} from "@getpaseo/protocol/daemon-endpoints";
+} from "@aaswitch/protocol/daemon-endpoints";
 import {
   parseConnectionOfferFromUrl,
   type ConnectionOffer,
-} from "@getpaseo/protocol/connection-offer";
-import { parseSshTransportUri } from "@getpaseo/protocol/ssh-transport";
-import { DaemonClient, type WebSocketLike } from "@getpaseo/client/internal/daemon-client";
+} from "@aaswitch/protocol/connection-offer";
+import { parseSshTransportUri } from "@aaswitch/protocol/ssh-transport";
+import { DaemonClient, type WebSocketLike } from "@aaswitch/client/internal/daemon-client";
 import { WebSocket } from "ws";
 import { getOrCreateCliClientId } from "./client-id.js";
 import { resolveCliVersion } from "../version.js";
@@ -69,7 +69,7 @@ function describeConnectionRemedy(code: string, target: DaemonTarget): string {
   if (code === "AUTH_FAILED")
     return "The daemon rejected the password. Check PASEO_PASSWORD and retry.";
   if (target.kind === "instance")
-    return `Start with: paseo daemon start --home ${JSON.stringify(target.home)}`;
+    return `Start with: aaswitch daemon start --home ${JSON.stringify(target.home)}`;
   return "Check the selected endpoint and credentials. SSH transport does not install or start the daemon.";
 }
 

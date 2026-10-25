@@ -3,7 +3,7 @@ import {
   isGitHubHost,
   parseGitHubRemoteUrl,
   parseGitRemoteLocation,
-} from "@getpaseo/protocol/git-remote";
+} from "@aaswitch/protocol/git-remote";
 import { findExecutable } from "../executable-resolution/executable-resolution.js";
 import { runGitCommand } from "../utils/run-git-command.js";
 import {

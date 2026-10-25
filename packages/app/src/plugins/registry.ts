@@ -1,9 +1,9 @@
 import type { AudioEngine } from "@/audio";
 import { useMemo, useSyncExternalStore } from "react";
 import { QueryClient } from "@tanstack/react-query";
-import { createPaseoApi } from "@getpaseo/client";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import { assertPluginCompatibility } from "@getpaseo/protocol/plugin-requirements";
+import { createPaseoApi } from "@aaswitch/client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
+import { assertPluginCompatibility } from "@aaswitch/protocol/plugin-requirements";
 import { resolveAppVersion } from "@/utils/app-version";
 import { createPluginClientRuntime } from "./client-runtime";
 import { runPluginClientBundle } from "./evaluate";

@@ -1,13 +1,13 @@
 import path from "node:path";
 import type { Command } from "commander";
 import { isCancel, password as passwordPrompt } from "@clack/prompts";
-import { hashDaemonPassword } from "@getpaseo/server/auth";
+import { hashDaemonPassword } from "@aaswitch/server/auth";
 import {
   readPersistedConfig,
   savePersistedConfig,
   type PersistedConfig,
-} from "@getpaseo/server/configuration";
-import { resolvePaseoHome } from "@getpaseo/server/daemon-control";
+} from "@aaswitch/server/configuration";
+import { resolvePaseoHome } from "@aaswitch/server/daemon-control";
 import type {
   CommandError,
   CommandOptions,
@@ -61,7 +61,7 @@ function terminalPasswordPrompt(): PromptPassword {
   if (!process.stdin.isTTY) {
     throw createCommandError(
       "PASSWORD_TTY_REQUIRED",
-      "paseo daemon set-password needs a terminal to read the password",
+      "aaswitch daemon set-password needs a terminal to read the password",
       "Run it in an interactive terminal, or set PASEO_PASSWORD in the daemon's environment instead.",
     );
   }
@@ -111,8 +111,8 @@ export async function setDaemonPasswordInConfig(
   return {
     action: "password_set",
     configPath,
-    restartCommand: `paseo daemon restart --home ${JSON.stringify(paseoHome)}`,
-    message: `Password written to ${configPath}\nRestart the daemon for the change to take effect.\nRun: paseo daemon restart --home ${JSON.stringify(paseoHome)}`,
+    restartCommand: `aaswitch daemon restart --home ${JSON.stringify(paseoHome)}`,
+    message: `Password written to ${configPath}\nRestart the daemon for the change to take effect.\nRun: aaswitch daemon restart --home ${JSON.stringify(paseoHome)}`,
   };
 }
 

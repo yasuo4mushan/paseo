@@ -1,4 +1,4 @@
-import { isPaseoToolName } from "@getpaseo/protocol/tool-name-normalization";
+import { isPaseoToolName } from "@aaswitch/protocol/tool-name-normalization";
 import { describeToolCall, type ToolCallRun } from "../grouping";
 
 const DIRECT_PASEO_TOOL_PREFIX = "paseo_";

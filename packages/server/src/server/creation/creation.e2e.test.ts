@@ -1,15 +1,15 @@
 import { execFileSync } from "node:child_process";
 import type { z } from "zod";
-import { BUILTIN_PROVIDER_IDS } from "@getpaseo/protocol/provider-manifest";
+import { BUILTIN_PROVIDER_IDS } from "@aaswitch/protocol/provider-manifest";
 import { WebSocket } from "ws";
-import { SessionInboundMessageSchema, WSOutboundMessageSchema } from "@getpaseo/protocol/messages";
+import { SessionInboundMessageSchema, WSOutboundMessageSchema } from "@aaswitch/protocol/messages";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, vi } from "vitest";
 import pino from "pino";
-import type { CreationSnapshot, SessionOutboundMessage } from "@getpaseo/protocol/messages";
+import type { CreationSnapshot, SessionOutboundMessage } from "@aaswitch/protocol/messages";
 import type { AgentTimelineItem } from "../agent/agent-sdk-types.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";
 import { createTestAgentClients } from "../test-utils/fake-agent-client.js";

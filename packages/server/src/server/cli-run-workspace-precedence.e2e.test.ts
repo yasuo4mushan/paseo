@@ -6,7 +6,7 @@ import path from "node:path";
 import { DaemonClient } from "./test-utils/index.js";
 import { createTestPaseoDaemon } from "./test-utils/paseo-daemon.js";
 import { getFullAccessConfig } from "./daemon-e2e/agent-configs.js";
-import { PARENT_AGENT_ID_LABEL } from "@getpaseo/protocol/agent-labels";
+import { PARENT_AGENT_ID_LABEL } from "@aaswitch/protocol/agent-labels";
 
 // The daemon-level workspace contract that `paseo run` depends on: each
 // local-backed createWorkspace for a cwd mints a fresh, distinct workspace,

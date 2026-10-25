@@ -1,5 +1,5 @@
 {
-  "name": "@getpaseo/relay",
+  "name": "@aaswitch/relay",
   "version": "0.12.0-beta.2",
   "description": "Paseo relay for bridging daemon and client connections",
   "files": [

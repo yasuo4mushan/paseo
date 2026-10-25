@@ -27,10 +27,10 @@ import { getDefaultMarkdownClipboardEnvironment } from "@/utils/rich-clipboard-d
 import { formatDuration, formatMessageTimestamp } from "@/utils/time";
 import { resolveToolCallIcon } from "@/utils/tool-call-icon";
 import { useTargetAgentTitle } from "@/tool-calls/use-target-agent-title";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
-import type { AgentMessage } from "@getpaseo/protocol/agent-message";
-import type { AgentCapabilityFlags, ToolCallDetail } from "@getpaseo/protocol/agent-types";
-import type { AgentAttachment } from "@getpaseo/protocol/messages";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
+import type { AgentMessage } from "@aaswitch/protocol/agent-message";
+import type { AgentCapabilityFlags, ToolCallDetail } from "@aaswitch/protocol/agent-types";
+import type { AgentAttachment } from "@aaswitch/protocol/messages";
 import MaskedView from "@react-native-masked-view/masked-view";
 import {
   Check,

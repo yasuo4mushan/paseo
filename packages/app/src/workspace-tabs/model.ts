@@ -1,5 +1,5 @@
-import type { AgentProvider } from "@getpaseo/protocol/agent-types";
-import type { JsonValue } from "@getpaseo/protocol/agent-types";
+import type { AgentProvider } from "@aaswitch/protocol/agent-types";
+import type { JsonValue } from "@aaswitch/protocol/agent-types";
 import type { WorkspaceFileTabTarget } from "@/workspace/file-open";
 
 export interface WorkspaceDraftTabSetup {

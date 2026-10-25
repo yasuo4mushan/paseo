@@ -43,7 +43,7 @@ test("the published schema stays current with the daemon's configuration schema"
   generated.title = "PaseoConfigV1";
   expect(
     publishedSchema,
-    "Run npm run generate:config-schema --workspace=@getpaseo/server",
+    "Run npm run generate:config-schema --workspace=@aaswitch/server",
   ).toEqual(generated);
 });
 

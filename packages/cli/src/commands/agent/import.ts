@@ -3,7 +3,7 @@ import { connectToDaemon } from "../../utils/client.js";
 import { collectMultiple } from "../../utils/command-options.js";
 import type { CommandError, CommandOptions, SingleResult } from "../../output/index.js";
 import { agentRunSchema, type AgentRunResult } from "./run.js";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { AgentSnapshotPayload } from "@aaswitch/protocol/messages";
 
 export function addImportOptions(cmd: Command): Command {
   return cmd
@@ -44,7 +44,7 @@ function parseImportProvider(provider: string | undefined): string {
     throw {
       code: "MISSING_PROVIDER",
       message: "Provider is required",
-      details: "Usage: paseo import --provider <provider> <id>",
+      details: "Usage: aaswitch import --provider <provider> <id>",
     } satisfies CommandError;
   }
 
@@ -104,7 +104,7 @@ export async function runImportCommand(
     throw {
       code: "MISSING_SESSION_ID",
       message: "Session ID is required",
-      details: "Usage: paseo import --provider <provider> <id>",
+      details: "Usage: aaswitch import --provider <provider> <id>",
     } satisfies CommandError;
   }
 

@@ -1,4 +1,4 @@
-import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
+import type { AgentTimelineItem } from "@aaswitch/protocol/agent-types";
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pino from "pino";
 import { expect, test } from "vitest";
-import type { PluginBeforeRequests, PluginLifecycleEvents } from "@getpaseo/plugin/server";
+import type { PluginBeforeRequests, PluginLifecycleEvents } from "@aaswitch/plugin/server";
 import { ClaudeAgentClient } from "../agent/providers/claude/agent.js";
 import { CodexAppServerAgentClient } from "../agent/providers/codex-app-server-agent.js";
 import { DaemonClient } from "../test-utils/daemon-client.js";

@@ -1,8 +1,8 @@
-import type { AgentMessage } from "@getpaseo/protocol/agent-message";
-import { buildAgentMessageDisplay } from "@getpaseo/protocol/paseo-tool-presentation/index";
+import type { AgentMessage } from "@aaswitch/protocol/agent-message";
+import { buildAgentMessageDisplay } from "@aaswitch/protocol/paseo-tool-presentation/index";
 import type { PlanOutcome } from "@/components/plan-card";
 import type { ComponentType } from "react";
-import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
+import type { ToolCallDetail } from "@aaswitch/protocol/agent-types";
 import type { ToolCallDisplayInput } from "@/utils/tool-call-display";
 import { buildToolCallDisplayModel } from "@/utils/tool-call-display";
 import { extractToolCallFilePath } from "@/utils/extract-tool-call-file-path";

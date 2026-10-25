@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { ProviderPaseoToolsPolicy } from "@getpaseo/protocol/provider-config";
+import type { ProviderPaseoToolsPolicy } from "@aaswitch/protocol/provider-config";
 
 import { isPaseoToolEnabled, resolvePaseoToolPolicy } from "./paseo-tool-policy.js";
 

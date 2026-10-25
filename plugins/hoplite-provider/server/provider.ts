@@ -1,5 +1,5 @@
-import { runAcpProvider } from "@getpaseo/plugin/server/acp";
-import type { ProviderRegistration } from "@getpaseo/plugin/server/provider";
+import { runAcpProvider } from "@aaswitch/plugin/server/acp";
+import type { ProviderRegistration } from "@aaswitch/plugin/server/provider";
 import { runPhaseTransformer } from "./run-phase.js";
 
 export function createHopliteProvider(): ProviderRegistration {

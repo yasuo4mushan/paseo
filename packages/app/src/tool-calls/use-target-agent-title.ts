@@ -1,5 +1,5 @@
-import type { ToolCallDetail } from "@getpaseo/protocol/agent-types";
-import { getPaseoToolTargetAgentId } from "@getpaseo/protocol/paseo-tool-presentation/index";
+import type { ToolCallDetail } from "@aaswitch/protocol/agent-types";
+import { getPaseoToolTargetAgentId } from "@aaswitch/protocol/paseo-tool-presentation/index";
 import { useSessionStore } from "@/stores/session-store";
 
 /** Title of the agent a Paseo tool call acts on, when this host knows it. */

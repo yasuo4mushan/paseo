@@ -141,7 +141,7 @@ With desktop dev running, verify the real BrowserWindow, titlebar clearance, ful
 transition, and 751-pixel settings split with:
 
 ```bash
-npm run verify:electron-cdp --workspace=@getpaseo/desktop
+npm run verify:electron-cdp --workspace=@aaswitch/desktop
 ```
 
 The verifier reads the same `EXPO_PORT` and
@@ -201,7 +201,7 @@ web, keep a daemon available, then run:
 PASEO_PROFILE_SERVER_ID=<server-id> \
 PASEO_PROFILE_WORKSPACE_ID=<workspace-path> \
 PASEO_PROFILE_AGENT_ID=<agent-id> \
-  npm run profile:workspace-tabs --workspace=@getpaseo/app
+  npm run profile:workspace-tabs --workspace=@aaswitch/app
 ```
 
 This script opens the app with `?renderProfile=1`, creates a temporary terminal
@@ -222,7 +222,7 @@ daemon state:
 
 ```bash
 PASEO_PROFILE_APP_URL=http://localhost:19010 \
-  npm run profile:workspace-switching --workspace=@getpaseo/app
+  npm run profile:workspace-switching --workspace=@aaswitch/app
 ```
 
 The benchmark first warms `Cmd+1` through `Cmd+7`, then records a rapid seven-workspace
@@ -245,7 +245,7 @@ the scenario report. This mode wraps `HTMLElement.focus`, so use it only for dia
 For the desktop Explorer sidebar toggle, run the app against the root checkout's daemon and use:
 
 ```bash
-npm run profile:explorer-toggle --workspace=@getpaseo/app
+npm run profile:explorer-toggle --workspace=@aaswitch/app
 ```
 
 The harness verifies port `6768`, opens the Paseo workspace, creates and warms the Explorer pane,
@@ -260,7 +260,7 @@ daemon:
 
 ```bash
 PASEO_PROFILE_APP_URL=http://localhost:19010 \
-  npm run profile:composer-typing --workspace=@getpaseo/app
+  npm run profile:composer-typing --workspace=@aaswitch/app
 ```
 
 The benchmark opens the first workspace, preserves its existing draft, and dispatches 300 printable
@@ -324,7 +324,7 @@ Linux-only; macOS and Windows keep waiting for `ready-to-show`.
 Run the startup regression on Linux with an isolated display:
 
 ```bash
-xvfb-run -a npm run test:e2e:window-startup --workspace=@getpaseo/desktop
+xvfb-run -a npm run test:e2e:window-startup --workspace=@aaswitch/desktop
 ```
 
 ### Daemon logs
@@ -354,7 +354,7 @@ the daemon-global Git process limits in `$PASEO_HOME/config.json`:
 }
 ```
 
-Reload the daemon with `paseo reload`. Environment-variable overrides still require a restart because
+Reload the daemon with `aaswitch reload`. Environment-variable overrides still require a restart because
 the launch environment remains authoritative. Lower values reduce machine pressure but make Git-backed workspace state and
 Git RPCs wait longer. See [Git process limits](data-model.md#git-process-limits) for defaults,
 semantics, and environment-variable overrides.
@@ -364,7 +364,7 @@ semantics, and environment-variable overrides.
 Measure the MCP `tools/list` payload that Paseo injects into agents with:
 
 ```bash
-npm run measure:agent-tools --workspace=@getpaseo/server
+npm run measure:agent-tools --workspace=@aaswitch/server
 ```
 
 The command reports compact JSON bytes, estimated tokens, field totals, largest
@@ -463,14 +463,14 @@ The daemon can optionally serve the browser web client from the same HTTP server
 Enable it in persistent configuration:
 
 ```bash
-paseo daemon config set features.webUi.enabled true
-paseo daemon start
+aaswitch daemon config set features.webUi.enabled true
+aaswitch daemon start
 ```
 
 Or set the environment variable:
 
 ```bash
-PASEO_WEB_UI_ENABLED=true paseo daemon run
+PASEO_WEB_UI_ENABLED=true aaswitch daemon run
 ```
 
 Or persist it in `config.json`:
@@ -503,13 +503,13 @@ Measured bundle size for a standard Expo web export:
 - gzip: 2.55 MiB
 - brotli: 1.93 MiB
 
-The desktop-managed daemon disables the bundled web UI by default (`PASEO_WEB_UI_ENABLED=false`) because the desktop app already ships the renderer as `app-dist`. Shipping the same assets again inside `@getpaseo/server` would duplicate the ~10.8 MiB install. Desktop packaging also excludes `node_modules/@getpaseo/server/dist/server/web-ui/**` from the packaged app.
+The desktop-managed daemon disables the bundled web UI by default (`PASEO_WEB_UI_ENABLED=false`) because the desktop app already ships the renderer as `app-dist`. Shipping the same assets again inside `@aaswitch/server` would duplicate the ~10.8 MiB install. Desktop packaging also excludes `node_modules/@aaswitch/server/dist/server/web-ui/**` from the packaged app.
 
 ## Built workspace packages
 
 Package imports resolve through package exports to compiled `dist/` output, not sibling `src/` files. This is true in local dev and in published packages: the app, daemon, CLI, and SDK consumers should all exercise the same runtime paths.
 
-`npm run dev:server` builds the server-side workspace packages once, then keeps `@getpaseo/protocol` and `@getpaseo/client` fresh with TypeScript watch builds while the daemon runs. If you change protocol schemas or client code outside that watch workflow, rebuild the producer before trusting runtime behavior.
+`npm run dev:server` builds the server-side workspace packages once, then keeps `@aaswitch/protocol` and `@aaswitch/client` fresh with TypeScript watch builds while the daemon runs. If you change protocol schemas or client code outside that watch workflow, rebuild the producer before trusting runtime behavior.
 
 Use the named root build targets instead of remembering workspace dependency chains:
 
@@ -561,7 +561,7 @@ install.
 
 Use `npm run cli` to run the in-repo CLI from source (`npx tsx packages/cli/src/index.ts`). The script wraps the CLI with `scripts/dev-home.sh`, so it automatically uses this checkout's `.dev/paseo-home` and dev daemon endpoint unless you pass an explicit override. The globally installed `paseo` binary on macOS is a symlink into the installed Paseo desktop app, not this checkout — use it to drive the desktop's built-in daemon, but use `npm run cli` when you want to talk to the CLI you are editing.
 
-Canonical automation uses `paseo project create/ls/rename/delete`, `paseo workspace create/ls/rename/archive`, `paseo heartbeat create/update/delete`, and the full `paseo schedule` group. MCP heartbeat automation is intentionally smaller: create and delete only. Detach remains an explicit user lifecycle action rather than an agent tool. `paseo run --new-workspace local|worktree` composes workspace creation with agent creation. The old `paseo worktree` and `paseo run --worktree` forms are hidden compatibility aliases.
+Canonical automation uses `aaswitch project create/ls/rename/delete`, `aaswitch workspace create/ls/rename/archive`, `aaswitch heartbeat create/update/delete`, and the full `aaswitch schedule` group. MCP heartbeat automation is intentionally smaller: create and delete only. Detach remains an explicit user lifecycle action rather than an agent tool. `aaswitch run --new-workspace local|worktree` composes workspace creation with agent creation. The old `aaswitch worktree` and `aaswitch run --worktree` forms are hidden compatibility aliases.
 
 ```bash
 npm run cli -- ls -a -g              # List all agents globally
@@ -587,7 +587,7 @@ In an SSH URI, the URL port is the SSH server port. The remote daemon defaults t
 
 Desktop integrations can focus an existing agent without creating one or
 sending a message. Use `paseo://h/<server-id>/agent/<agent-id>`, or run
-`paseo agent open <agent-id>`. The CLI reads the local daemon's server ID by
+`aaswitch agent open <agent-id>`. The CLI reads the local daemon's server ID by
 default; pass `--server <server-id>` when targeting another server.
 
 ## Agent state
@@ -635,7 +635,7 @@ Do NOT use browser history (back/forward). Always navigate by clicking UI elemen
 ## App web deploys
 
 `packages/app` exports a single-page Expo web app and deploys the `dist/`
-directory to Cloudflare Pages with `npm run deploy:web --workspace=@getpaseo/app`.
+directory to Cloudflare Pages with `npm run deploy:web --workspace=@aaswitch/app`.
 
 PWA install metadata lives in `packages/app/public/manifest.json` and is linked
 from `packages/app/public/index.html`. Keep the install icons in `public/` so

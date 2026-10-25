@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import type { PaseoConfigRaw } from "@getpaseo/protocol/paseo-config-schema";
+import type { PaseoConfigRaw } from "@aaswitch/protocol/paseo-config-schema";
 import { hasUncommittedWorktreeSetupChanges } from "./worktree-setup-commit-status.js";
 
 const tempDirs: string[] = [];

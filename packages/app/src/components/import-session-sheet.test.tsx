@@ -7,8 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
   DaemonClient,
   FetchRecentProviderSessionEntry,
-} from "@getpaseo/client/internal/daemon-client";
-import type { ProviderSnapshotEntry } from "@getpaseo/protocol/agent-types";
+} from "@aaswitch/client/internal/daemon-client";
+import type { ProviderSnapshotEntry } from "@aaswitch/protocol/agent-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ImportSessionSheet } from "@/components/import-session-sheet";
 

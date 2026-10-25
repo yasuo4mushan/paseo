@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { DaemonClient } from "@getpaseo/client/internal/daemon-client";
+import type { DaemonClient } from "@aaswitch/client/internal/daemon-client";
 import { spawnTsx, killProcessTree } from "./spawn-node";
 import { expect, test as base, type Page } from "../fixtures";
 import { connectDaemonClient } from "./daemon-client-loader";

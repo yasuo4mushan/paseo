@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AgentSnapshotPayload } from "@getpaseo/protocol/messages";
+import type { AgentSnapshotPayload } from "@aaswitch/protocol/messages";
 import { buildAgentLsFetchOptions, listAgents } from "./ls.js";
 
 const daemonTarget = { kind: "endpoint" as const, host: "example.test:12345" };

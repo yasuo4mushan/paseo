@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchUsage, discover } from "./usage.js";
 import { inputSchema, type UsageInput } from "../shared/input.js";
-import { hashAccountKey, type UsageReport } from "@getpaseo/plugin/server/usage";
+import { hashAccountKey, type UsageReport } from "@aaswitch/plugin/server/usage";
 
 function credentialInput(directory: string): UsageInput {
   return { route: { store: "claude", path: join(directory, ".credentials.json") } };

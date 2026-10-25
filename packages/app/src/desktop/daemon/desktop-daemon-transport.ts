@@ -1,8 +1,8 @@
 import type {
   DaemonTransport,
   DaemonTransportFactory,
-} from "@getpaseo/client/internal/daemon-client";
-import { validatePort, validateSshHost } from "@getpaseo/protocol/ssh-transport";
+} from "@aaswitch/client/internal/daemon-client";
+import { validatePort, validateSshHost } from "@aaswitch/protocol/ssh-transport";
 import type { DesktopDaemonTransportTarget } from "./desktop-daemon";
 import {
   defaultLocalDaemonTransportRpc,

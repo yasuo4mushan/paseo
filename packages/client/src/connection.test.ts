@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { CLIENT_CAPS } from "@getpaseo/protocol/client-capabilities";
+import { CLIENT_CAPS } from "@aaswitch/protocol/client-capabilities";
 import { DaemonClient, type DaemonTransport } from "./daemon-client";
 
 function connection(
