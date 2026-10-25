@@ -390,7 +390,7 @@ async function main(): Promise<void> {
       generatedAt: new Date().toISOString(),
       phases,
     };
-    const outputPath = process.env.PASEO_GIT_OBSERVATION_REPORT?.trim();
+    const outputPath = process.env.AASWITCH_GIT_OBSERVATION_REPORT?.trim();
     if (outputPath) {
       await writeFile(path.resolve(outputPath), `${JSON.stringify(report, null, 2)}\n`, "utf8");
     }

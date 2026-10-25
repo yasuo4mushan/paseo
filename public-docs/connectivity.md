@@ -87,7 +87,7 @@ Copy the address it prints. The example below uses `100.101.102.103`.
 
 ### 2. Configure the daemon
 
-Open `~/.paseo/config.json` and set `daemon.listen` to the Tailscale IP:
+Open `~/.aaswitch/config.json` and set `daemon.listen` to the Tailscale IP:
 
 ```json
 {

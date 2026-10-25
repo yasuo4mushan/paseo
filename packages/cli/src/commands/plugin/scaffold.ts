@@ -5,7 +5,7 @@ import { resolveCliVersion } from "../../version.js";
 
 const OVERVIEW = `<!--
 OVERVIEW.md is required to list your plugin in the registry. Keep it beside
-paseo-plugin.json in your repository at the pinned commit and in your npm package.
+aaswitch-plugin.json in your repository at the pinned commit and in your npm package.
 Replace this comment with useful facts before publishing.
 
 This overview is for people choosing a plugin in Paseo, on the plugin page under
@@ -182,7 +182,7 @@ export async function scaffoldPluginDirectory(
     private: true,
     version: "0.0.0",
     files: [
-      "paseo-plugin.json",
+      "aaswitch-plugin.json",
       "OVERVIEW.md",
       "index.client.ts",
       "index.client.tsx",
@@ -205,7 +205,7 @@ export async function scaffoldPluginDirectory(
   };
   const files = new Map<string, string>([
     [
-      "paseo-plugin.json",
+      "aaswitch-plugin.json",
       `${JSON.stringify(
         {
           id,

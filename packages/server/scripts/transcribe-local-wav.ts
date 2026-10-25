@@ -29,7 +29,7 @@ function usage(): string {
     "  npm run speech:transcribe:local -- ./sample.wav --out ./tmp/sample.transcript.txt",
     "",
     "Env fallbacks:",
-    "  PASEO_LOCAL_MODELS_DIR",
+    "  AASWITCH_LOCAL_MODELS_DIR",
   ].join("\n");
 }
 
@@ -45,7 +45,7 @@ function parseArgs(argv: string[]): CliOptions {
 
   const paseoHome = resolvePaseoHome();
   const defaultModelsDir =
-    process.env.PASEO_LOCAL_MODELS_DIR ?? path.join(paseoHome, "models", "local-speech");
+    process.env.AASWITCH_LOCAL_MODELS_DIR ?? path.join(paseoHome, "models", "local-speech");
 
   const positional: string[] = [];
   let outPath: string | undefined;

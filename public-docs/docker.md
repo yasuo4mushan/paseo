@@ -15,7 +15,7 @@ Docker images follow the stable Paseo release cadence. `ghcr.io/getpaseo/paseo:l
 ```bash
 docker run -d --name paseo \
   -p 6767:6767 \
-  -e PASEO_PASSWORD=change-me \
+  -e AASWITCH_PASSWORD=change-me \
   -v "$PWD/paseo-home:/home/paseo" \
   -v "$PWD:/workspace" \
   ghcr.io/getpaseo/paseo:latest
@@ -27,7 +27,7 @@ Then open:
 http://localhost:6767
 ```
 
-If you set `PASEO_PASSWORD`, use that same password when adding the direct daemon connection in the web UI, mobile app, or CLI.
+If you set `AASWITCH_PASSWORD`, use that same password when adding the direct daemon connection in the web UI, mobile app, or CLI.
 
 ## What the image includes
 
@@ -54,8 +54,8 @@ services:
     ports:
       - "6767:6767"
     environment:
-      PASEO_PASSWORD: "change-me"
-      # PASEO_HOSTNAMES: "paseo.example.com,.lan"
+      AASWITCH_PASSWORD: "change-me"
+      # AASWITCH_HOSTNAMES: "paseo.example.com,.lan"
     volumes:
       - ./paseo-home:/home/paseo
       - ./workspace:/workspace
@@ -142,14 +142,14 @@ If you reach Paseo by DNS name, allow that host:
 
 ```yaml
 environment:
-  PASEO_HOSTNAMES: "paseo.example.com,.lan"
+  AASWITCH_HOSTNAMES: "paseo.example.com,.lan"
 ```
 
 IPs and `localhost` are allowed by default.
 
 ## Security
 
-Set `PASEO_PASSWORD` for any published port or network-reachable deployment. Use HTTPS at your reverse proxy for browser access outside localhost.
+Set `AASWITCH_PASSWORD` for any published port or network-reachable deployment. Use HTTPS at your reverse proxy for browser access outside localhost.
 
 The static web UI is public on the daemon origin. The daemon API and WebSocket are protected by password auth when configured.
 
@@ -159,8 +159,8 @@ See [Security](/docs/security) for the full daemon trust model.
 
 ## Troubleshooting
 
-- **The UI loads but cannot connect:** if `PASEO_PASSWORD` is set, add a direct connection with the same password.
-- **403 Host not allowed:** set `PASEO_HOSTNAMES` to the DNS names you use.
+- **The UI loads but cannot connect:** if `AASWITCH_PASSWORD` is set, add a direct connection with the same password.
+- **403 Host not allowed:** set `AASWITCH_HOSTNAMES` to the DNS names you use.
 - **Provider not available:** install that agent CLI in a child image or make sure the binary is on `PATH`.
 - **Permission errors in `/workspace`:** make the mounted directory writable by uid/gid `1000:1000`, or run the container as the host uid/gid.
 - **Logs:** run `docker logs paseo`, or inspect `/home/paseo/.paseo/daemon.log` inside the container.

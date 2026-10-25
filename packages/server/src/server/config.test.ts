@@ -6,6 +6,8 @@ import { afterEach, describe, expect, test } from "vitest";
 
 import { loadConfig, resolveBundledWebUiDistDir, resolveConfigFromPersisted } from "./config.js";
 import { loadPersistedConfig } from "./persisted-config.js";
+import { configurationEnvironment } from "./config-environment.js";
+import { readEnvSetting, withLegacyPaseoEnvAliases } from "./env-compat.js";
 
 const roots: string[] = [];
 
@@ -19,7 +21,7 @@ describe("server config", () => {
     roots.push(paseoHome);
 
     const desktopConfig = loadConfig(paseoHome, {
-      env: { PASEO_DESKTOP_MANAGED: "1" },
+      env: { AASWITCH_DESKTOP_MANAGED: "1" },
     });
     const standaloneConfig = loadConfig(paseoHome, { env: {} });
 
@@ -214,4 +216,67 @@ test("loads private plugin registry settings through the configuration boundary"
   } finally {
     await rm(home, { recursive: true, force: true });
   }
+});
+
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+describe("legacy PASEO_* environment compatibility", () => {
+  afterEach(async () => {
+    await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  });
+
+  test("legacy PASEO_DESKTOP_MANAGED still marks the daemon desktop-managed", async () => {
+    const paseoHome = await mkdtemp(path.join(os.tmpdir(), "paseo-config-legacy-env-"));
+    roots.push(paseoHome);
+    const config = loadConfig(paseoHome, { env: { PASEO_DESKTOP_MANAGED: "1" } });
+    expect(config.desktopManaged).toBe(true);
+  });
+
+  test("legacy PASEO_LISTEN still resolves the listen address", async () => {
+    const paseoHome = await mkdtemp(path.join(os.tmpdir(), "paseo-config-legacy-listen-"));
+    roots.push(paseoHome);
+    const config = loadConfig(paseoHome, { env: { PASEO_LISTEN: "127.0.0.1:6798" } });
+    expect(config.listen).toBe("127.0.0.1:6798");
+  });
+
+  test("AASWITCH_LISTEN wins over a set PASEO_LISTEN", async () => {
+    const paseoHome = await mkdtemp(path.join(os.tmpdir(), "paseo-config-env-precedence-"));
+    roots.push(paseoHome);
+    const config = loadConfig(paseoHome, {
+      env: { AASWITCH_LISTEN: "127.0.0.1:6797", PASEO_LISTEN: "127.0.0.1:6796" },
+    });
+    expect(config.listen).toBe("127.0.0.1:6797");
+  });
+
+  test("configurationEnvironment maps legacy keys onto AASWITCH_* names", () => {
+    const env = configurationEnvironment({
+      PASEO_LISTEN: "127.0.0.1:6795",
+      PASEO_HUB_URL: "https://hub.example.test",
+      PORT: "7000",
+    });
+    expect(env.AASWITCH_LISTEN).toBe("127.0.0.1:6795");
+    expect(env.AASWITCH_HUB_URL).toBe("https://hub.example.test");
+    expect(env.PORT).toBe("7000");
+    expect(env.PASEO_LISTEN).toBeUndefined();
+  });
+
+  test("readEnvSetting prefers the new name and deprecation-falls back once", () => {
+    expect(readEnvSetting({ AASWITCH_PASSWORD: "new" }, "AASWITCH_PASSWORD")).toBe("new");
+    expect(
+      readEnvSetting({ AASWITCH_PASSWORD: "new", PASEO_PASSWORD: "old" }, "AASWITCH_PASSWORD"),
+    ).toBe("new");
+    expect(readEnvSetting({ PASEO_PASSWORD: "old" }, "AASWITCH_PASSWORD")).toBe("old");
+    expect(readEnvSetting({}, "AASWITCH_PASSWORD")).toBeUndefined();
+  });
+
+  test("withLegacyPaseoEnvAliases copies legacy values onto unset new names", () => {
+    const merged = withLegacyPaseoEnvAliases({
+      PASEO_HOME: "/legacy-home",
+      PASEO_LISTEN: "127.0.0.1:6794",
+      AASWITCH_LISTEN: "127.0.0.1:6793",
+      OPENAI_API_KEY: "sk-test",
+    });
+    expect(merged.AASWITCH_HOME).toBe("/legacy-home");
+    expect(merged.AASWITCH_LISTEN).toBe("127.0.0.1:6793");
+    expect(merged.OPENAI_API_KEY).toBe("sk-test");
+  });
 });

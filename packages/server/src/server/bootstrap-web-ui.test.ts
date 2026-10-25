@@ -52,7 +52,7 @@ function fetchDaemonWebUi(options: {
 
 function readInjectedConnectionHint(html: string): InitialDaemonConnectionHint {
   const match = html.match(
-    /window\.__PASEO_INITIAL_DAEMON_CONNECTION__=(?<json>\{[^<]+})<\/script>/,
+    /window\.__AASWITCH_INITIAL_DAEMON_CONNECTION__=(?<json>\{[^<]+})<\/script>/,
   );
   if (!match?.groups?.json) {
     throw new Error("Missing initial daemon connection hint");

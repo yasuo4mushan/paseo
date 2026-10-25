@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { appendFileSync, existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -9,6 +10,7 @@ import {
   releasePidLock,
   type PidLockInfo,
 } from "./pid-lock.js";
+import { legacyPaseoHomeCandidate, migrateLegacyPaseoHome } from "./paseo-home.js";
 import { daemonLaunchEnvironment } from "./config-environment.js";
 import { readPersistedConfig } from "./persisted-config.js";
 import treeKill from "tree-kill";
@@ -26,6 +28,12 @@ const killTree = (pid: number, signal: string): Promise<void> =>
 // Process ownership only: desktop and CLI load this entry in their own processes.
 // Keep daemon bootstrap and WebSocket schemas out of its dependency tree.
 export { resolvePaseoHome } from "./paseo-home.js";
+export { legacyPaseoHomeCandidate, migrateLegacyPaseoHome } from "./paseo-home.js";
+export {
+  readEnvSetting,
+  withLegacyPaseoEnvAliases,
+  applyLegacyPaseoEnvAliases,
+} from "./env-compat.js";
 export { ensurePrivateDirectory } from "./private-files.js";
 export { daemonLaunchEnvironment } from "./config-environment.js";
 export { readLocalCredentialForTarget } from "./local-credential.js";
@@ -33,6 +41,42 @@ export {
   isSamePidLock as isSameDaemonInstance,
   type PidLockInfo as DaemonInstance,
 } from "./pid-lock.js";
+
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Moves ~/.paseo (or a checkout's .dev/paseo-home) onto its aaswitch
+// successor the first time a daemon starts against the new default home.
+// Never overwrites an existing target and never migrates a home whose
+// legacy directory still hosts a running daemon.
+export async function ensureMigratedPaseoHome(home: string): Promise<void> {
+  const legacyHome = legacyPaseoHomeCandidate(home);
+  if (!legacyHome || existsSync(home) || !existsSync(legacyHome)) return;
+
+  const legacyLock = await getPidLockInfo(legacyHome);
+  const result = migrateLegacyPaseoHome(home, {
+    isLegacyHomeInUse: () => legacyLock !== null && isPidLockOwnerRunning(legacyLock),
+  });
+  if (result.action === "none") return;
+
+  const detail =
+    result.action === "skipped"
+      ? `legacy home ${result.from} still hosts a running daemon; starting fresh in ${result.to} instead`
+      : `migrated home ${result.from} -> ${result.to}${result.copied ? " (copied; legacy directory retained as backup)" : ""}`;
+  process.stderr.write(`aaswitch: ${detail}\n`);
+  try {
+    appendFileSync(
+      path.join(result.to, "daemon.log"),
+      `${JSON.stringify({
+        level: "warn",
+        time: new Date().toISOString(),
+        pid: process.pid,
+        name: "DaemonInstance",
+        msg: `aaswitch home migration: ${detail}`,
+      })}\n`,
+    );
+  } catch {
+    // daemon.log is best-effort; stderr already carries the migration notice.
+  }
+}
 
 export class DaemonInstanceError extends Error {
   constructor(
@@ -71,7 +115,7 @@ export async function waitForDaemonReady(
     if (!instance)
       throw new DaemonInstanceError(
         "DAEMON_NOT_RUNNING",
-        `Daemon is not running for ${home}. Start with: paseo daemon start --home ${JSON.stringify(home)}`,
+        `Daemon is not running for ${home}. Start with: aaswitch daemon start --home ${JSON.stringify(home)}`,
       );
     if (options.instance && !isSamePidLock(instance, options.instance)) {
       throw new DaemonInstanceError(
@@ -88,7 +132,7 @@ export async function waitForDaemonReady(
 function notReady(home: string, instance: PidLockInfo): DaemonInstanceError {
   return new DaemonInstanceError(
     "DAEMON_NOT_READY",
-    `Daemon PID ${instance.pid} remains running but is not ready for ${home}.\nLogs: ${daemonLogPath(home)}\nStatus: paseo daemon status --home ${JSON.stringify(home)}\nStop: paseo daemon stop --home ${JSON.stringify(home)}`,
+    `Daemon PID ${instance.pid} remains running but is not ready for ${home}.\nLogs: ${daemonLogPath(home)}\nStatus: aaswitch daemon status --home ${JSON.stringify(home)}\nStop: aaswitch daemon stop --home ${JSON.stringify(home)}`,
   );
 }
 
@@ -217,6 +261,7 @@ export async function startDaemonInstance(input: {
   onReady?: (instance: PidLockInfo & { listen: string }) => void;
 }): Promise<{ instance: PidLockInfo; spawned: boolean; exitCode?: number }> {
   input.signal?.throwIfAborted();
+  await ensureMigratedPaseoHome(input.home);
   const existing = await readDaemonInstance(input.home);
   if (existing) return { instance: existing, spawned: false };
   const {
@@ -283,7 +328,7 @@ export async function startDaemonInstance(input: {
         if (acquired) throw notReady(input.home, acquired);
         throw new DaemonInstanceError(
           "DAEMON_NOT_READY",
-          `Supervisor PID ${child.pid} remains running but has not published its lock for ${input.home}. Logs: ${daemonLogPath(input.home)}. Check paseo daemon status --home ${JSON.stringify(input.home)}. Stop with paseo daemon stop --home ${JSON.stringify(input.home)} once its lock is published, or signal this PID.`,
+          `Supervisor PID ${child.pid} remains running but has not published its lock for ${input.home}. Logs: ${daemonLogPath(input.home)}. Check aaswitch daemon status --home ${JSON.stringify(input.home)}. Stop with aaswitch daemon stop --home ${JSON.stringify(input.home)} once its lock is published, or signal this PID.`,
         );
       }
       await delay(100, undefined, { signal });

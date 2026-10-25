@@ -31,15 +31,21 @@ function parsePort(value, name) {
 }
 
 export function resolveDevRuntime(env = process.env) {
-  const remoteDebuggingPort = env.PASEO_ELECTRON_REMOTE_DEBUGGING_PORT
-    ? parsePort(env.PASEO_ELECTRON_REMOTE_DEBUGGING_PORT, "PASEO_ELECTRON_REMOTE_DEBUGGING_PORT")
+  const remoteDebuggingPort = env.AASWITCH_ELECTRON_REMOTE_DEBUGGING_PORT
+    ? parsePort(
+        env.AASWITCH_ELECTRON_REMOTE_DEBUGGING_PORT,
+        "AASWITCH_ELECTRON_REMOTE_DEBUGGING_PORT",
+      )
     : 0;
   return {
-    electronFlags: buildElectronFlags(env.PASEO_ELECTRON_FLAGS, remoteDebuggingPort),
+    electronFlags: buildElectronFlags(
+      env.AASWITCH_ELECTRON_FLAGS ?? env.PASEO_ELECTRON_FLAGS,
+      remoteDebuggingPort,
+    ),
     userDataDir: resolveDevUserDataDir({
-      devRoot: env.PASEO_DEV_ROOT,
-      inheritedUserDataDir: env.PASEO_ELECTRON_USER_DATA_DIR,
-      fallbackRoot: env.PASEO_DEV_RUNTIME_FALLBACK_ROOT,
+      devRoot: env.AASWITCH_DEV_ROOT ?? env.PASEO_DEV_ROOT,
+      inheritedUserDataDir: env.AASWITCH_ELECTRON_USER_DATA_DIR ?? env.PASEO_ELECTRON_USER_DATA_DIR,
+      fallbackRoot: env.AASWITCH_DEV_RUNTIME_FALLBACK_ROOT ?? env.PASEO_DEV_RUNTIME_FALLBACK_ROOT,
     }),
   };
 }

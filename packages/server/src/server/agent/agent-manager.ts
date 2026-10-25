@@ -5360,6 +5360,10 @@ export class AgentManager {
       agentId,
       env: {
         ...env,
+        // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+        // Agent-side tooling may read either spelling; the daemon sets both.
+        AASWITCH_AGENT_ID: agentId,
+        AASWITCH_AGENT_CWD: cwd,
         PASEO_AGENT_ID: agentId,
         PASEO_AGENT_CWD: cwd,
       },

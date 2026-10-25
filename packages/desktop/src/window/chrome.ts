@@ -17,7 +17,7 @@ export function resolveDesktopWindowChromeMode(input: {
   const override = input.override?.trim().toLowerCase();
   if (!override) return systemWindowChromeMode(input.platform);
   if (input.isPackaged) {
-    throw new Error("PASEO_DESKTOP_WINDOW_CONTROLS is only available in development builds");
+    throw new Error("AASWITCH_DESKTOP_WINDOW_CONTROLS is only available in development builds");
   }
   if (override === "windows") return "custom-windows";
   if (override === "linux") return "custom-linux";

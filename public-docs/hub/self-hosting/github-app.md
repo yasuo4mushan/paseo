@@ -16,16 +16,16 @@ Open **Apps → GitHub**. Hub gives you the current callback URLs, required repo
 
 Repository access and installation work without a GitHub webhook. GitHub event triggers and configuration sync do not: GitHub must be able to deliver events to a public HTTPS URL.
 
-On a local HTTP Hub, the Apps guide lets you configure repository access and explains that event setup is unavailable. Reopen Hub at its public address after setting `PASEO_HUB_APP_URL` to add the webhook secret and events.
+On a local HTTP Hub, the Apps guide lets you configure repository access and explains that event setup is unavailable. Reopen Hub at its public address after setting `AASWITCH_HUB_APP_URL` to add the webhook secret and events.
 
 GitHub uses these Hub URLs:
 
-| Setting      | Hub URL                                                |
-| ------------ | ------------------------------------------------------ |
-| Homepage URL | `<PASEO_HUB_APP_URL>`                                  |
-| Callback URL | `<PASEO_HUB_APP_URL>/api/integrations/github/callback` |
-| Setup URL    | `<PASEO_HUB_APP_URL>/api/integrations/github/setup`    |
-| Webhook URL  | `<PASEO_HUB_APP_URL>/webhook`                          |
+| Setting      | Hub URL                                                   |
+| ------------ | --------------------------------------------------------- |
+| Homepage URL | `<AASWITCH_HUB_APP_URL>`                                  |
+| Callback URL | `<AASWITCH_HUB_APP_URL>/api/integrations/github/callback` |
+| Setup URL    | `<AASWITCH_HUB_APP_URL>/api/integrations/github/setup`    |
+| Webhook URL  | `<AASWITCH_HUB_APP_URL>/webhook`                          |
 
 Keep GitHub's SSL verification enabled.
 

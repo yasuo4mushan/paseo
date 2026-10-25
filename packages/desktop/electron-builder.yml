@@ -1,14 +1,14 @@
 npmRebuild: false
-# aaswitch is the user-facing brand (t14); the npm scope and the `aaswitch`
-# binary follow it (t33). The `paseo://` deep-link scheme intentionally stays
-# Paseo-based.
+# aaswitch is the user-facing brand (t14); the npm scope, the `aaswitch`
+# binary, and the `aaswitch://` deep-link scheme follow it (t33). Links with
+# the legacy paseo:// scheme stay parseable for one compatibility window.
 appId: cn.aaswitch.desktop
 productName: aaswitch
 executableName: aaswitch
 protocols:
   - name: aaswitch agent link
     schemes:
-      - paseo
+      - aaswitch
 afterPack: ./scripts/after-pack.js
 afterSign: ./scripts/after-sign.js
 directories:

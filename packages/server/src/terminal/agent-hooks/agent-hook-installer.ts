@@ -137,8 +137,11 @@ export function buildAgentHookShellCommand<TConfig>(
   provider: AgentHookProvider<TConfig>,
   event: AgentHookEventDefinition,
 ): string {
-  const hookCommand = `"\${PASEO_HOOK_CLI:-paseo}" hooks ${shellToken(provider.id)} ${shellToken(event.event)}`;
-  return `if [ -n "$PASEO_TERMINAL_ID" ]; then ${hookCommand}; fi`;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  // Both AASWITCH_HOOK_CLI and the legacy PASEO_HOOK_CLI are exported to the
+  // hook shell; the `aaswitch` binary is the PATH fallback.
+  const hookCommand = `"\${AASWITCH_HOOK_CLI:-\${PASEO_HOOK_CLI:-aaswitch}}" hooks ${shellToken(provider.id)} ${shellToken(event.event)}`;
+  return `if [ -n "$AASWITCH_TERMINAL_ID" ] || [ -n "$PASEO_TERMINAL_ID" ]; then ${hookCommand}; fi`;
 }
 
 export function buildAgentHookWindowsCommand<TConfig>(
@@ -146,7 +149,8 @@ export function buildAgentHookWindowsCommand<TConfig>(
   event: AgentHookEventDefinition,
 ): string {
   const hookArgs = `hooks ${windowsToken(provider.id)} ${windowsToken(event.event)}`;
-  return `if defined PASEO_TERMINAL_ID (if defined PASEO_HOOK_CLI ("%PASEO_HOOK_CLI%" ${hookArgs}) else (paseo ${hookArgs})) else (exit /b 0)`;
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  return `if defined AASWITCH_TERMINAL_ID (if defined AASWITCH_HOOK_CLI ("%AASWITCH_HOOK_CLI%" ${hookArgs}) else (if defined PASEO_HOOK_CLI ("%PASEO_HOOK_CLI%" ${hookArgs}) else (aaswitch ${hookArgs}))) else (if defined PASEO_TERMINAL_ID (if defined PASEO_HOOK_CLI ("%PASEO_HOOK_CLI%" ${hookArgs}) else (aaswitch ${hookArgs})) else (exit /b 0))`;
 }
 
 function installAgentHookPluginFile(

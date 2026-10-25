@@ -1,4 +1,5 @@
-import { mkdtemp, open, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, open, readFile, rm, stat, utimes, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -207,7 +208,7 @@ describe("pid-lock ownership", () => {
 
   test("retries a heartbeat refresh while its owner is rewriting the lock", async () => {
     const paseoHome = await mkdtemp(join(tmpdir(), "paseo-pid-lock-refresh-rewrite-"));
-    const pidPath = join(paseoHome, "paseo.pid");
+    const pidPath = join(paseoHome, "aaswitch.pid");
 
     try {
       await acquirePidLock(paseoHome, null, { ownerPid: process.pid });
@@ -288,6 +289,72 @@ describe("pid-lock ownership", () => {
       await expect(readFile(pidPath, "utf-8")).resolves.toBe(JSON.stringify({ pid: "unknown" }));
     } finally {
       await rm(paseoHome, { recursive: true, force: true });
+    }
+  });
+});
+
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+describe("pid-lock filename migration", () => {
+  test("new locks are written to aaswitch.pid", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "paseo-pid-lock-filename-"));
+    const home = join(parent, "home");
+    try {
+      await acquirePidLock(home, null);
+      expect(existsSync(join(home, "aaswitch.pid"))).toBe(true);
+      expect(existsSync(join(home, "paseo.pid"))).toBe(false);
+    } finally {
+      await rm(parent, { recursive: true, force: true });
+    }
+  });
+
+  test("a legacy paseo.pid lock is still readable", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "paseo-pid-lock-legacy-read-"));
+    const home = join(parent, "home");
+    await mkdir(home, { recursive: true });
+    try {
+      await writeFile(
+        join(home, "paseo.pid"),
+        JSON.stringify({
+          pid: process.pid,
+          startedAt: new Date().toISOString(),
+          hostname: "host",
+          uid: process.getuid?.() ?? 0,
+          listen: "127.0.0.1:6799",
+          heartbeat: true,
+        }),
+      );
+      const lock = await getPidLockInfo(home);
+      expect(lock?.listen).toBe("127.0.0.1:6799");
+    } finally {
+      await rm(parent, { recursive: true, force: true });
+    }
+  });
+
+  test("acquiring reclaims a stale legacy lock and switches to aaswitch.pid", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "paseo-pid-lock-legacy-reclaim-"));
+    const home = join(parent, "home");
+    const stalePid = process.pid + 100_000;
+    await mkdir(home, { recursive: true });
+    try {
+      await writeFile(
+        join(home, "paseo.pid"),
+        JSON.stringify({
+          pid: stalePid,
+          // Started before this boot, so the lock reads as abandoned.
+          startedAt: new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString(),
+          hostname: "host",
+          uid: process.getuid?.() ?? 0,
+          listen: null,
+          heartbeat: true,
+        }),
+      );
+      await acquirePidLock(home, null);
+      expect(existsSync(join(home, "aaswitch.pid"))).toBe(true);
+      expect(existsSync(join(home, "paseo.pid"))).toBe(false);
+      const lock = await getPidLockInfo(home);
+      expect(lock?.pid).toBe(process.pid);
+    } finally {
+      await rm(parent, { recursive: true, force: true });
     }
   });
 });

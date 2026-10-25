@@ -99,8 +99,22 @@ export function isPidLockOwnerRunning(lock: PidLockInfo): boolean {
   return isPidRunning(lock.pid);
 }
 
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+// Locks are written to aaswitch.pid; a paseo.pid left by a pre-rebrand
+// daemon is still read so a new CLI can see, follow, and stop an old daemon.
+export const PID_LOCK_FILENAME = "aaswitch.pid";
+export const LEGACY_PID_LOCK_FILENAME = "paseo.pid";
+
 function getPidFilePath(paseoHome: string): string {
-  return join(paseoHome, "paseo.pid");
+  return join(paseoHome, PID_LOCK_FILENAME);
+}
+
+function getLegacyPidFilePath(paseoHome: string): string {
+  return join(paseoHome, LEGACY_PID_LOCK_FILENAME);
+}
+
+function pidLockPathCandidates(paseoHome: string): [string, string] {
+  return [getPidFilePath(paseoHome), getLegacyPidFilePath(paseoHome)];
 }
 
 async function touchPidLockFile(pidPath: string): Promise<void> {
@@ -223,18 +237,29 @@ export async function acquirePidLock(
 
   ensurePrivateDirectory(paseoHome);
 
-  // Try to read existing lock
-  const existingLock = await readPidLock(pidPath);
+  // Try to read existing lock, preferring the current filename and falling
+  // back to the legacy one so an abandoned pre-rebrand lock can be reclaimed.
+  const [modernPath, legacyPath] = pidLockPathCandidates(paseoHome);
+  const modernLock = await readPidLock(modernPath);
+  const existingLock = modernLock ?? (await readPidLock(legacyPath));
+  let existingPath: string | null = null;
+  if (modernLock) {
+    existingPath = modernPath;
+  } else if (existingLock) {
+    existingPath = legacyPath;
+  }
 
   // Check if existing lock is stale
   const lockOwnerPid = resolveOwnerPid(options?.ownerPid);
-  if (existingLock) {
-    const result = await clearExistingPidLock(pidPath, existingLock, lockOwnerPid);
+  if (existingLock && existingPath) {
+    const result = await clearExistingPidLock(existingPath, existingLock, lockOwnerPid);
     if (result === "already_owned") {
       return;
     }
   } else {
-    await removeEmptyPidLock(pidPath);
+    for (const candidate of [modernPath, legacyPath]) {
+      await removeEmptyPidLock(candidate);
+    }
   }
 
   // Create new lock with exclusive flag
@@ -247,7 +272,7 @@ export async function acquirePidLock(
     listen,
     heartbeat: true,
     ...(bootId ? { bootId } : {}),
-    ...(process.env.PASEO_DESKTOP_MANAGED === "1" ? { desktopManaged: true } : {}),
+    ...(process.env.AASWITCH_DESKTOP_MANAGED === "1" ? { desktopManaged: true } : {}),
   };
 
   await writeNewPidLock(pidPath, lockInfo);
@@ -257,7 +282,7 @@ export async function refreshPidLock(
   paseoHome: string,
   options?: { ownerPid?: number },
 ): Promise<void> {
-  const pidPath = getPidFilePath(paseoHome);
+  const pidPath = await resolveLivePidLockPath(paseoHome);
   const lockOwnerPid = resolveOwnerPid(options?.ownerPid);
   let fd;
   try {
@@ -350,7 +375,7 @@ export async function updatePidLock(
   patch: { listen: string; serverId: string } | { listen: null; serverId: null },
   options?: { ownerPid?: number },
 ): Promise<void> {
-  const pidPath = getPidFilePath(paseoHome);
+  const pidPath = await resolveLivePidLockPath(paseoHome);
   const lockOwnerPid = resolveOwnerPid(options?.ownerPid);
   const fd = await open(pidPath, "r+");
   try {
@@ -380,26 +405,37 @@ export async function releasePidLock(
   paseoHome: string,
   options?: { ownerPid?: number; startedAt?: string },
 ): Promise<void> {
-  const pidPath = getPidFilePath(paseoHome);
   const lockOwnerPid = resolveOwnerPid(options?.ownerPid);
-  try {
-    // Only remove if it's our lock
-    const content = await readFile(pidPath, "utf-8");
-    const lock = parsePidLockInfo(JSON.parse(content));
-    if (
-      lock?.pid === lockOwnerPid &&
-      (options?.startedAt === undefined || lock.startedAt === options.startedAt)
-    ) {
-      await unlink(pidPath);
+  for (const pidPath of pidLockPathCandidates(paseoHome)) {
+    try {
+      // Only remove if it's our lock
+      const content = await readFile(pidPath, "utf-8");
+      const lock = parsePidLockInfo(JSON.parse(content));
+      if (
+        lock?.pid === lockOwnerPid &&
+        (options?.startedAt === undefined || lock.startedAt === options.startedAt)
+      ) {
+        await unlink(pidPath);
+      }
+    } catch {
+      // Ignore errors - lock may already be gone
     }
-  } catch {
-    // Ignore errors - lock may already be gone
   }
 }
 
 export async function getPidLockInfo(paseoHome: string): Promise<PidLockInfo | null> {
-  const pidPath = getPidFilePath(paseoHome);
-  return readPidLock(pidPath);
+  const [modernPath, legacyPath] = pidLockPathCandidates(paseoHome);
+  return (await readPidLock(modernPath)) ?? (await readPidLock(legacyPath));
+}
+
+/**
+ * The lock file a running daemon actually keeps its lock in: the current
+ * filename when it exists, otherwise the legacy one (pre-rebrand daemon).
+ */
+async function resolveLivePidLockPath(paseoHome: string): Promise<string> {
+  const [modernPath, legacyPath] = pidLockPathCandidates(paseoHome);
+  const modernStat = await stat(modernPath).catch(() => null);
+  return modernStat ? modernPath : legacyPath;
 }
 
 export async function isLocked(

@@ -199,7 +199,9 @@ export async function runSendCommand(
     const images =
       options.image && options.image.length > 0 ? await readImageFiles(options.image) : undefined;
 
-    const sourceAgentId = process.env.PASEO_AGENT_ID?.trim() || undefined;
+    // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+    const sourceAgentId =
+      (process.env.AASWITCH_AGENT_ID ?? process.env.PASEO_AGENT_ID)?.trim() || undefined;
     // Send the message
     await client.sendAgentMessage(agentIdArg, promptInput, {
       images,

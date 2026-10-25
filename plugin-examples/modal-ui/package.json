@@ -10,7 +10,7 @@
     "directory": "plugin-examples/modal-ui"
   },
   "files": [
-    "paseo-plugin.json",
+    "aaswitch-plugin.json",
     "index.client.tsx",
     "client/",
     "screenshots/",

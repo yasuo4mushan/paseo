@@ -80,7 +80,7 @@ aaswitch heartbeat update <id> --cron "*/10 * * * *"
 aaswitch heartbeat delete <id>
 ```
 
-Updating a heartbeat changes only its cron cadence and optional time zone. Its target and prompt stay fixed. Heartbeat commands require `PASEO_AGENT_ID`, which Paseo sets inside agent sessions.
+Updating a heartbeat changes only its cron cadence and optional time zone. Its target and prompt stay fixed. Heartbeat commands require `AASWITCH_AGENT_ID`, which Paseo sets inside agent sessions.
 
 Heartbeats require a raw `--cron` expression. The `--every` presets below are available only for new-agent schedules.
 

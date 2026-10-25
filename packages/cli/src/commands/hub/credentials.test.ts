@@ -18,7 +18,7 @@ afterEach(async () => {
 describe("Hub CLI credentials", () => {
   it("stores multiple normalized origins privately and selects the latest login", () => {
     const home = temporaryHome();
-    const store = new PrivateHubCredentialStore({ PASEO_HOME: home });
+    const store = new PrivateHubCredentialStore({ AASWITCH_HOME: home });
 
     store.save({ origin: "https://first.example.com", credential: "first-secret" });
     store.save({ origin: "https://second.example.com:443", credential: "second-secret" });
@@ -42,6 +42,7 @@ describe("Hub CLI credentials", () => {
   });
 
   it("logs out only the active human credential and preserves other origins", () => {
+    // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
     const store = new PrivateHubCredentialStore({ PASEO_HOME: temporaryHome() });
     store.save({ origin: "https://first.example.com", credential: "first-secret" });
     store.save({ origin: "https://second.example.com", credential: "second-secret" });
@@ -59,7 +60,7 @@ describe("Hub CLI credentials", () => {
     chmodSync(path.join(home, "hub-credentials.json"), 0o600);
 
     assert.throws(
-      () => new PrivateHubCredentialStore({ PASEO_HOME: home }).active(),
+      () => new PrivateHubCredentialStore({ AASWITCH_HOME: home }).active(),
       (error) => {
         assert.ok(error instanceof Error);
         assert.equal(error.message.includes(secret), false);
@@ -72,7 +73,7 @@ describe("Hub CLI credentials", () => {
   it("repairs permissive persisted file modes before returning credentials", () => {
     if (process.platform === "win32") return;
     const home = temporaryHome();
-    const store = new PrivateHubCredentialStore({ PASEO_HOME: home });
+    const store = new PrivateHubCredentialStore({ AASWITCH_HOME: home });
     store.save({ origin: "https://hub.test", credential: "stored-secret" });
     const credentialPath = path.join(home, "hub-credentials.json");
     chmodSync(credentialPath, 0o644);
@@ -82,7 +83,7 @@ describe("Hub CLI credentials", () => {
   });
 
   it("resolves origin from explicit, environment, active login, then hosted default", () => {
-    const store = new PrivateHubCredentialStore({ PASEO_HOME: temporaryHome() });
+    const store = new PrivateHubCredentialStore({ AASWITCH_HOME: temporaryHome() });
     store.save({ origin: "https://stored.example.com", credential: "stored-secret" });
 
     assert.equal(
@@ -109,14 +110,14 @@ describe("Hub CLI credentials", () => {
       resolveHubOrigin({
         options: {},
         env: {},
-        credentials: new PrivateHubCredentialStore({ PASEO_HOME: temporaryHome() }),
+        credentials: new PrivateHubCredentialStore({ AASWITCH_HOME: temporaryHome() }),
       }),
       DEFAULT_HUB_ORIGIN,
     );
   });
 
   it("resolves credential from explicit, environment, then exact-origin stored login", () => {
-    const store = new PrivateHubCredentialStore({ PASEO_HOME: temporaryHome() });
+    const store = new PrivateHubCredentialStore({ AASWITCH_HOME: temporaryHome() });
     store.save({ origin: "https://stored.example.com", credential: "stored-secret" });
 
     assert.equal(
@@ -149,7 +150,7 @@ describe("Hub CLI credentials", () => {
   });
 
   it("never applies a stored credential to a different origin", () => {
-    const store = new PrivateHubCredentialStore({ PASEO_HOME: temporaryHome() });
+    const store = new PrivateHubCredentialStore({ AASWITCH_HOME: temporaryHome() });
     store.save({ origin: "https://stored.example.com", credential: "stored-secret" });
 
     assert.throws(

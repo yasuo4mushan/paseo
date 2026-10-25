@@ -12,7 +12,7 @@ const workspaceCwd = process.env.PASEO_PROFILE_WORKSPACE_CWD ?? repoRoot;
 const workspaceId = process.env.PASEO_PROFILE_WORKSPACE_ID ?? resolvePaseoWorkspaceId();
 const serverId =
   process.env.PASEO_PROFILE_SERVER_ID ??
-  (await readFile(resolve(repoRoot, ".dev/paseo-home/server-id"), "utf8")).trim();
+  (await readFile(resolve(repoRoot, ".dev/aaswitch-home/server-id"), "utf8")).trim();
 const warmPresses = numberFromEnv("PASEO_PROFILE_WARM_PRESSES", 8);
 const measuredPresses = numberFromEnv("PASEO_PROFILE_MEASURED_PRESSES", 20);
 const burstPresses = numberFromEnv("PASEO_PROFILE_BURST_PRESSES", 20);

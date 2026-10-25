@@ -1448,7 +1448,7 @@ export const en = {
       fullStatus: {
         title: "Full status",
         modalTitle: "Daemon status",
-        hint: "Runs `paseo daemon status` and shows the output",
+        hint: "Runs `aaswitch daemon status` and shows the output",
         view: "View status",
         copied: "Status copied to clipboard.",
         fetchFailed: "Failed to fetch daemon status: {{message}}",
@@ -3032,7 +3032,7 @@ export const en = {
         newScript: "New script",
         editScript: "Edit {{name}}",
         runAsService: "Run as a service",
-        serviceHint: "aaswitch supervises the process and assigns a port via $PASEO_PORT",
+        serviceHint: "aaswitch supervises the process and assigns a port via $AASWITCH_PORT",
         actions: {
           add: "Add script",
           edit: "Edit",

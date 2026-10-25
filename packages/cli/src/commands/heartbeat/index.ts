@@ -33,7 +33,7 @@ const heartbeatDeleteSchema: OutputSchema<HeartbeatDeleteRow> = {
 };
 
 function requireCallerAgentId(): string {
-  const agentId = process.env.PASEO_AGENT_ID?.trim();
+  const agentId = (process.env.AASWITCH_AGENT_ID ?? process.env.PASEO_AGENT_ID)?.trim();
   if (!agentId) {
     throw new Error("Heartbeat commands must run inside an aaswitch agent");
   }

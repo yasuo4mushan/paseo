@@ -7,7 +7,7 @@ describe("desktop agent navigation", () => {
       parseAgentDeepLinkFromArgv([
         "/Applications/aaswitch.app/Contents/MacOS/aaswitch",
         "--no-sandbox",
-        "paseo://h/server-1/agent/agent-2",
+        "aaswitch://h/server-1/agent/agent-2",
       ]),
     ).toEqual({ serverId: "server-1", agentId: "agent-2" });
   });

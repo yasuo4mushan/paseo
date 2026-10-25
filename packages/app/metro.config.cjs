@@ -5,12 +5,19 @@ const path = require("path");
 const projectRoot = __dirname;
 const appNodeModulesRoot = path.resolve(projectRoot, "node_modules");
 const appSrcRoot = path.resolve(projectRoot, "src");
-const isFdroidBuild = process.env.PASEO_FDROID_BUILD === "1";
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+const isFdroidBuild =
+  process.env.AASWITCH_FDROID_BUILD === "1" || process.env.PASEO_FDROID_BUILD === "1";
 const fdroidModuleOverrides = {
   "expo-camera": path.resolve(appSrcRoot, "fdroid/expo-camera.tsx"),
   "expo-notifications": path.resolve(appSrcRoot, "fdroid/expo-notifications.ts"),
 };
-const customWebPlatform = (process.env.PASEO_WEB_PLATFORM ?? "")
+// COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+const customWebPlatform = (
+  process.env.AASWITCH_WEB_PLATFORM ??
+  process.env.PASEO_WEB_PLATFORM ??
+  ""
+)
   .trim()
   .replace(/^\./, "")
   .toLowerCase();

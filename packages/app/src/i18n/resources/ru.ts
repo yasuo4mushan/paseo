@@ -1443,7 +1443,7 @@ export const ru: TranslationResources = {
       fullStatus: {
         title: "Полный статус",
         modalTitle: "Статус демона",
-        hint: "Выполняет команду `paseo daemon status` и показывает результат",
+        hint: "Выполняет команду `aaswitch daemon status` и показывает результат",
         view: "Посмотреть статус",
         copied: "Статус скопирован в буфер обмена.",
         fetchFailed: "Не удалось получить статус демона: {{message}}",
@@ -2955,7 +2955,8 @@ export const ru: TranslationResources = {
         newScript: "Новый скрипт",
         editScript: "Изменить {{name}}",
         runAsService: "Запускать как сервис",
-        serviceHint: "aaswitch управляет процессом и назначает порт через переменную $PASEO_PORT.",
+        serviceHint:
+          "aaswitch управляет процессом и назначает порт через переменную $AASWITCH_PORT.",
         actions: {
           add: "Добавить скрипт",
           edit: "Редактировать",

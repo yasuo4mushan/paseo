@@ -72,6 +72,7 @@ function cleanEnvForDesktopLaunch(): NodeJS.ProcessEnv {
   // desktop app would start as a bare Node process instead of Electron.
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.ELECTRON_NO_ATTACH_CONSOLE;
+  delete env.AASWITCH_NODE_ENV;
   delete env.PASEO_NODE_ENV;
   return env;
 }
@@ -85,7 +86,7 @@ function spawnDetached(command: string, args: string[]): void {
 }
 
 function launchDesktop(args: string[]): void {
-  if (process.env.PASEO_DESKTOP_CLI === "1") {
+  if (process.env.AASWITCH_DESKTOP_CLI === "1" || process.env.PASEO_DESKTOP_CLI === "1") {
     throw new Error("Cannot open aaswitch Desktop while running in desktop CLI passthrough mode.");
   }
 

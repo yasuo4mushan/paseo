@@ -23,7 +23,7 @@ For a private plugin, use [direct Git installation](#share-through-github-or-git
 ## Your listing page
 
 You can submit without `OVERVIEW.md`; the reviewer creates a listing page from your README and
-verified behavior. To maintain the page yourself, put `OVERVIEW.md` beside `paseo-plugin.json`
+verified behavior. To maintain the page yourself, put `OVERVIEW.md` beside `aaswitch-plugin.json` Pre-rebrand sources that still ship a `paseo-plugin.json` manifest keep installing; both filenames are accepted during the compatibility window.
 and include it in the published package. The scaffold already includes it in `files`.
 Your shipped overview replaces the reviewer-written page.
 
@@ -55,7 +55,7 @@ Themes, panels and other visual plugin interfaces need at least one image showin
 interface. Use sample data and hide private details. An icon alone does not meet this requirement;
 plugins without their own visual interface do not need screenshots.
 
-Declare local images in `paseo-plugin.json` before publishing:
+Declare local images in `aaswitch-plugin.json` before publishing:
 
 ```json
 {
@@ -135,7 +135,7 @@ npm run typecheck
 npm pack --dry-run --ignore-scripts
 ```
 
-Check the file list contains `paseo-plugin.json`, at least one runtime entry, every imported local
+Check the file list contains `aaswitch-plugin.json`, at least one runtime entry, every imported local
 module, any overview and assets you declared, and the shrinkwrap when required. Repository-only import aliases
 and files outside the package do not reach users. The scaffold includes the entries and `client/`,
 `server/` and `shared/`; add other asset directories to `files`.
@@ -165,7 +165,7 @@ runtime entries, imported files and listing assets. Git tags and commits are opt
 provide one to select a revision, or the reviewer resolves `main`.
 
 If preparation installs runtime npm dependencies, commit a synchronized `package-lock.json` and
-add this command to `paseo-plugin.json`:
+add this command to `aaswitch-plugin.json`:
 
 ```json
 {

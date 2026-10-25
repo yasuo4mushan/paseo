@@ -1,8 +1,11 @@
-const PASEO_NODE_ENV = "PASEO_NODE_ENV";
+const AASWITCH_NODE_ENV = "AASWITCH_NODE_ENV";
 const ELECTRON_RUN_AS_NODE = "ELECTRON_RUN_AS_NODE";
 
 const RUNTIME_CONTROL_ENV_KEYS = [
-  PASEO_NODE_ENV,
+  AASWITCH_NODE_ENV,
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  "PASEO_NODE_ENV",
+  "AASWITCH_DESKTOP_MANAGED",
   "PASEO_DESKTOP_MANAGED",
   "PASEO_SUPERVISED",
   ELECTRON_RUN_AS_NODE,
@@ -77,6 +80,7 @@ export function buildSelfNodeCommand(
 }
 
 export function resolvePaseoNodeEnv(env: NodeJS.ProcessEnv): PaseoNodeEnv | undefined {
-  const value = env[PASEO_NODE_ENV];
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  const value = env[AASWITCH_NODE_ENV] ?? env.PASEO_NODE_ENV;
   return value === "development" || value === "production" || value === "test" ? value : undefined;
 }

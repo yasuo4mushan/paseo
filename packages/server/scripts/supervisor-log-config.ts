@@ -13,8 +13,8 @@ export function resolveSupervisorLogFile(
 ) {
   const configuredFile = persistedConfig.log?.file;
   const configuredPath = configuredFile?.path;
-  const envRotateSize = env.PASEO_LOG_ROTATE_SIZE?.trim();
-  const envRotateMaxFiles = parseOptionalPositiveInteger(env.PASEO_LOG_ROTATE_COUNT);
+  const envRotateSize = env.AASWITCH_LOG_ROTATE_SIZE?.trim();
+  const envRotateMaxFiles = parseOptionalPositiveInteger(env.AASWITCH_LOG_ROTATE_COUNT);
   let logPath = path.join(paseoHome, DEFAULT_DAEMON_LOG_FILENAME);
   if (configuredPath) {
     logPath = path.isAbsolute(configuredPath)

@@ -217,7 +217,7 @@ describe("daemon service proxy config", () => {
       loadConfig(home, {
         env: { PASEO_SERVICE_PROXY_PUBLIC_BASE_URL: "not-a-url" },
       }),
-    ).toThrow("Invalid PASEO_SERVICE_PROXY_PUBLIC_BASE_URL: not-a-url");
+    ).toThrow("Invalid AASWITCH_SERVICE_PROXY_PUBLIC_BASE_URL: not-a-url");
   });
 });
 

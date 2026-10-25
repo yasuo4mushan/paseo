@@ -22,12 +22,13 @@ import type {
 } from "./worker-protocol.js";
 import { bufferToWorkerBytes, workerBytesToBuffer } from "./worker-bytes.js";
 
-process.title = "Paseo Voice";
+process.title = "aaswitch Voice";
 
 type LocalSttEngine = SherpaOfflineRecognizerEngine;
 
 const logger = pino({
-  level: process.env.PASEO_LOG_LEVEL ?? "info",
+  // COMPAT(paseoNames): added in v0.12.0, remove after 2027-04-30.
+  level: process.env.AASWITCH_LOG_LEVEL ?? process.env.PASEO_LOG_LEVEL ?? "info",
 }).child({ module: "speech", component: "local-worker" });
 
 const sttEngines = new Map<string, LocalSttEngine>();

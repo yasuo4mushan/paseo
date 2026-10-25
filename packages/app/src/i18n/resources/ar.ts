@@ -1424,7 +1424,7 @@ export const ar: TranslationResources = {
       fullStatus: {
         title: "الوضع الكامل",
         modalTitle: "حالة Daemon",
-        hint: "يقوم بتشغيل`paseo daemon status`ويظهر الإخراج",
+        hint: "يقوم بتشغيل`aaswitch daemon status`ويظهر الإخراج",
         view: "عرض الحالة",
         copied: "تم نسخ الحالة إلى الحافظة.",
         fetchFailed: "فشل جلب حالة البرنامج الخفي:{{message}}",
@@ -2903,7 +2903,7 @@ export const ar: TranslationResources = {
         newScript: "نص جديد",
         editScript: "تحرير{{name}}",
         runAsService: "تشغيل كخدمة",
-        serviceHint: "يشرف aaswitch على العملية ويعين منفذًا عبر $PASEO_PORT",
+        serviceHint: "يشرف aaswitch على العملية ويعين منفذًا عبر $AASWITCH_PORT",
         actions: {
           add: "إضافة البرنامج النصي",
           edit: "يحرر",

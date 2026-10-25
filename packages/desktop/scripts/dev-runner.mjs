@@ -144,7 +144,7 @@ spawnChild("metro", "npx", ["expo", "start", "--port", String(expoPort)], {
     ...colorEnv,
     BROWSER: "none",
     APP_VARIANT: "development",
-    EXPO_PUBLIC_PASEO_DEV_BUILD_LABEL: devBuildLabel,
+    EXPO_PUBLIC_AASWITCH_DEV_BUILD_LABEL: devBuildLabel,
     PASEO_WEB_PLATFORM: "electron",
   },
 });

@@ -255,7 +255,7 @@ async function ensureLogin(
           message: "Custom Hub URL",
           initialValue:
             activeOrigin === undefined || activeOrigin === DEFAULT_HUB_ORIGIN
-              ? environment.env.PASEO_HUB_URL
+              ? (environment.env.AASWITCH_HUB_URL ?? environment.env.PASEO_HUB_URL)
               : activeOrigin,
           validate(value) {
             try {
