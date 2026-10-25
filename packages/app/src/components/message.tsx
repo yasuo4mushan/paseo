@@ -143,8 +143,8 @@ const mutedForegroundColorMapping = (theme: Theme) => ({
   color: theme.colors.mutedForeground,
 });
 const destructiveColorMapping = (theme: Theme) => ({ color: theme.colors.destructive });
-const infoColorMapping = (theme: Theme) => ({ color: theme.colors.palette.blue[300] });
-const warningColorMapping = (theme: Theme) => ({ color: theme.colors.palette.amber[500] });
+const infoColorMapping = (theme: Theme) => ({ color: theme.colors.statusInfo });
+const warningColorMapping = (theme: Theme) => ({ color: theme.colors.statusWarning });
 const WEB_TOOLCALL_SHIMMER_KEYFRAME_CSS = `
   @keyframes ${WEB_TOOLCALL_SHIMMER_ANIMATION_NAME} {
     0% {
@@ -309,7 +309,8 @@ const userMessageStylesheet = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing[4],
   },
   bubble: {
-    backgroundColor: theme.colors.surface3,
+    // WeChat chat pattern: own messages sit on the brand green with inverse text.
+    backgroundColor: theme.colors.accent,
     borderRadius: theme.borderRadius["2xl"],
     borderTopRightRadius: theme.borderRadius.sm,
     paddingHorizontal: theme.spacing[4],
@@ -318,7 +319,7 @@ const userMessageStylesheet = StyleSheet.create((theme) => ({
     flexShrink: 1,
   },
   text: {
-    color: theme.colors.foreground,
+    color: theme.colors.accentForeground,
     fontSize: theme.fontSize.content,
     ...(isWeb
       ? {
@@ -1276,14 +1277,17 @@ const notificationStylesheet = StyleSheet.create((theme) => ({
   containerSpacing: {
     marginBottom: theme.spacing[1],
   },
+  // WeChat fade tints at the 10-12% band. Literal rgba — stylesheet theme
+  // values are var() strings on web, so alpha must be spelled out. The hues
+  // mirror the status family: info #10aeff, warning #faad14, danger #fa5151.
   infoBg: {
-    backgroundColor: "rgba(147, 197, 253, 0.1)",
+    backgroundColor: "rgba(16, 174, 255, 0.1)",
   },
   warningBg: {
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
+    backgroundColor: "rgba(250, 173, 20, 0.12)",
   },
   errorBg: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: "rgba(250, 81, 81, 0.1)",
   },
   content: {
     paddingHorizontal: theme.spacing[3],

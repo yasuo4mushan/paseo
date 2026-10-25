@@ -37,10 +37,11 @@ const mutedIconMapping = (theme: Theme) => ({ color: theme.colors.foregroundMute
 // See docs/unistyles.md.
 const ThemedBottomSheetModal = withUnistyles(IsolatedBottomSheetModal, (theme) => ({
   backgroundStyle: {
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
+    // Card surface (white in light) — a WeChat action sheet reads as a raised card.
+    borderTopLeftRadius: theme.borderRadius["2xl"],
+    borderTopRightRadius: theme.borderRadius["2xl"],
     borderWidth: 1,
-    backgroundColor: theme.colors.surface0,
+    backgroundColor: theme.colors.surface1,
     borderColor: theme.colors.border,
   },
   handleIndicatorStyle: {
@@ -490,8 +491,8 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: "center",
   },
   sheetTitle: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.medium,
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
     color: theme.colors.foreground,
     flexShrink: 1,
   },

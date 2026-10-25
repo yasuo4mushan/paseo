@@ -1544,10 +1544,10 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: theme.fontSize.base,
   },
   aboutVersionMismatch: {
-    color: theme.colors.palette.amber[500],
+    color: theme.colors.statusWarning,
   },
   aboutErrorText: {
-    color: theme.colors.palette.red[300],
+    color: theme.colors.statusDanger,
     fontSize: theme.fontSize.sm,
     marginTop: theme.spacing[1],
   },

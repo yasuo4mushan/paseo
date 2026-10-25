@@ -19,7 +19,7 @@ const ThemedBottomSheetModal = withUnistyles(IsolatedBottomSheetModal, (theme) =
     borderTopLeftRadius: theme.borderRadius["2xl"],
     borderTopRightRadius: theme.borderRadius["2xl"],
   },
-  handleIndicatorStyle: { backgroundColor: theme.colors.palette.zinc[600] },
+  handleIndicatorStyle: { backgroundColor: theme.colors.foregroundExtraMuted },
 }));
 
 /**

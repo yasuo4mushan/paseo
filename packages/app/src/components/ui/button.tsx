@@ -114,6 +114,18 @@ const styles = StyleSheet.create((theme) => {
       backgroundColor: theme.colors.accent,
       borderColor: theme.colors.accent,
     },
+    // WeChat pressed state: the brand darkens to --brand-pressed instead of dimming.
+    pressedDefault: {
+      backgroundColor: theme.colors.accentBright,
+      borderColor: theme.colors.accentBright,
+    },
+    // WeChat disabled primary: brand-fade fill with brand text (the miniprogram
+    // .btn[disabled] treatment) rather than an opacity overlay, which reads mint.
+    disabledDefault: {
+      backgroundColor: theme.colors.statusSuccessTint,
+      borderColor: theme.colors.statusSuccessTint,
+      opacity: 1,
+    },
     secondary: {
       backgroundColor: theme.colors.surface3,
       borderColor: theme.colors.surface3,
@@ -146,6 +158,11 @@ const styles = StyleSheet.create((theme) => {
     },
     textDefault: {
       color: theme.colors.accentForeground,
+      fontWeight: theme.fontWeight.semibold,
+    },
+    // Disabled primary label: brand green on the brand-fade fill.
+    textDisabledDefault: {
+      color: theme.colors.accent,
     },
     textDestructive: {
       color: theme.colors.destructiveForeground,
@@ -211,6 +228,8 @@ export function Button({
     sizeStyle = styles.md;
   }
   const isGhostHovered = hovered && variant === "ghost";
+  // WeChat pressed state: the primary fill darkens to brand-pressed; other variants dim.
+  const pressedStyle = variant === "default" ? styles.pressedDefault : styles.pressed;
 
   const handleHoverIn = useCallback(() => setHovered(true), []);
   const handleHoverOut = useCallback(() => setHovered(false), []);
@@ -220,11 +239,14 @@ export function Button({
       styles.base,
       sizeStyle,
       variantStyle,
-      pressed ? styles.pressed : null,
-      isDisabled ? styles.disabled : null,
+      pressed ? pressedStyle : null,
+      // Disabled primary keeps full opacity on a brand-fade fill (miniprogram pattern);
+      // every other variant dims by opacity as before.
+      isDisabled && variant === "default" ? styles.disabledDefault : null,
+      isDisabled && variant !== "default" ? styles.disabled : null,
       style,
     ],
-    [sizeStyle, variantStyle, isDisabled, style],
+    [sizeStyle, variantStyle, pressedStyle, isDisabled, variant, style],
   );
 
   const resolvedTextStyle = useMemo(
@@ -236,8 +258,9 @@ export function Button({
       variant === "ghost" ? styles.textGhost : null,
       textStyle,
       isGhostHovered ? styles.textGhostHovered : null,
+      isDisabled && variant === "default" ? styles.textDisabledDefault : null,
     ],
-    [size, variant, textStyle, isGhostHovered],
+    [size, variant, textStyle, isGhostHovered, isDisabled],
   );
 
   const accessibilityState = useMemo(

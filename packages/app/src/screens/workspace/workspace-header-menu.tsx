@@ -317,6 +317,6 @@ const styles = StyleSheet.create((theme) => ({
     width: ATTENTION_DOT_SIZE,
     height: ATTENTION_DOT_SIZE,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.palette.red[500],
+    backgroundColor: theme.colors.statusDanger,
   },
 }));

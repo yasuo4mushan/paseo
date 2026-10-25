@@ -534,13 +534,13 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: theme.spacing[3],
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.palette.amber[500],
+    borderColor: theme.colors.statusWarning,
     backgroundColor: "rgba(245, 158, 11, 0.12)",
     paddingVertical: theme.spacing[2],
     paddingHorizontal: theme.spacing[3],
   },
   warningText: {
-    color: theme.colors.palette.amber[500],
+    color: theme.colors.statusWarning,
     fontSize: theme.fontSize.sm,
   },
   modalBody: {
