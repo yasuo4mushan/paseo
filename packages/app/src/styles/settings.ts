@@ -31,6 +31,16 @@ export const settingsStyles = StyleSheet.create((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     overflow: "hidden",
+    // WeChat card chrome: a faint lift on light surfaces (foreground at 4%,
+    // the miniprogram --shadow-card band), flat in dark.
+    ...(theme.colorScheme === "light"
+      ? {
+          shadowColor: theme.colors.foreground,
+          shadowOffset: { width: 0, height: 1 },
+          shadowRadius: 4,
+          shadowOpacity: 0.04,
+        }
+      : null),
   },
   row: {
     flexDirection: "row",

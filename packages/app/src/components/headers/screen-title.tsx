@@ -27,11 +27,9 @@ const styles = StyleSheet.create((theme) => ({
   text: {
     flexShrink: 1,
     minWidth: 0,
-    fontSize: theme.fontSize.base,
-    fontWeight: {
-      xs: "400",
-      md: "300",
-    },
+    // WeChat nav-bar title: one step above body size, semibold, both form factors.
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
     color: theme.colors.foreground,
   },
 }));

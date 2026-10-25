@@ -64,7 +64,7 @@ function getProgressColor(percentage: number, theme: Theme): string {
     return theme.colors.destructive;
   }
   if (percentage >= 70) {
-    return theme.colors.palette.amber[500];
+    return theme.colors.statusWarning;
   }
   return theme.colors.foregroundMuted;
 }

@@ -113,14 +113,15 @@ export const baseColors = {
 //
 // A diff *stat* — the "+12 −3" footnote next to a title — is not this. It is a status
 // signal, so it uses statusSuccess/statusDanger below rather than a tier of its own.
+// WeChat-family diff colors, mirrored from miniprogram/src/app.css --diff-* tokens.
 const lightDiffColors = {
-  diffAddition: "#15803d", // green-700 — readable on white without screaming
-  diffDeletion: "#b91c1c", // red-700
+  diffAddition: "#2da44e",
+  diffDeletion: "#cf222e",
 };
 
 const darkDiffColors = {
-  diffAddition: "#4ade80", // green-400
-  diffDeletion: "#ef4444", // red-500
+  diffAddition: "#3fb950",
+  diffDeletion: "#f85149",
 };
 
 // Status colors — semantic signals for success/danger/warning/merged. There is exactly one
@@ -130,33 +131,24 @@ const darkDiffColors = {
 // louder variant of a status color because of where it sits — if a dense list feels loud,
 // that is a density or weight problem, not a color problem.
 //
-// The level is set by the densest consumer, the sidebar workspace list: quiet enough that a
-// column of green checks reads as one line of subtitle and the single red row still stands
-// out, saturated enough to name the state on its own. Every other surface follows it.
-//
-// Normalized, not hand-picked. Every color below shares one lightness and one chroma; only
-// the hue changes, and each hue is the one that family already had. Chroma is a fixed
-// fraction of what sRGB allows at that lightness and hue, because the gamut is lopsided —
-// amber runs out of room long before red does, so a literal equal-chroma set leaves amber
-// flat and red screaming. Equal fractions is what makes four hues read as one family.
-// Regenerate with the same rule rather than nudging one value.
-//
-// Hues are fixed per family across both themes: success 150, danger 27, warning 70.5,
-// merged 300.
+// WeChat status family (miniprogram/src/app.css): success shares the brand green,
+// danger/warning use the official WeChat palette. Warning text runs darker than the
+// dot/badge hue in light mode (--warning-text #d48806) and lifts to #e6a23c in dark so
+// pill text stays readable on the tinted fill.
 const lightStatusColors = {
-  // L=0.50, chroma 60% of gamut max
-  statusSuccess: "#3e704a",
-  statusDanger: "#9d433b",
-  statusWarning: "#7b5d39",
+  statusSuccess: "#07c160",
+  statusDanger: "#fa5151",
+  statusWarning: "#d48806",
   statusMerged: "#7347af",
+  statusInfo: "#10aeff", // --info, constant across modes
 };
 
 const darkStatusColors = {
-  // L=0.70, chroma 55% of gamut max
-  statusSuccess: "#6cb17b",
-  statusDanger: "#d8847b",
-  statusWarning: "#c09664",
+  statusSuccess: "#07c160",
+  statusDanger: "#fa5151",
+  statusWarning: "#e6a23c",
   statusMerged: "#a890d5",
+  statusInfo: "#10aeff",
 };
 
 // Status tints — the fill of a status badge. The status color itself at low opacity, so a
@@ -170,51 +162,28 @@ function statusTints(colors: typeof lightStatusColors, alphaHex: string) {
   };
 }
 
-const lightStatusTints = statusTints(lightStatusColors, "1f"); // 12%
-const darkStatusTints = statusTints(darkStatusColors, "29"); // 16%
+const lightStatusTints = statusTints(lightStatusColors, "1a"); // 10% — WeChat brand-fade band
+const darkStatusTints = statusTints(darkStatusColors, "29"); // 16% — dark-mode fade band
 
 // Status *dot* colors — the small filled discs on a sidebar row, and the glyphs that stand in
-// for them. Same four hues and the same generation rule as the status colors above, but its
-// own band, because a dot is doing a different job than a check icon or a host badge.
-//
-// A dot is 6pt of solid color with no shape to read and no label attached. At the status
-// band's lightness the dots read dimmer than the static text and icons beside them on the same
-// row, which is backwards — the dot is the row's state. The loudness comes from chroma: 90% of
-// gamut max against the status family's 55-60%.
-//
-// Lightness is set by hue separation, not by distance from the surface. A dark dot on a light
-// surface has plenty of contrast but the four hues collapse into each other at 6pt — dark green,
-// dark red, dark amber and dark blue all read as "dark blob", and the point of the dot is telling
-// them apart at a glance. So the light band runs as bright as the contrast floor allows: L=0.62
-// is the last step where all four clear 3:1 against the sidebar's surface2 (success is the
-// binding one at 3.10, and drops under 3 by L=0.64), which is WCAG's non-text minimum for a
-// control that carries state.
-//
-// All four move together. A dot matching its siblings in lightness and chroma says only which
-// state the row is in; one that does not says "this row matters more", which is a claim the
-// color has no business making. Regenerate the set, never one hue.
-//
-// 90% and not 100%: at the gamut edge the lopsidedness is worst — green reaches C=0.215 while
-// blue manages 0.116 — so the set stops reading as one family and green wins. Red running out
-// of chroma as lightness climbs is what caps the dark band at L=0.72; higher turns the failed
-// dot pink, and the light band pastels out the same way just above its own cap. Running is blue
-// at hue 250, clear of
-// identity-colors' blue at 256.6 so a blue host badge and a working dot on the same row do not
-// read as related.
+// for them. WeChat keeps the signal hues constant across light and dark (only the fade tints
+// change per mode, see miniprogram/src/app.css), so the dot band is one theme-independent
+// set: brand green for success, WeChat red/amber for danger/warning, and info blue for the
+// running pulse. Dots are solid color with no label attached, so they carry the full-saturation
+// brand hues rather than the text-safe status colors above. All four move together — never
+// nudge one hue.
 const lightStatusDotColors = {
-  // L=0.62, chroma 90% of gamut max
-  statusDotSuccess: "#299f51",
-  statusDotDanger: "#f12e2f",
-  statusDotWarning: "#b37824",
-  statusDotRunning: "#268ae0",
+  statusDotSuccess: "#07c160",
+  statusDotDanger: "#fa5151",
+  statusDotWarning: "#faad14",
+  statusDotRunning: "#10aeff",
 };
 
 const darkStatusDotColors = {
-  // L=0.72, chroma 90% of gamut max
-  statusDotSuccess: "#35c264",
-  statusDotDanger: "#f7796d",
-  statusDotWarning: "#db932e",
-  statusDotRunning: "#5caaf6",
+  statusDotSuccess: "#07c160",
+  statusDotDanger: "#fa5151",
+  statusDotWarning: "#faad14",
+  statusDotRunning: "#10aeff",
 };
 
 export interface LightThemeConfig {
@@ -284,12 +253,12 @@ export function buildLightSemanticColors(tint: LightThemeConfig) {
     accentForeground: tint.accentForeground ?? tint.surface0,
 
     destructive: tint.destructive,
-    destructiveForeground: tint.surface0,
+    destructiveForeground: "#ffffff",
     success: tint.accent,
-    successForeground: tint.surface0,
+    successForeground: "#ffffff",
 
     background: tint.surface0,
-    popover: tint.surface0,
+    popover: tint.surface1, // floating cards stay card-colored above the gray page
     popoverForeground: tint.foreground,
     primary: tint.primary,
     primaryForeground: tint.primaryForeground,
@@ -320,28 +289,30 @@ export function buildLightSemanticColors(tint: LightThemeConfig) {
   };
 }
 
+// WeChat light theme (miniprogram/src/app.css): gray page (#f7f8fa), white cards, #f2f3f5
+// fills, #f0f0f0 dividers, three-step text ramp #1f2329 / #5f6672 / #b9c0cc, brand #07c160.
 const lightSemanticColors = buildLightSemanticColors({
-  surface0: "#ffffff",
-  surface1: "#fafafa",
-  surface2: "#f4f4f5",
-  surface3: "#e4e4e7",
-  surface4: "#d4d4d8",
-  surfaceDiffEmpty: "#f6f6f6",
-  surfaceSidebar: "#f4f4f5",
-  foreground: "#1a1a1e",
-  foregroundMuted: "#71717a",
-  foregroundExtraMuted: "#a1a1aa",
-  border: "#e4e4e7",
-  borderAccent: "#ececf1",
-  accent: "#20744A",
-  accentBright: "#239956",
+  surface0: "#f7f8fa", // --bg
+  surface1: "#ffffff", // --card
+  surface2: "#f2f3f5", // --fill
+  surface3: "#e8eaed", // hover / secondary control fill
+  surface4: "#d8dce2", // selected
+  surfaceDiffEmpty: "#f7f8fa",
+  surfaceSidebar: "#f2f3f5",
+  foreground: "#1f2329", // --text-1
+  foregroundMuted: "#5f6672", // --text-2
+  foregroundExtraMuted: "#b9c0cc", // --text-3
+  border: "#f0f0f0", // --divider
+  borderAccent: "#e7e8eb",
+  accent: "#07c160", // --brand
+  accentBright: "#06ad56", // --brand-pressed
   accentForeground: "#ffffff",
-  primary: "#18181b",
-  primaryForeground: "#fafafa",
-  destructive: "#b04138",
-  terminalBlack: "#1a1a1e",
-  terminalBrightBlack: "#3f3f46",
-  ring: "#18181b",
+  primary: "#1f2329",
+  primaryForeground: "#ffffff",
+  destructive: "#fa5151", // --danger
+  terminalBlack: "#1f2329",
+  terminalBrightBlack: "#5f6672",
+  ring: "#07c160",
 });
 
 // ---------------------------------------------------------------------------
@@ -456,24 +427,28 @@ export function buildDarkSemanticColors(tint: DarkThemeConfig) {
 // Dark tint definitions
 // ---------------------------------------------------------------------------
 
-// Paseo — subtle teal-green tint (default)
+// Default dark — WeChat dark band (miniprogram/src/app.css): #111 page, #1e1e1e cards,
+// #2a2a2a fills, #333 dividers, text #e8eaed / #9da3ae / #5f6672. The brand green stays
+// #07c160 across modes; only the fade tints lift in dark.
 const paseoDarkColors = buildDarkSemanticColors({
-  surface0: "#181B1A",
-  surface1: "#1E2120",
-  surface2: "#272A29",
-  surface3: "#434645",
-  surface4: "#595B5B",
-  surfaceDiffEmpty: "#252827",
-  surfaceSidebar: "#141716",
-  foregroundMuted: "#A1A5A4",
-  foregroundExtraMuted: "#717574",
-  border: "#252B2A",
-  borderAccent: "#2F3534",
-  accent: "#20744A",
-  accentBright: "#7ccba0",
-  destructive: "#c64f43", // warm red, hue ~7 — reads as red (not pink) against the green tint
-  terminalBlack: "#141716",
-  terminalBrightBlack: "#434645",
+  surface0: "#111111", // --bg (dark)
+  surface1: "#1e1e1e", // --card (dark)
+  surface2: "#2a2a2a", // --fill (dark)
+  surface3: "#333333", // --divider (dark) doubles as control fill
+  surface4: "#3d3d3d",
+  surfaceDiffEmpty: "#191919",
+  surfaceSidebar: "#0c0c0c",
+  foreground: "#e8eaed", // --text-1 (dark)
+  foregroundMuted: "#9da3ae", // --text-2 (dark)
+  foregroundExtraMuted: "#5f6672", // --text-3 (dark)
+  border: "#333333", // --divider (dark)
+  borderAccent: "#3d3d3d",
+  accent: "#07c160", // --brand (constant across modes)
+  accentBright: "#07c160",
+  destructive: "#fa5151", // --danger
+  terminalBlack: "#161616",
+  terminalBrightBlack: "#3f3f3f",
+  ring: "#07c160",
 });
 
 // Zinc — neutral gray, no tint
@@ -726,13 +701,13 @@ const pureBlackDarkColors = buildDarkSemanticColors({
   surface4: "#2d2d2d",
   surfaceDiffEmpty: "#0c0c0c",
   surfaceSidebar: "#000000",
-  foregroundMuted: "#a1a1aa",
-  foregroundExtraMuted: "#71717a",
+  foregroundMuted: "#9da3ae",
+  foregroundExtraMuted: "#5f6672",
   border: "#1c1c1c",
   borderAccent: "#242424",
-  accent: "#20744A",
-  accentBright: "#7ccba0",
-  destructive: "#c44a4a",
+  accent: "#07c160",
+  accentBright: "#07c160",
+  destructive: "#fa5151",
   terminalBlack: "#595959",
   terminalBrightBlack: "#8a8a8a",
 });
@@ -791,7 +766,7 @@ export const THEME_OPTIONS = [
     group: "primary",
     unistylesName: "dark",
     theme: darkTheme,
-    swatch: "#2D8B62",
+    swatch: "#07c160",
   },
   { name: "auto", group: "primary" },
   {

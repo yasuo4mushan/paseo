@@ -1836,7 +1836,7 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surface2,
   },
   handleIndicator: {
-    backgroundColor: theme.colors.palette.zinc[600],
+    backgroundColor: theme.colors.foregroundExtraMuted,
   },
   sheetHeader: {
     flexDirection: "row",

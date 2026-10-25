@@ -148,15 +148,14 @@ function HomeTile({ icon: Icon, title, description, onPress, testID, accent }: H
   const handleHoverIn = useCallback(() => setHovered(true), []);
   const handleHoverOut = useCallback(() => setHovered(false), []);
 
-  const iconColor = accent ? theme.colors.accent : theme.colors.foregroundMuted;
-
   const pressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       styles.tile,
+      accent ? styles.tileAccent : null,
       hovered && styles.tileHovered,
       pressed && styles.tilePressed,
     ],
-    [hovered],
+    [hovered, accent],
   );
 
   return (
@@ -167,9 +166,16 @@ function HomeTile({ icon: Icon, title, description, onPress, testID, accent }: H
       testID={testID}
       style={pressableStyle}
     >
-      <Icon size={20} color={iconColor} />
+      {/* WeChat list-chrome: the primary action's glyph sits in a filled brand chip. */}
+      {accent ? (
+        <View style={styles.tileIconChip}>
+          <Icon size={16} color={theme.colors.accentForeground} />
+        </View>
+      ) : (
+        <Icon size={20} color={theme.colors.foregroundMuted} />
+      )}
       <View style={styles.tileText}>
-        <Text style={styles.tileTitle}>{title}</Text>
+        <Text style={[styles.tileTitle, accent ? styles.tileTitleAccent : null]}>{title}</Text>
         <Text style={styles.tileDescription}>{description}</Text>
       </View>
     </Pressable>
@@ -225,6 +231,32 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.xl,
     gap: theme.spacing[3],
+    // WeChat card lift on the light page; flat in dark.
+    ...(theme.colorScheme === "light"
+      ? {
+          shadowColor: theme.colors.foreground,
+          shadowOffset: { width: 0, height: 1 },
+          shadowRadius: 4,
+          shadowOpacity: 0.04,
+        }
+      : null),
+  },
+  // The primary tile carries the brand: white card, brand border, filled brand
+  // icon chip, and a brand-colored title — the WeChat selected-state vocabulary.
+  tileAccent: {
+    borderColor: theme.colors.accent,
+  },
+  tileIconChip: {
+    width: 28,
+    height: 28,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tileTitleAccent: {
+    color: theme.colors.accent,
+    fontWeight: theme.fontWeight.semibold,
   },
   tileHovered: {
     backgroundColor: theme.colors.surface2,

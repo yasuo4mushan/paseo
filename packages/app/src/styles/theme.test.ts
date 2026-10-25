@@ -48,9 +48,9 @@ describe("Pure black theme", () => {
     expect(darkPureBlackTheme.colors.terminal.background).toBe("#000000");
   });
 
-  it("uses Paseo's muted green accent", () => {
-    expect(darkPureBlackTheme.colors.accent).toBe("#20744A");
-    expect(darkPureBlackTheme.colors.accentBright).toBe("#7ccba0");
+  it("uses the WeChat brand accent", () => {
+    expect(darkPureBlackTheme.colors.accent).toBe("#07c160");
+    expect(darkPureBlackTheme.colors.accentBright).toBe("#07c160");
   });
 
   it("derives sidebar interaction surfaces from the surface scale", () => {
@@ -83,14 +83,28 @@ describe("Sidebar interaction surfaces", () => {
 describe("Built-in light theme", () => {
   it("preserves its authored aliases and terminal contrast through the semantic builder", () => {
     expect(lightTheme.colors).toMatchObject({
-      primary: "#18181b",
-      primaryForeground: "#fafafa",
+      primary: "#1f2329",
+      primaryForeground: "#ffffff",
       destructiveForeground: "#ffffff",
       successForeground: "#ffffff",
       terminal: {
-        black: "#1a1a1e",
-        brightBlack: "#3f3f46",
+        black: "#1f2329",
+        brightBlack: "#5f6672",
       },
     });
+  });
+
+  it("carries the WeChat brand palette shared with the miniprogram", () => {
+    expect(lightTheme.colors.accent).toBe("#07c160");
+    expect(lightTheme.colors.accentBright).toBe("#06ad56");
+    expect(lightTheme.colors.destructive).toBe("#fa5151");
+    expect(lightTheme.colors.surface0).toBe("#f7f8fa");
+    expect(lightTheme.colors.surface1).toBe("#ffffff");
+    expect(lightTheme.colors.surface2).toBe("#f2f3f5");
+    expect(lightTheme.colors.border).toBe("#f0f0f0");
+    expect(darkTheme.colors.accent).toBe("#07c160");
+    expect(darkTheme.colors.surface0).toBe("#111111");
+    expect(darkTheme.colors.surface1).toBe("#1e1e1e");
+    expect(darkTheme.colors.border).toBe("#333333");
   });
 });

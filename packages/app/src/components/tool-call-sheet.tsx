@@ -76,7 +76,7 @@ export const ToolCallSheetModal = withUnistyles(IsolatedBottomSheetModal, (theme
     borderRadius: 16,
   },
   handleIndicatorStyle: {
-    backgroundColor: theme.colors.palette.zinc[600],
+    backgroundColor: theme.colors.foregroundExtraMuted,
   },
 }));
 

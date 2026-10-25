@@ -649,11 +649,20 @@ const styles = StyleSheet.create((theme) => ({
   },
   card: {
     backgroundColor: theme.colors.surface1,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius["2xl"],
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing[4],
     gap: theme.spacing[3],
+    // WeChat big-card chrome: faint lift on the gray page, flat in dark.
+    ...(theme.colorScheme === "light"
+      ? {
+          shadowColor: theme.colors.foreground,
+          shadowOffset: { width: 0, height: 1 },
+          shadowRadius: 4,
+          shadowOpacity: 0.04,
+        }
+      : null),
   },
   modeRow: {
     flexDirection: "row",

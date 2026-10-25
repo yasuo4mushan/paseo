@@ -78,7 +78,8 @@ const styles = StyleSheet.create((theme) => ({
   },
   desktopOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    // WeChat dialog mask band (--mask rgba(0,0,0,0.45)).
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
     padding: theme.spacing[6],
@@ -92,7 +93,7 @@ const styles = StyleSheet.create((theme) => ({
     flexShrink: 1,
     minHeight: 0,
     backgroundColor: theme.colors.surface1,
-    borderRadius: theme.borderRadius.xl,
+    borderRadius: theme.borderRadius["2xl"],
     borderWidth: 1,
     borderColor: theme.colors.surface2,
   },
@@ -120,8 +121,8 @@ const styles = StyleSheet.create((theme) => ({
     minWidth: 0,
   },
   title: {
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.medium,
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
   },
   headerActions: {
     flexDirection: "row",
@@ -230,18 +231,19 @@ export function SheetBackground({ style }: BottomSheetBackgroundProps) {
     () => [
       style,
       {
-        backgroundColor: theme.colors.surface0,
+        // Card surface, not the page gray — a WeChat sheet reads as a raised card.
+        backgroundColor: theme.colors.surface1,
         borderTopLeftRadius: theme.borderRadius["2xl"],
         borderTopRightRadius: theme.borderRadius["2xl"],
       },
     ],
-    [style, theme.colors.surface0, theme.borderRadius],
+    [style, theme.colors.surface1, theme.borderRadius],
   );
   return <Animated.View pointerEvents="none" style={combinedStyle} />;
 }
 
 const ThemedBottomSheetHandle = withUnistyles(BottomSheetHandle, (theme) => ({
-  indicatorStyle: { backgroundColor: theme.colors.palette.zinc[600] },
+  indicatorStyle: { backgroundColor: theme.colors.foregroundExtraMuted },
 }));
 
 const HANDLE_WITH_CONTENT_STYLE = { paddingHorizontal: 0, paddingBottom: 0 };

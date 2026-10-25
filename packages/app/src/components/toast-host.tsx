@@ -58,11 +58,12 @@ const toastExiting = FadeOut.duration(140);
 const ThemedCheckCircle = withUnistyles(CheckCircle2);
 const ThemedInfo = withUnistyles(Info);
 const ThemedWarning = withUnistyles(AlertTriangle);
-const foregroundIcon = (theme: Theme) => ({ color: theme.colors.foreground });
-const infoIcon = (theme: Theme) => ({ color: theme.colors.palette.blue[300] });
-const successIcon = (theme: Theme) => ({ color: theme.colors.primary });
-const warningIcon = (theme: Theme) => ({ color: theme.colors.palette.amber[500] });
-const errorIcon = (theme: Theme) => ({ color: theme.colors.destructive });
+// Icon colors for the inverse (black) toast surface — light hues only.
+const foregroundIcon = (theme: Theme) => ({ color: theme.colors.palette.white });
+const infoIcon = (theme: Theme) => ({ color: theme.colors.statusInfo });
+const successIcon = (theme: Theme) => ({ color: theme.colors.palette.white });
+const warningIcon = (theme: Theme) => ({ color: theme.colors.statusDotWarning });
+const errorIcon = (theme: Theme) => ({ color: theme.colors.statusDanger });
 
 export function useToastHost(): {
   api: ToastApi;
@@ -288,23 +289,19 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing[2],
-    backgroundColor: theme.colors.surface0,
-    borderRadius: theme.borderRadius["2xl"],
-    borderWidth: theme.borderWidth[1],
-    borderColor: theme.colors.border,
+    // WeChat toast: black scrim pill with inverse text, no border. A literal
+    // rgba, not a token — stylesheet values are var() strings on web, and a
+    // scrim is theme-independent by design (like the sheet overlay below).
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 0,
     paddingVertical: theme.spacing[2],
     paddingHorizontal: theme.spacing[3],
     ...theme.shadow.md,
   },
-  toastInfo: {
-    borderColor: theme.colors.palette.blue[300],
-  },
-  toastWarning: {
-    borderColor: theme.colors.palette.amber[500],
-  },
-  toastError: {
-    borderColor: theme.colors.destructive,
-  },
+  toastInfo: {},
+  toastWarning: {},
+  toastError: {},
   iconSlot: {
     alignItems: "center",
     justifyContent: "center",
@@ -315,7 +312,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   message: {
     flexShrink: 1,
-    color: theme.colors.foreground,
+    color: theme.colors.palette.white,
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.normal,
   },

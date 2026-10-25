@@ -278,7 +278,7 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing[1],
   },
   errorsBannerText: {
-    color: theme.colors.palette.red[300],
+    color: theme.colors.statusDanger,
     fontSize: theme.fontSize.sm,
   },
 }));

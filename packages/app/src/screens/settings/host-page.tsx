@@ -517,7 +517,7 @@ function ConnectionRow({
     if (latencyMs != null) return formatLatency(latencyMs);
     return "—";
   })();
-  const latencyColor = latencyError ? theme.colors.palette.red[300] : theme.colors.foregroundMuted;
+  const latencyColor = latencyError ? theme.colors.statusDanger : theme.colors.foregroundMuted;
 
   const handlePressRemove = useCallback(() => {
     onRemove(connection);

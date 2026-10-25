@@ -123,9 +123,9 @@ function resolveAccentColor(
   variant: AlertVariant,
   theme: ReturnType<typeof useUnistyles>["theme"],
 ): string | null {
-  if (variant === "info") return theme.colors.palette.blue[300];
+  if (variant === "info") return theme.colors.statusInfo;
   if (variant === "success") return theme.colors.statusSuccess;
-  if (variant === "warning") return theme.colors.palette.amber[500];
+  if (variant === "warning") return theme.colors.statusWarning;
   if (variant === "error") return theme.colors.destructive;
   return null;
 }
