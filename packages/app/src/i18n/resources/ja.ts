@@ -1699,8 +1699,16 @@ export const ja: TranslationResources = {
     done: {
       title: "You're all set",
       subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+        "aaswitch ミニプログラムを開いてこのコードをスキャンすると、このマシンのエージェントに接続できます。",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "ローカルデーモンに接続中…",
+      relayOffHint:
+        "エンドツーエンド暗号化のリレーを有効にするとペアリングQRコードを生成できます。",
+      copyLink: "ペアリングリンクをコピー",
+      qrAccessibility: "ペアリングQRコード",
+      securityHint: "ペアリングリンクはパスワードと同じ扱いにしてください。",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2579,6 +2587,14 @@ export const ja: TranslationResources = {
         title: "デバイスをペアリング",
         rowTitle: "デバイスをペアリング",
         rowHint: "QRコードをスキャンするかリンクをコピーしてスマートフォンをこのホストに接続",
+      },
+      connectPhone: {
+        title: "スマートフォンを接続",
+        hint: "aaswitch ミニプログラムでスキャンしてこのマシンのエージェントに接続",
+      },
+      autoArchive: {
+        title: "マージされたPRのワークスペースをアーカイブ",
+        hint: "プルリクエストのマージ後、クリーンなワークスペースを自動的にアーカイブします",
       },
       account: {
         signedOutTitle: "Not signed in",

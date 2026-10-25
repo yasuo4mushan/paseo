@@ -31,7 +31,10 @@ const { theme, toastMock, copyMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("react-native", () => ({
-  Platform: { OS: "web" },
+  Platform: {
+    OS: "web",
+    select: (options: Record<string, unknown>) => options.web ?? options.default,
+  },
   View: ({ children, testID }: { children?: React.ReactNode; testID?: string }) =>
     React.createElement("div", { "data-testid": testID }, children),
   Text: ({ children, testID }: { children?: React.ReactNode; testID?: string }) =>
@@ -84,6 +87,12 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("@/app/_layout", () => ({
   useEarliestOnlineHostServerId: () => "srv-1",
+}));
+
+vi.mock("@/screens/onboarding/connect-phone-qr", () => ({
+  // The QR card's data path (host runtime, daemon pairing RPC, qrcode/SvgXml)
+  // is exercised end-to-end; here it only needs to render a placeholder.
+  ConnectPhoneQr: () => React.createElement("div", { "data-testid": "connect-phone-qr" }),
 }));
 
 vi.mock("@/components/provider-icons", () => ({

@@ -1676,8 +1676,15 @@ export const zhCN: TranslationResources = {
     },
     done: {
       title: "一切就绪",
-      subtitle: "设备已上表。在手机小程序登录同一账号，即可连接这台设备。",
+      subtitle: "打开 aaswitch 小程序扫一扫，即可连接本机 agent。",
       enter: "进入主界面",
+    },
+    connect: {
+      waitingHost: "正在连接本机守护进程…",
+      relayOffHint: "生成二维码前需先开启中继连接（端到端加密）。",
+      copyLink: "复制配对链接",
+      qrAccessibility: "本机配对二维码",
+      securityHint: "配对链接等同密码，请勿转发给他人。",
     },
     errors: {
       phoneRequired: "请输入手机号",
@@ -2577,6 +2584,14 @@ export const zhCN: TranslationResources = {
         title: "配对设备",
         rowTitle: "配对设备",
         rowHint: "扫描二维码或复制链接，将手机连接到这个主机",
+      },
+      connectPhone: {
+        title: "连接手机",
+        hint: "用 aaswitch 小程序扫码，连接本机 agent",
+      },
+      autoArchive: {
+        title: "合并 PR 后归档工作区",
+        hint: "PR 合并后自动归档干净的工作区",
       },
       account: {
         signedOutTitle: "未登录",

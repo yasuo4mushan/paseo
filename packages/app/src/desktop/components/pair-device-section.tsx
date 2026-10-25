@@ -3,7 +3,6 @@ import { Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as QRCode from "qrcode";
 import { SvgXml } from "react-native-svg";
-import { useMutation } from "@tanstack/react-query";
 import { Check, Copy, Network, RotateCw, ShieldCheck } from "lucide-react-native";
 import { StyleSheet, withUnistyles } from "react-native-unistyles";
 import { useTranslation } from "react-i18next";
@@ -12,9 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "@/components/ui/external-link";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useFetchQuery } from "@/data/query";
-import { daemonPairingOfferQueryKey } from "@/data/daemon-pairing";
-import { useDaemonConfig } from "@/hooks/use-daemon-config";
-import { useHostRuntimeClient, useHostRuntimeSnapshot } from "@/runtime/host-runtime";
+import { useDaemonPairingOffer } from "@/hooks/use-daemon-pairing-offer";
 import type { Theme } from "@/styles/theme";
 import {
   EditingTextInput as TextInput,
@@ -37,41 +34,9 @@ export interface PairDeviceSectionProps {
 }
 
 export function PairDeviceSection({ serverId, onClose }: PairDeviceSectionProps) {
-  const { t } = useTranslation();
-  const client = useHostRuntimeClient(serverId);
-  const runtimeSnapshot = useHostRuntimeSnapshot(serverId);
-  const isConnected = runtimeSnapshot?.connectionStatus === "online";
-  const isDisconnected =
-    runtimeSnapshot?.connectionStatus === "offline" ||
-    runtimeSnapshot?.connectionStatus === "error";
-  const { patchConfig } = useDaemonConfig(serverId);
+  const { isDisconnected, supportsPairingRpc, canConfigureRelay, pairingQuery, enableRelay } =
+    useDaemonPairingOffer(serverId);
   const [copied, setCopied] = useState(false);
-  const serverFeatures = client?.getLastServerInfoMessage()?.features;
-  const supportsPairingRpc = serverFeatures?.daemonStatusRpc === true;
-  const canConfigureRelay = supportsPairingRpc && serverFeatures?.relayConfig === true;
-
-  const pairingQuery = useFetchQuery({
-    queryKey: daemonPairingOfferQueryKey(serverId),
-    queryFn: async () => {
-      if (!client) throw new Error(t("workspace.terminal.hostDisconnected"));
-      return client.getDaemonPairingOffer();
-    },
-    enabled: supportsPairingRpc && Boolean(client && isConnected),
-    dataShape: "value",
-    staleTimeMs: 5 * 60 * 1000,
-    retry: 1,
-  });
-
-  const enableRelay = useMutation({
-    mutationFn: async () => {
-      if (client?.getLastServerInfoMessage()?.features?.relayConfig !== true) {
-        throw new Error(t("pairing.device.updateRequired"));
-      }
-      const config = await patchConfig({ relay: { enabled: true } });
-      if (!config) throw new Error(t("workspace.terminal.hostDisconnected"));
-      return pairingQuery.refetch();
-    },
-  });
 
   const qrQuery = useFetchQuery({
     queryKey: ["daemon-pairing-offer-qr", pairingQuery.data?.url],

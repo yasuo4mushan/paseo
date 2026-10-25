@@ -22,6 +22,7 @@ import { useEarliestOnlineHostServerId } from "@/app/_layout";
 import { buildOpenProjectRoute } from "@/utils/host-routes";
 import { copyToClipboard } from "@/utils/copy-to-clipboard";
 import { useHubOnboardingGateStore } from "@/screens/onboarding/hub-onboarding-gate-store";
+import { ConnectPhoneQr } from "@/screens/onboarding/connect-phone-qr";
 import {
   hubAccountErrorKey,
   isHubAccountFormSubmittable,
@@ -405,7 +406,7 @@ function AgentsStep({ rows, serverId, loading, onRefresh, onNext }: AgentsStepPr
   );
 }
 
-function DoneStep({ onFinish }: { onFinish: () => void }) {
+function DoneStep({ serverId, onFinish }: { serverId: string | null; onFinish: () => void }) {
   const { t } = useTranslation();
   return (
     <View style={styles.card} testID="hub-onboarding-step-done">
@@ -416,6 +417,7 @@ function DoneStep({ onFinish }: { onFinish: () => void }) {
       </View>
       <Text style={styles.stepTitle}>{t("hubOnboarding.done.title")}</Text>
       <Text style={styles.stepSubtitle}>{t("hubOnboarding.done.subtitle")}</Text>
+      <ConnectPhoneQr serverId={serverId} />
       <View style={styles.actions}>
         <Button variant="default" onPress={onFinish} testID="hub-onboarding-finish">
           {t("hubOnboarding.done.enter")}
@@ -603,7 +605,7 @@ export function HubOnboardingScreen() {
               onNext={goDone}
             />
           ) : null}
-          {phase === "done" ? <DoneStep onFinish={handleFinish} /> : null}
+          {phase === "done" ? <DoneStep serverId={serverId} onFinish={handleFinish} /> : null}
         </View>
       </ScrollView>
     </View>

@@ -1707,8 +1707,15 @@ export const en = {
     done: {
       title: "You're all set",
       subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+        "Open the aaswitch mini-program and scan this code to connect this machine's agents.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "Connecting to the local daemon…",
+      relayOffHint: "Turn on the end-to-end encrypted relay to generate a pairing QR code.",
+      copyLink: "Copy pairing link",
+      qrAccessibility: "Pairing QR code",
+      securityHint: "Treat the pairing link like a password.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2679,6 +2686,14 @@ export const en = {
         title: "Pair devices",
         rowTitle: "Pair a device",
         rowHint: "Scan a QR code or copy a link to connect your phone to this host",
+      },
+      connectPhone: {
+        title: "Connect phone",
+        hint: "Scan with the aaswitch mini-program to reach this machine's agents",
+      },
+      autoArchive: {
+        title: "Archive merged PR workspaces",
+        hint: "Automatically archive clean workspaces after their pull request is merged",
       },
       account: {
         signedOutTitle: "Not signed in",

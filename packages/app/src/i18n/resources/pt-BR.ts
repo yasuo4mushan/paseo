@@ -1713,8 +1713,15 @@ export const ptBR: TranslationResources = {
     done: {
       title: "You're all set",
       subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+        "Abra o miniaplicativo do aaswitch e escaneie este código para conectar os agentes desta máquina.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "Conectando ao daemon local…",
+      relayOffHint: "Ative o relay criptografado de ponta a ponta para gerar o QR de pareamento.",
+      copyLink: "Copiar link de pareamento",
+      qrAccessibility: "QR code de pareamento",
+      securityHint: "Trate o link de pareamento como uma senha.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2592,6 +2599,14 @@ export const ptBR: TranslationResources = {
         title: "Parear dispositivos",
         rowTitle: "Parear um dispositivo",
         rowHint: "Escaneie um QR code ou copie um link para conectar seu celular a este host",
+      },
+      connectPhone: {
+        title: "Conectar celular",
+        hint: "Escaneie com o miniaplicativo do aaswitch para acessar os agentes desta máquina",
+      },
+      autoArchive: {
+        title: "Arquivar workspaces mesclados",
+        hint: "Arquiva automaticamente workspaces limpos após o merge do pull request",
       },
       account: {
         signedOutTitle: "Not signed in",

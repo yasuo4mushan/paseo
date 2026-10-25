@@ -1692,9 +1692,15 @@ export const ko: TranslationResources = {
     },
     done: {
       title: "You're all set",
-      subtitle:
-        "This device is registered with the hub. Sign in to the miniprogram on your phone with the same account to connect to it.",
+      subtitle: "aaswitch 미니프로그램을 열고 이 코드를 스캔하면 이 머신의 에이전트에 연결됩니다.",
       enter: "Enter the app",
+    },
+    connect: {
+      waitingHost: "로컬 데몬에 연결 중…",
+      relayOffHint: "종단 간 암호화 릴레이를 켜면 페어링 QR 코드를 생성할 수 있습니다.",
+      copyLink: "페어링 링크 복사",
+      qrAccessibility: "페어링 QR 코드",
+      securityHint: "페어링 링크는 비밀번호처럼 취급하세요.",
     },
     errors: {
       phoneRequired: "Enter your phone number",
@@ -2567,6 +2573,14 @@ export const ko: TranslationResources = {
         title: "기기 페어링",
         rowTitle: "기기 페어링",
         rowHint: "QR 코드를 스캔하거나 링크를 복사하여 휴대폰을 이 호스트에 연결하세요",
+      },
+      connectPhone: {
+        title: "휴대폰 연결",
+        hint: "aaswitch 미니프로그램으로 스캔해 이 머신의 에이전트에 연결",
+      },
+      autoArchive: {
+        title: "병합된 PR 워크스페이스 보관",
+        hint: "풀 리퀘스트 병합 후 깨끗한 워크스페이스를 자동으로 보관합니다",
       },
       account: {
         signedOutTitle: "Not signed in",

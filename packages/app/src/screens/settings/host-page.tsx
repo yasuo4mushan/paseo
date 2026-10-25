@@ -8,6 +8,7 @@ import {
   Pencil,
   Plus,
   RotateCw,
+  Smartphone,
   SquareTerminal,
   Trash2,
 } from "lucide-react-native";
@@ -373,6 +374,8 @@ export function HostSettingsPage({
       <HostStatusBadges serverId={serverId} />
       <HostConnectionError serverId={serverId} />
 
+      <ConnectPhoneTile serverId={serverId} />
+
       <HostAppearanceSection host={host} />
 
       {isLocalDaemon ? <LocalDaemonSection /> : null}
@@ -380,6 +383,51 @@ export function HostSettingsPage({
       {!isLocalDaemon ? <UpdateDaemonCard key={host.serverId} host={host} /> : null}
 
       <RemoveHostSection host={host} isLocalDaemon={isLocalDaemon} onRemoved={onHostRemoved} />
+    </View>
+  );
+}
+
+/**
+ * t34: pairing promoted to the top of the host page. It used to live only in
+ * the host-sections sidebar, where nobody looks right after onboarding.
+ */
+function ConnectPhoneTile({ serverId }: { serverId: string }) {
+  const { t } = useTranslation();
+  const { theme } = useUnistyles();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpen = useCallback(() => setIsModalOpen(true), []);
+  const handleClose = useCallback(() => setIsModalOpen(false), []);
+
+  return (
+    <View style={styles.connectTileSection}>
+      <View style={settingsStyles.card}>
+        <Pressable
+          style={styles.connectTileRow}
+          onPress={handleOpen}
+          accessibilityRole="button"
+          testID="host-page-connect-phone-tile"
+        >
+          <View style={styles.connectTileBadge}>
+            <Smartphone
+              size={theme.iconSize.md}
+              color={theme.colors.accentForeground ?? theme.colors.foreground}
+            />
+          </View>
+          <View style={settingsStyles.rowContent}>
+            <Text style={settingsStyles.rowTitle}>{t("settings.host.connectPhone.title")}</Text>
+            <Text style={settingsStyles.rowHint}>{t("settings.host.connectPhone.hint")}</Text>
+          </View>
+          <ChevronRight size={theme.iconSize.sm} color={theme.colors.foregroundMuted} />
+        </Pressable>
+      </View>
+
+      <PairDeviceModal
+        serverId={serverId}
+        visible={isModalOpen}
+        onClose={handleClose}
+        testID="host-page-connect-phone-card"
+      />
     </View>
   );
 }
@@ -899,6 +947,7 @@ function InjectPaseoToolsCard({ serverId }: { serverId: string }) {
 }
 
 function AutoArchiveMergedWorkspacesCard({ serverId }: { serverId: string }) {
+  const { t } = useTranslation();
   const isConnected = useHostRuntimeIsConnected(serverId);
   const { config, patchConfig } = useDaemonConfig(serverId);
 
@@ -921,15 +970,13 @@ function AutoArchiveMergedWorkspacesCard({ serverId }: { serverId: string }) {
     <View style={settingsStyles.card} testID="host-page-auto-archive-merged-workspaces-card">
       <View style={settingsStyles.row}>
         <View style={settingsStyles.rowContent}>
-          <Text style={settingsStyles.rowTitle}>Archive merged PR workspaces</Text>
-          <Text style={settingsStyles.rowHint}>
-            Automatically archive clean Paseo workspaces after their pull request is merged
-          </Text>
+          <Text style={settingsStyles.rowTitle}>{t("settings.host.autoArchive.title")}</Text>
+          <Text style={settingsStyles.rowHint}>{t("settings.host.autoArchive.hint")}</Text>
         </View>
         <Switch
           value={config?.autoArchiveAfterMerge === true}
           onValueChange={handleValueChange}
-          accessibilityLabel="Archive merged PR workspaces"
+          accessibilityLabel={t("settings.host.autoArchive.title")}
           testID="host-page-auto-archive-merged-workspaces-switch"
         />
       </View>
@@ -1699,6 +1746,26 @@ const terminalProfileStyles = StyleSheet.create((theme) => ({
 }));
 
 const styles = StyleSheet.create((theme) => ({
+  connectTileSection: {
+    marginBottom: theme.spacing[6],
+  },
+  connectTileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing[3],
+    paddingVertical: theme.spacing[4],
+    paddingHorizontal: theme.spacing[4],
+  },
+  // Brand-green tile badge: the one promoted action on the host page gets the
+  // accent fill, everything below stays neutral.
+  connectTileBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.accent,
+  },
   updateFailure: {
     marginHorizontal: theme.spacing[4],
     marginBottom: theme.spacing[4],
