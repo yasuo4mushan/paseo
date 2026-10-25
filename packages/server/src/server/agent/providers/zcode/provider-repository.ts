@@ -24,16 +24,27 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { candidateZcodeAppBundleCjsPaths } from "./discovery.js";
+
 export const ZCODE_V2_CONFIG_PATH = path.join(os.homedir(), ".zcode", "v2", "config.json");
 export const ZCODE_CLI_SETTINGS_PATH = path.join(os.homedir(), ".zcode", "cli", "config.json");
 
-/** Candidate locations for the desktop app's bundled builtin provider catalog. */
-export const ZCODE_BUILTIN_PROVIDER_CANDIDATES = [
-  // ZCode 3.12+ desktop layout.
-  "/Applications/ZCode.app/Contents/Resources/config/provider/zcode-builtin.json",
-  // ZCode 0.16.x desktop layout.
-  "/Applications/ZCode.app/Contents/Resources/glm/provider/zcode-builtin.json",
-];
+/**
+ * Candidate locations for the desktop app's bundled builtin provider catalog.
+ * Derived from the discovered app-bundle Resources dirs (see discovery.ts) so
+ * installs outside the default Applications dir (other mounted volumes on
+ * macOS, per-user Programs dir on Windows) are covered; two layouts per root:
+ * ZCode 3.12+ (config/provider) and 0.16.x (glm/provider).
+ */
+export function zcodeBuiltinProviderCandidates(): string[] {
+  return candidateZcodeAppBundleCjsPaths().flatMap((cjs) => {
+    const resourcesDir = path.dirname(path.dirname(cjs));
+    return [
+      path.join(resourcesDir, "config", "provider", "zcode-builtin.json"),
+      path.join(resourcesDir, "glm", "provider", "zcode-builtin.json"),
+    ];
+  });
+}
 
 export interface ZcodeProviderRepository {
   /** Absolute path of the written snapshot (personal repository). */
@@ -122,7 +133,7 @@ function fileExists(filePath: string): boolean {
 }
 
 export function findZcodeBuiltinProviderFile(): string | null {
-  return ZCODE_BUILTIN_PROVIDER_CANDIDATES.find(fileExists) ?? null;
+  return zcodeBuiltinProviderCandidates().find(fileExists) ?? null;
 }
 
 function writeJsonAtomic(filePath: string, value: unknown): void {

@@ -35,10 +35,9 @@ import {
 } from "./protocol.js";
 import {
   describeZcodeLaunchSource,
+  existingZcodeAppBundleCjs,
   isZcodeLaunchAvailable,
   resolveZcodeLaunch,
-  zcodeAppBundleCjsExists,
-  ZCODE_MACOS_APP_CJS_PATH,
 } from "./discovery.js";
 import { buildZcodeToolCallItem, displayZcodeToolName } from "./tool-call-detail.js";
 import {
@@ -1270,8 +1269,8 @@ export class ZcodeAgentClient implements AgentClient {
             value: launch.source === "path" ? `found (${launch.command})` : "not found",
           },
           {
-            label: "macOS app bundle",
-            value: zcodeAppBundleCjsExists() ? `found (${ZCODE_MACOS_APP_CJS_PATH})` : "not found",
+            label: "App bundle",
+            value: existingZcodeAppBundleCjs() ?? "not found",
           },
           { label: "Status", value: available ? "available" : "unavailable" },
         ]),
