@@ -1,0 +1,61 @@
+# npm Trusted Publishing (OIDC) — tag push 触发，无需任何令牌/口令。
+# 前置（每个包一次性）：npmjs.com → 包 Settings → Trusted Publishing 绑定：
+#   Repository: yasuo4mushan/paseo   Workflow: npm-publish.yml
+#   Environment: npm-publish（也可留空，则删掉本文件中的 environment 行）
+# 触发：git tag v*（例：git tag v1.0.1 && git push origin v1.0.1）
+name: npm publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  # OIDC 身份令牌：npm 用它与 GitHub 核验发布来源，这是 Trusted Publishing 的核心
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build all publishable packages
+        run: |
+          npm run build:protocol
+          npm run build:highlight
+          npm run build:plugin
+          npm run build:relay
+          npm run build:client
+          npm run build:server
+          npm run build --workspace=aaswitch
+
+      # npm ≥11.5 在 GitHub Actions + id-token:write 下自动走 OIDC，
+      # 无需 NPM_TOKEN。依赖序发布；任一失败立即停止，避免半发布状态。
+      - name: Publish (dependency order)
+        run: |
+          for p in protocol highlight plugin relay client server; do
+            echo "::group::publish @aaswitch/$p"
+            (cd packages/$p && npm publish --access public --provenance) || exit 1
+            echo "::endgroup::"
+          done
+          echo "::group::publish aaswitch"
+          (cd packages/cli && npm publish --access public --provenance) || exit 1
+          echo "::endgroup::"
+
+      - name: Published versions
+        run: npm view aaswitch version
